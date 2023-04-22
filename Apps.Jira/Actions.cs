@@ -8,6 +8,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
 using Apps.Jira.Dtos;
+using Blackbird.Applications.Sdk.Common.Actions;
 
 namespace Apps.Jira
 {
@@ -15,12 +16,14 @@ namespace Apps.Jira
     public class Actions
     {
         [Action("Get issue", Description = "Get issue by key")]
-        public IssueResponse GetIssueByKey(string url, string login, AuthenticationCredentialsProvider authenticationCredentialsProvider, 
+        public IssueResponse GetIssueByKey(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders, 
             [ActionParameter] IssueRequest input)
         {
             var fields = new List<string>() { "summary", "status", "assignee" };
-            var request = CreateRequestToJira(login, authenticationCredentialsProvider.Value, $"/rest/api/3/issue/{input.IssueKey}/?fields={string.Join(",", fields)}", Method.Get);
-            var response = new RestClient(url).Get(request);
+            var client = new JiraClient(authenticationCredentialsProviders);
+            var request = new JiraRequest($"/issue/{input.IssueKey}/?fields={string.Join(",", fields)}", Method.Get, authenticationCredentialsProviders);
+
+            var response = client.Get(request);
 
             dynamic parsedIssue = JsonConvert.DeserializeObject(response.Content);
 
@@ -37,10 +40,11 @@ namespace Apps.Jira
         }
 
         [Action("Issue transition", Description = "Perform issue transition")]
-        public BaseResponse IssueTransition(string url, string login, AuthenticationCredentialsProvider authenticationCredentialsProvider,
+        public BaseResponse IssueTransition(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders,
             [ActionParameter] IssueTransitionRequest input)
         {
-            var request = CreateRequestToJira(login, authenticationCredentialsProvider.Value, $"/rest/api/3/issue/{input.IssueKey}/transitions", Method.Post);
+            var client = new JiraClient(authenticationCredentialsProviders);
+            var request = new JiraRequest($"/issue/{input.IssueKey}/transitions", Method.Get, authenticationCredentialsProviders);
             request.AddJsonBody(new
             {
                 transition = new
@@ -48,7 +52,7 @@ namespace Apps.Jira
                     id = input.TransitionId
                 }
             });
-            var response = new RestClient(url).Execute(request);
+            var response = client.Execute(request);
 
             return new BaseResponse()
             {
@@ -58,11 +62,12 @@ namespace Apps.Jira
         }
 
         [Action("Get issue transitions", Description = "Get list of available transitions for specific issue")]
-        public GetIssueTransitionsResponse GetIssueTransitions(string url, string login, AuthenticationCredentialsProvider authenticationCredentialsProvider,
+        public GetIssueTransitionsResponse GetIssueTransitions(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders,
             [ActionParameter] GetIssueTransitionsRequest input)
         {
-            var request = CreateRequestToJira(login, authenticationCredentialsProvider.Value, $"/rest/api/3/issue/{input.IssueKey}/transitions", Method.Get);
-            var response = new RestClient(url).Get(request);
+            var client = new JiraClient(authenticationCredentialsProviders);
+            var request = new JiraRequest($"/issue/{input.IssueKey}/transitions", Method.Get, authenticationCredentialsProviders);
+            var response = client.Get(request);
 
             dynamic availableTransitions = JsonConvert.DeserializeObject(response.Content);
             JArray transitionsArr = availableTransitions.transitions;
@@ -84,10 +89,11 @@ namespace Apps.Jira
         }
 
         [Action("Get all users", Description = "Get list of users")]
-        public GetAllUsersResponse GetAllUsers(string url, string login, AuthenticationCredentialsProvider authenticationCredentialsProvider)
+        public GetAllUsersResponse GetAllUsers(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders)
         {
-            var request = CreateRequestToJira(login, authenticationCredentialsProvider.Value, $"/rest/api/3/users/search", Method.Get);
-            var response = new RestClient(url).Get(request);
+            var client = new JiraClient(authenticationCredentialsProviders);
+            var request = new JiraRequest($"/users/search", Method.Get, authenticationCredentialsProviders);            
+            var response = client.Get(request);
 
             dynamic usersObj = JsonConvert.DeserializeObject(response.Content);
             JArray usersArr = usersObj;
@@ -106,15 +112,6 @@ namespace Apps.Jira
             {
                 Users = users
             };
-        }
-
-        private RestRequest CreateRequestToJira(string email, string token, string endpoint,
-            RestSharp.Method methodType)
-        {
-            string base64Key = Convert.ToBase64String(Encoding.UTF8.GetBytes($"{email}:{token}"));
-            var request = new RestRequest(endpoint, methodType);
-            request.AddHeader("Authorization", $"Basic {base64Key}");
-            return request;
         }
     }
 }
