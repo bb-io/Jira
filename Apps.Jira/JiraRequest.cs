@@ -13,8 +13,8 @@ namespace Apps.Jira
     {
         public JiraRequest(string endpoint, Method method, IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders) : base(endpoint, method)
         {
-            var email = authenticationCredentialsProviders.First(p => p.KeyName == "email");
-            var apiKey = authenticationCredentialsProviders.First(p => p.KeyName == "apiKey");
+            var email = authenticationCredentialsProviders.First(p => p.KeyName == "email").Value;
+            var apiKey = authenticationCredentialsProviders.First(p => p.KeyName == "apiKey").Value;
 
             string base64Key = Convert.ToBase64String(Encoding.UTF8.GetBytes($"{email}:{apiKey}"));
             this.AddHeader("Authorization", $"Basic {base64Key}");
