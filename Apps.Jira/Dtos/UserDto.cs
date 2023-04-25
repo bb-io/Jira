@@ -12,4 +12,9 @@ namespace Apps.Jira.Dtos
 
         public string AccountId { get; set; }
     }
+
+    public class UsersResponseWrapper
+    {
+        public IEnumerable<UserDto> Users { get; set; }
+    }
 }

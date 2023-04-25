@@ -12,4 +12,9 @@ namespace Apps.Jira.Dtos
 
         public string Id { get; set; }
     }
+
+    public class TransitionsResponseWrapper
+    {
+        public IEnumerable<TransitionDto> Transitions { get; set; }
+    }
 }

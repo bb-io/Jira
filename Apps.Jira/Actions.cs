@@ -16,31 +16,16 @@ namespace Apps.Jira
     public class Actions
     {
         [Action("Get issue", Description = "Get issue by key")]
-        public IssueResponse GetIssueByKey(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders, 
+        public IssueDto GetIssueByKey(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders, 
             [ActionParameter] IssueRequest input)
         {
-            var fields = new List<string>() { "summary", "status", "assignee" };
             var client = new JiraClient(authenticationCredentialsProviders);
-            var request = new JiraRequest($"/issue/{input.IssueKey}/?fields={string.Join(",", fields)}", Method.Get, authenticationCredentialsProviders);
-
-            var response = client.Get(request);
-
-            dynamic parsedIssue = JsonConvert.DeserializeObject(response.Content);
-
-            string summary = parsedIssue.fields.summary;
-            string status = parsedIssue.fields.status.name;
-            string assignee = parsedIssue.fields.assignee.emailAddress;
-
-            return new IssueResponse()
-            {
-                Summary = summary,
-                Status = status,
-                Assignee = assignee
-            };
+            var request = new JiraRequest($"/issue/{input.IssueKey}", Method.Get, authenticationCredentialsProviders);
+            return client.Get<ResponseWrapper<IssueDto>>(request).Fields;
         }
 
         [Action("Issue transition", Description = "Perform issue transition")]
-        public BaseResponse IssueTransition(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders,
+        public void IssueTransition(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders,
             [ActionParameter] IssueTransitionRequest input)
         {
             var client = new JiraClient(authenticationCredentialsProviders);
@@ -52,66 +37,24 @@ namespace Apps.Jira
                     id = input.TransitionId
                 }
             });
-            var response = client.Execute(request);
-
-            return new BaseResponse()
-            {
-                StatusCode = ((int)response.StatusCode),
-                Details = response.Content
-            };
+            client.Execute(request);
         }
 
         [Action("Get issue transitions", Description = "Get list of available transitions for specific issue")]
-        public GetIssueTransitionsResponse GetIssueTransitions(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders,
+        public TransitionsResponseWrapper GetIssueTransitions(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders,
             [ActionParameter] GetIssueTransitionsRequest input)
         {
             var client = new JiraClient(authenticationCredentialsProviders);
             var request = new JiraRequest($"/issue/{input.IssueKey}/transitions", Method.Get, authenticationCredentialsProviders);
-            var response = client.Get(request);
-
-            dynamic availableTransitions = JsonConvert.DeserializeObject(response.Content);
-            JArray transitionsArr = availableTransitions.transitions;
-
-            var transitions = new List<TransitionDto>();
-            foreach( JObject transition in transitionsArr)
-            {
-                transitions.Add(new TransitionDto()
-                {
-                    Name = transition.GetValue("name").ToString(),
-                    Id = transition.GetValue("id").ToString()
-                });
-            }
-
-            return new GetIssueTransitionsResponse()
-            {
-                Transitions = transitions
-            };
+            return client.Get<TransitionsResponseWrapper>(request);
         }
 
         [Action("Get all users", Description = "Get list of users")]
-        public GetAllUsersResponse GetAllUsers(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders)
+        public UsersResponseWrapper GetAllUsers(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders)
         {
             var client = new JiraClient(authenticationCredentialsProviders);
-            var request = new JiraRequest($"/users/search", Method.Get, authenticationCredentialsProviders);            
-            var response = client.Get(request);
-
-            dynamic usersObj = JsonConvert.DeserializeObject(response.Content);
-            JArray usersArr = usersObj;
-
-            var users = new List<UserDto>();
-            foreach (JObject user in usersArr)
-            {
-                users.Add(new UserDto()
-                {
-                    DisplayName = user.GetValue("displayName").ToString(),
-                    AccountId = user.GetValue("accountId").ToString()
-                });
-            }
-
-            return new GetAllUsersResponse()
-            {
-                Users = users
-            };
+            var request = new JiraRequest($"/users/search", Method.Get, authenticationCredentialsProviders);
+            return client.Get<UsersResponseWrapper>(request);
         }
     }
 }
