@@ -29,7 +29,7 @@ namespace Apps.Jira
             [ActionParameter] IssueTransitionRequest input)
         {
             var client = new JiraClient(authenticationCredentialsProviders);
-            var request = new JiraRequest($"/issue/{input.IssueKey}/transitions", Method.Get, authenticationCredentialsProviders);
+            var request = new JiraRequest($"/issue/{input.IssueKey}/transitions", Method.Post, authenticationCredentialsProviders);
             request.AddJsonBody(new
             {
                 transition = new
