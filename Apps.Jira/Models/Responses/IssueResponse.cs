@@ -13,5 +13,7 @@ namespace Apps.Jira.Models.Responses
         public string Status { get; set; }
 
         public string Assignee { get; set; }
+
+        public string Description { get; set; }
     }
 }

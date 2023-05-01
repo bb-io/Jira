@@ -9,6 +9,7 @@ using Newtonsoft.Json.Linq;
 using System;
 using Apps.Jira.Dtos;
 using Blackbird.Applications.Sdk.Common.Actions;
+using System.Linq;
 
 namespace Apps.Jira
 {
@@ -16,12 +17,19 @@ namespace Apps.Jira
     public class Actions
     {
         [Action("Get issue", Description = "Get issue by key")]
-        public IssueDto GetIssueByKey(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders, 
+        public IssueResponse GetIssueByKey(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders, 
             [ActionParameter] IssueRequest input)
         {
             var client = new JiraClient(authenticationCredentialsProviders);
             var request = new JiraRequest($"/issue/{input.IssueKey}", Method.Get, authenticationCredentialsProviders);
-            return client.Get<ResponseWrapper<IssueDto>>(request).Fields;
+            var issue = client.Get<ResponseWrapper<IssueDto>>(request).Fields;
+            return new IssueResponse()
+            {
+                Summary = issue.Summary,
+                Status = issue.Status.Name,
+                Assignee = issue.Assignee.DisplayName,
+                Description = string.Join('\n', issue.Description.Content.Select(x => string.Join('\n', x.Content.Select(c => c.Text))).ToArray())
+            };
         }
 
         [Action("Issue transition", Description = "Perform issue transition")]
