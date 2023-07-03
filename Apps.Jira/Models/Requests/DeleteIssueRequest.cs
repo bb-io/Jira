@@ -2,12 +2,12 @@
 
 namespace Apps.Jira.Models.Requests
 {
-    public class IssueTransitionRequest
+    public class DeleteIssueRequest
     {
-        [Display("Transition Id")]
-        public string TransitionId { get; set; }
-
         [Display("Issue Key")]
         public string IssueKey { get; set; }
+        
+        [Display("Delete Subtasks")]
+        public string DeleteSubtasks { get; set; }
     }
 }

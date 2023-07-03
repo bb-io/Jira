@@ -1,13 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Blackbird.Applications.Sdk.Common;
 
 namespace Apps.Jira.Models.Requests
 {
     public class GetIssueTransitionsRequest
     {
+        [Display("Issue Key")]
         public string IssueKey { get; set; }
     }
 }
