@@ -28,8 +28,11 @@ namespace Apps.Jira
             {
                 Summary = issue.Summary,
                 Status = issue.Status.Name,
-                Assignee = issue.Assignee.DisplayName,
-                Description = string.Join('\n', issue.Description.Content.Select(x => string.Join('\n', x.Content.Select(c => c.Text))).ToArray())
+                Assignee = issue.Assignee == null ? "Unassigned" : issue.Assignee.DisplayName,
+                Description = issue.Description == null ? ""
+                    : string.Join('\n',
+                        issue.Description.Content.Select(x => string.Join('\n', x.Content.Select(c => c.Text)))
+                            .ToArray())
             };
         }
 
