@@ -3,13 +3,8 @@ using Blackbird.Applications.Sdk.Common.Authentication;
 using Apps.Jira.Models.Requests;
 using Apps.Jira.Models.Responses;
 using RestSharp;
-using System.Text;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using System;
 using Apps.Jira.Dtos;
 using Blackbird.Applications.Sdk.Common.Actions;
-using System.Linq;
 using Microsoft.AspNetCore.WebUtilities;
 
 namespace Apps.Jira
