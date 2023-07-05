@@ -27,8 +27,8 @@ namespace Apps.Jira.Auth.OAuth2
             var bodyParameters = new Dictionary<string, string>
             {
                 { "grant_type", "authorization_code" },
-                { "client_id", values["client_id"] },
-                { "client_secret", values["client_secret"] },
+                { "client_id", ApplicationConstants.ClientId },
+                { "client_secret", ApplicationConstants.ClientSecret },
                 { "redirect_uri", ApplicationConstants.RedirectUri },
                 { "code", code }
             };
