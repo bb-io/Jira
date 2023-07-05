@@ -9,39 +9,31 @@ namespace Apps.Jira.Connections
         {
             new ConnectionPropertyGroup
             {
-                Name = "Jira connection",
-                AuthenticationType = ConnectionAuthenticationType.Undefined,
+                Name = "OAuth2",
+                AuthenticationType = ConnectionAuthenticationType.OAuth2,
                 ConnectionUsage = ConnectionUsage.Actions,
-                ConnectionProperties = new List<ConnectionProperty>()
+                ConnectionProperties = new List<ConnectionProperty>
                 {
-                    new ConnectionProperty("email"),
-                    new ConnectionProperty("apiKey"),
-                    new ConnectionProperty("url")
+                    new ConnectionProperty("client_id"),
+                    new ConnectionProperty("client_secret"),
+                    new ConnectionProperty("jira_url")
                 }
             }
         };
 
         public IEnumerable<AuthenticationCredentialsProvider> CreateAuthorizationCredentialsProviders(Dictionary<string, string> values)
         {
-            var email = values.First(v => v.Key == "email");
+            var token = values.First(v => v.Key == "access_token");
             yield return new AuthenticationCredentialsProvider(
-                AuthenticationCredentialsRequestLocation.None,
-                email.Key,
-                email.Value
+                AuthenticationCredentialsRequestLocation.Header,
+                "Authorization",
+                $"Bearer {token.Value}"
             );
-
-            var apiKey = values.First(v => v.Key == "apiKey");
+            var jiraUrl = values.First(v => v.Key == "jira_url");
             yield return new AuthenticationCredentialsProvider(
                 AuthenticationCredentialsRequestLocation.None,
-                apiKey.Key,
-                apiKey.Value
-            );
-
-            var url = values.First(v => v.Key == "url");
-            yield return new AuthenticationCredentialsProvider(
-                AuthenticationCredentialsRequestLocation.None,
-                url.Key,
-                url.Value
+                "jira_url",
+                jiraUrl.Value
             );
         }
     }
