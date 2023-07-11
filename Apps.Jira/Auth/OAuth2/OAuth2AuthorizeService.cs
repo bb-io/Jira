@@ -11,7 +11,7 @@ namespace Apps.Jira.Auth.OAuth2
             var parameters = new Dictionary<string, string>
             {
                 { "audience", "api.atlassian.com" },
-                { "client_id", values["client_id"] },
+                { "client_id", ApplicationConstants.ClientId },
                 { "scope", "read:jira-work write:jira-work manage:jira-webhook read:jira-user" },
                 { "redirect_uri", ApplicationConstants.RedirectUri },
                 { "state", values["state"] },

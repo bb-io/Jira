@@ -14,8 +14,6 @@ namespace Apps.Jira.Connections
                 ConnectionUsage = ConnectionUsage.Actions,
                 ConnectionProperties = new List<ConnectionProperty>
                 {
-                    new ConnectionProperty("client_id"),
-                    new ConnectionProperty("client_secret"),
                     new ConnectionProperty("jira_url")
                 }
             }
