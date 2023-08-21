@@ -4,25 +4,25 @@ namespace Apps.Jira.Webhooks.Responses
 {
     public class IssueResponse
     {
-        [Display("Issue Key")]
+        [Display("Issue key")]
         public string IssueKey { get; set; }
         
-        [Display("Project Key")]
+        [Display("Project key")]
         public string ProjectKey { get; set; }
         
         public string Summary { get; set; }
         
         public string Description { get; set; }
         
-        [Display("Issue Type")]
+        [Display("Issue type")]
         public string IssueType { get; set; }
         
         public string Priority { get; set; }
         
-        [Display("Assignee Account Id")]
+        [Display("Assignee account ID")]
         public string AssigneeAccountId { get; set; }
         
-        [Display("Assignee Name")]
+        [Display("Assignee name")]
         public string AssigneeName { get; set; }
         
         public string Status { get; set; }

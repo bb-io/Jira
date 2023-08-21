@@ -4,10 +4,10 @@ namespace Apps.Jira.Models.Requests
 {
     public class DeleteIssueRequest
     {
-        [Display("Issue Key")]
+        [Display("Issue key")]
         public string IssueKey { get; set; }
         
-        [Display("Delete Subtasks")]
+        [Display("Delete subtasks")]
         public string DeleteSubtasks { get; set; }
     }
 }

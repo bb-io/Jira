@@ -5,7 +5,7 @@ namespace Apps.Jira.Connections
 {
     public class ConnectionDefinition : IConnectionDefinition
     {
-        public IEnumerable<ConnectionPropertyGroup> ConnectionPropertyGroups => new List<ConnectionPropertyGroup>()
+        public IEnumerable<ConnectionPropertyGroup> ConnectionPropertyGroups => new List<ConnectionPropertyGroup>
         {
             new ConnectionPropertyGroup
             {
@@ -14,7 +14,7 @@ namespace Apps.Jira.Connections
                 ConnectionUsage = ConnectionUsage.Actions,
                 ConnectionProperties = new List<ConnectionProperty>
                 {
-                    new ConnectionProperty("jira_url")
+                    new ConnectionProperty("Jira URL")
                 }
             }
         };
@@ -27,7 +27,7 @@ namespace Apps.Jira.Connections
                 "Authorization",
                 $"Bearer {token.Value}"
             );
-            var jiraUrl = values.First(v => v.Key == "jira_url");
+            var jiraUrl = values.First(v => v.Key == "Jira URL");
             yield return new AuthenticationCredentialsProvider(
                 AuthenticationCredentialsRequestLocation.None,
                 "jira_url",

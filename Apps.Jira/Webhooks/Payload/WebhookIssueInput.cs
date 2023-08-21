@@ -4,7 +4,7 @@ namespace Apps.Jira.Webhooks.Payload
 {
     public class WebhookIssueInput : IWebhookInput
     {
-        [Display("Issue Key")]
+        [Display("Issue key")]
         public string? IssueKey { get; set; }
     }
 }

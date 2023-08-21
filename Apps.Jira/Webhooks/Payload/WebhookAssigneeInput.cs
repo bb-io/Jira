@@ -4,7 +4,7 @@ namespace Apps.Jira.Webhooks.Payload
 {
     public class WebhookAssigneeInput : IWebhookInput
     {
-        [Display("Assignee Display Name or Id")]
+        [Display("Assignee display name or ID")]
         public string AssigneeNameOrId { get; set; }
     }
 }

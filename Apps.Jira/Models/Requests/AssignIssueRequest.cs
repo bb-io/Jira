@@ -4,10 +4,10 @@ namespace Apps.Jira.Models.Requests
 {
     public class AssignIssueRequest
     {
-        [Display("Issue Key")]
+        [Display("Issue key")]
         public string IssueKey { get; set; }
         
-        [Display("Account Id")]
+        [Display("Account ID")]
         public string? AccountId { get; set; }
     }
 }

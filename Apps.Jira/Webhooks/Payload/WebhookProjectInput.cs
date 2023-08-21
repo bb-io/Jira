@@ -4,7 +4,7 @@ namespace Apps.Jira.Webhooks.Payload
 {
     public class WebhookProjectInput : IWebhookInput
     {
-        [Display("Project Key")]
+        [Display("Project key")]
         public string? ProjectKey { get; set; }
     }
 }
