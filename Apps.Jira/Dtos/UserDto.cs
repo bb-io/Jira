@@ -4,15 +4,13 @@ namespace Apps.Jira.Dtos
 {
     public class UserDto
     {
-        [Display("Display name")]
-        public string DisplayName { get; set; }
-
         [Display("Account ID")]
         public string AccountId { get; set; }
-    }
-
-    public class UsersResponseWrapper
-    {
-        public IEnumerable<UserDto> Users { get; set; }
+        
+        [Display("Email address")]
+        public string EmailAddress { get; set; }
+        
+        [Display("Display name")]
+        public string DisplayName { get; set; }
     }
 }

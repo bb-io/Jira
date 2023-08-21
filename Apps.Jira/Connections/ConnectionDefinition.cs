@@ -14,12 +14,13 @@ namespace Apps.Jira.Connections
                 ConnectionUsage = ConnectionUsage.Actions,
                 ConnectionProperties = new List<ConnectionProperty>
                 {
-                    new ConnectionProperty("Jira URL")
+                    new("Jira URL")
                 }
             }
         };
 
-        public IEnumerable<AuthenticationCredentialsProvider> CreateAuthorizationCredentialsProviders(Dictionary<string, string> values)
+        public IEnumerable<AuthenticationCredentialsProvider> CreateAuthorizationCredentialsProviders(
+            Dictionary<string, string> values)
         {
             var token = values.First(v => v.Key == "access_token");
             yield return new AuthenticationCredentialsProvider(
@@ -27,6 +28,7 @@ namespace Apps.Jira.Connections
                 "Authorization",
                 $"Bearer {token.Value}"
             );
+            
             var jiraUrl = values.First(v => v.Key == "Jira URL");
             yield return new AuthenticationCredentialsProvider(
                 AuthenticationCredentialsRequestLocation.None,

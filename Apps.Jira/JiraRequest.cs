@@ -6,9 +6,10 @@ namespace Apps.Jira
     public class JiraRequest : RestRequest
     {
         public JiraRequest(string endpoint, Method method,
-            IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders) : base(endpoint, method)
+            IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders)
+            : base(endpoint, method)
         {
-            this.AddHeader("Authorization",
+            this.AddHeader("Authorization", 
                 authenticationCredentialsProviders.First(p => p.KeyName == "Authorization").Value);
         }
     }
