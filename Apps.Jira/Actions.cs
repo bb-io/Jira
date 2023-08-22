@@ -4,6 +4,7 @@ using Apps.Jira.Models.Requests;
 using Apps.Jira.Models.Responses;
 using RestSharp;
 using Apps.Jira.Dtos;
+using Apps.Jira.Models.Identifiers;
 using Blackbird.Applications.Sdk.Common.Actions;
 using Blackbird.Applications.Sdk.Common.Invocation;
 using Microsoft.AspNetCore.WebUtilities;
@@ -18,8 +19,10 @@ namespace Apps.Jira
 
         public Actions(InvocationContext invocationContext) : base(invocationContext) { }
         
+        #region GET
+        
         [Action("Get issue", Description = "Get the specified issue.")]
-        public async Task<IssueResponse> GetIssueByKey([ActionParameter] IssueRequest input)
+        public async Task<IssueResponse> GetIssueByKey([ActionParameter] IssueIdentifier input)
         {
             var client = new JiraClient(Creds);
             var request = new JiraRequest($"/issue/{input.IssueKey}", Method.Get, Creds);
@@ -38,27 +41,12 @@ namespace Apps.Jira
                             .ToArray())
             };
         }
-
-        [Action("Transition issue", Description = "Perform issue transition.")]
-        public async Task TransitionIssue([ActionParameter] TransitionIssueRequest input)
-        {
-            var client = new JiraClient(Creds);
-            var request = new JiraRequest($"/issue/{input.IssueKey}/transitions", Method.Post, Creds);
-            request.AddJsonBody(new
-            {
-                transition = new
-                {
-                    id = input.TransitionId
-                }
-            });
-            await client.ExecuteWithHandling(request);
-        }
-
+        
         [Action("Get issue transitions", Description = "Get a list of available transitions for specific issue.")]
-        public async Task<TransitionsResponse> GetIssueTransitions([ActionParameter] GetIssueTransitionsRequest input)
+        public async Task<TransitionsResponse> GetIssueTransitions([ActionParameter] IssueIdentifier issue)
         {
             var client = new JiraClient(Creds);
-            var request = new JiraRequest($"/issue/{input.IssueKey}/transitions", Method.Get, Creds);
+            var request = new JiraRequest($"/issue/{issue.IssueKey}/transitions", Method.Get, Creds);
             var transitions = await client.ExecuteWithHandling<TransitionsResponse>(request);
             return transitions;
         }
@@ -72,8 +60,29 @@ namespace Apps.Jira
             return users;
         }
 
+        #endregion
+        
+        #region POST
+        
+        [Action("Transition issue", Description = "Perform issue transition.")]
+        public async Task TransitionIssue([ActionParameter] IssueIdentifier issue, 
+            [ActionParameter] TransitionIdentifier transition)
+        {
+            var client = new JiraClient(Creds);
+            var request = new JiraRequest($"/issue/{issue.IssueKey}/transitions", Method.Post, Creds);
+            request.AddJsonBody(new
+            {
+                transition = new
+                {
+                    id = transition.TransitionId
+                }
+            });
+            await client.ExecuteWithHandling(request);
+        }
+        
         [Action("Create issue", Description = "Create a new issue.")]
-        public async Task CreateIssue([ActionParameter] CreateIssueRequest input)
+        public async Task CreateIssue([ActionParameter] AssigneeIdentifier assignee, 
+            [ActionParameter] ProjectIdentifier project, [ActionParameter] CreateIssueRequest input)
         {
             var client = new JiraClient(Creds);
             var request = new JiraRequest("/issue", Method.Post, Creds);
@@ -81,8 +90,8 @@ namespace Apps.Jira
             {
                 fields = new
                 {
-                    assignee = new { id = input.AssigneeId },
-                    project = new { key = input.ProjectKey },
+                    assignee = new { id = assignee.AccountId },
+                    project = new { key = project.ProjectKey },
                     summary = input.Summary,
                     description = new
                     {
@@ -109,35 +118,41 @@ namespace Apps.Jira
             });
             await client.ExecuteWithHandling(request);
         }
+        
+        #endregion
 
-        [Action("Assign issue", Description = "Assign an issue to a user. Is AccountId is set to -1, issue is assigned " +
-                                              "to the default assignee for the project. Is AccountId is set to null, " +
-                                              "the issue is set to unassigned.")]
-        public async Task AssignIssue([ActionParameter] AssignIssueRequest input)
+        #region PUT
+        
+         [Action("Assign issue", Description = "Assign an issue to a user. If assignee is not specified, the issue is " +
+                                               "set to unassigned.")]
+        public async Task AssignIssue([ActionParameter] IssueIdentifier issue, 
+            [ActionParameter] AssigneeIdentifier assignee)
         {
             var client = new JiraClient(Creds);
-            var request = new JiraRequest($"/issue/{input.IssueKey}/assignee", Method.Put, Creds);
-            request.AddJsonBody(new { accountId = input.AccountId });
+            var request = new JiraRequest($"/issue/{issue.IssueKey}/assignee", Method.Put, Creds);
+            request.AddJsonBody(new { accountId = assignee.AccountId });
             await client.ExecuteWithHandling(request);
         }
 
         [Action("Update issue summary", Description = "Update summary for an issue.")]
-        public async Task UpdateIssueSummary([ActionParameter] UpdateIssueSummaryRequest input)
+        public async Task UpdateIssueSummary([ActionParameter] IssueIdentifier issue, 
+            [ActionParameter] [Display("Summary")] string summary)
         {
             var client = new JiraClient(Creds);
-            var request = new JiraRequest($"/issue/{input.IssueKey}", Method.Put, Creds);
+            var request = new JiraRequest($"/issue/{issue.IssueKey}", Method.Put, Creds);
             request.AddJsonBody(new
             {
-                fields = new { summary = input.Summary }
+                fields = new { summary }
             });
             await client.ExecuteWithHandling(request);
         }
 
         [Action("Update issue description", Description = "Update description for an issue.")]
-        public async Task UpdateIssueDescription([ActionParameter] UpdateDescriptionRequest input)
+        public async Task UpdateIssueDescription([ActionParameter] IssueIdentifier issue, 
+            [ActionParameter] [Display("Description")] string description)
         {
             var client = new JiraClient(Creds);
-            var request = new JiraRequest($"/issue/{input.IssueKey}", Method.Put, Creds);
+            var request = new JiraRequest($"/issue/{issue.IssueKey}", Method.Put, Creds);
             request.AddJsonBody(new
             {
                 fields = new
@@ -156,7 +171,7 @@ namespace Apps.Jira
                                     new
                                     {
                                         Type = "text",
-                                        Text = input.Description
+                                        Text = description
                                     }
                                 }
                             }
@@ -168,31 +183,39 @@ namespace Apps.Jira
         }
 
         [Action("Prioritize issue", Description = "Set priority for an issue.")]
-        public async Task PrioritizeIssue([ActionParameter] PrioritizeIssueRequest input)
+        public async Task PrioritizeIssue([ActionParameter] IssueIdentifier issue, 
+            [ActionParameter] PriorityIdentifier priority)
         {
             var client = new JiraClient(Creds);
-            var request = new JiraRequest($"/issue/{input.IssueKey}", Method.Put, Creds);
+            var request = new JiraRequest($"/issue/{issue.IssueKey}", Method.Put, Creds);
             request.AddJsonBody(new
             {
                 fields = new
                 {
                     priority = new
                     {
-                        id = input.PriorityId
+                        id = priority.PriorityId
                     }
                 }
             });
             await client.ExecuteWithHandling(request);
         }
-
+        
+        #endregion
+        
+        #region DELETE
+        
         [Action("Delete issue", Description = "Delete an issue. To delete an issue with subtasks, set DeleteSubtasks.")]
-        public async Task DeleteIssue([ActionParameter] DeleteIssueRequest input)
+        public async Task DeleteIssue([ActionParameter] IssueIdentifier issue, 
+            [ActionParameter] [Display("Delete subtasks")] bool deleteSubtasks)
         {
             var client = new JiraClient(Creds);
-            var endpoint = QueryHelpers.AddQueryString($"/issue/{input.IssueKey}", 
-                new Dictionary<string, string> { { "deleteSubtasks", input.DeleteSubtasks.ToString() } });
+            var endpoint = QueryHelpers.AddQueryString($"/issue/{issue.IssueKey}", 
+                new Dictionary<string, string> { { "deleteSubtasks", deleteSubtasks.ToString() } });
             var request = new JiraRequest(endpoint, Method.Delete, Creds);
             await client.ExecuteWithHandling(request);
         }
+        
+        #endregion
     }
 }

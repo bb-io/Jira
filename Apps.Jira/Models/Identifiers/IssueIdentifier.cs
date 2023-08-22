@@ -2,15 +2,11 @@
 using Blackbird.Applications.Sdk.Common;
 using Blackbird.Applications.Sdk.Common.Dynamic;
 
-namespace Apps.Jira.Models.Requests;
+namespace Apps.Jira.Models.Identifiers;
 
-public class PrioritizeIssueRequest
+public class IssueIdentifier
 {
     [Display("Issue")]
     [DataSource(typeof(IssueDataSourceHandler))]
     public string IssueKey { get; set; }
-    
-    [Display("Priority")]
-    [DataSource(typeof(PriorityDataSourceHandler))]
-    public string PriorityId { get; set; }
 }
