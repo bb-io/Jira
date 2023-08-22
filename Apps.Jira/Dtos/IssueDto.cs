@@ -18,6 +18,8 @@ namespace Apps.Jira.Dtos
         public UserDto? Assignee { get; set; }
 
         public Description? Description { get; set; }
+        
+        public IEnumerable<AttachmentDto>? Attachment { get; set; }
     }
 
     public class Description

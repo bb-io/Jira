@@ -59,6 +59,33 @@ namespace Apps.Jira
             var users = await client.ExecuteWithHandling<UsersResponse>(request);
             return users;
         }
+        
+        [Action("List attachments", Description = "List files attached to an issue.")]
+        public async Task<AttachmentsResponse> ListAttachments([ActionParameter] IssueIdentifier issue)
+        {
+            var client = new JiraClient(Creds);
+            var request = new JiraRequest($"/issue/{issue.IssueKey}", Method.Get, Creds);
+            var result = await client.ExecuteWithHandling<IssueWrapper>(request);
+            var attachments = result.Fields.Attachment;
+            return new AttachmentsResponse { Attachments = attachments };
+        }
+        
+        [Action("Download attachment", Description = "Download an attachment.")]
+        public async Task<DownloadAttachmentResponse> DownloadAttachment([ActionParameter] AttachmentIdentifier attachment)
+        {
+            var client = new JiraClient(Creds);
+            var request = new JiraRequest($"/attachment/content/{attachment.AttachmentId}", Method.Get, Creds);
+            var response = await client.ExecuteWithHandling(request);
+            var fileBytes = response.RawBytes;
+            var filenameHeader = response.ContentHeaders.First(h => h.Name == "Content-Disposition");
+            var filename = filenameHeader.Value.ToString().Split('"')[1];
+            
+            return new DownloadAttachmentResponse
+            {
+                Filename = filename,
+                File = fileBytes
+            };
+        }
 
         #endregion
         
@@ -118,12 +145,12 @@ namespace Apps.Jira
             });
             await client.ExecuteWithHandling(request);
         }
-        
+
         #endregion
 
         #region PUT
         
-         [Action("Assign issue", Description = "Assign an issue to a user. If assignee is not specified, the issue is " +
+        [Action("Assign issue", Description = "Assign an issue to a user. If assignee is not specified, the issue is " +
                                                "set to unassigned.")]
         public async Task AssignIssue([ActionParameter] IssueIdentifier issue, 
             [ActionParameter] AssigneeIdentifier assignee)
