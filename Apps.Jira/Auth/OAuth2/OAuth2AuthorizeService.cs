@@ -12,7 +12,7 @@ namespace Apps.Jira.Auth.OAuth2
             {
                 { "audience", "api.atlassian.com" },
                 { "client_id", ApplicationConstants.ClientId },
-                { "scope", "read:jira-work write:jira-work manage:jira-webhook read:jira-user" },
+                { "scope", ApplicationConstants.Scopes },
                 { "redirect_uri", ApplicationConstants.RedirectUri },
                 { "state", values["state"] },
                 { "response_type", "code" },
