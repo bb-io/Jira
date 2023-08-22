@@ -29,11 +29,11 @@ namespace Apps.Jira.Connections
                 $"Bearer {token.Value}"
             );
             
-            var jiraUrl = values.First(v => v.Key == "Jira URL");
+            var jiraUrl = new Uri(values.First(v => v.Key == "Jira URL").Value).GetLeftPart(UriPartial.Authority);
             yield return new AuthenticationCredentialsProvider(
                 AuthenticationCredentialsRequestLocation.None,
                 "jira_url",
-                jiraUrl.Value
+                jiraUrl
             );
         }
     }
