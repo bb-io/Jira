@@ -1,13 +1,16 @@
-﻿using Blackbird.Applications.Sdk.Common;
+﻿using Apps.Jira.DataSourceHandlers;
+using Blackbird.Applications.Sdk.Common;
+using Blackbird.Applications.Sdk.Common.Dynamic;
 
 namespace Apps.Jira.Models.Requests
 {
     public class DeleteIssueRequest
     {
-        [Display("Issue key")]
+        [Display("Issue")]
+        [DataSource(typeof(IssueDataSourceHandler))]
         public string IssueKey { get; set; }
         
         [Display("Delete subtasks")]
-        public string DeleteSubtasks { get; set; }
+        public bool DeleteSubtasks { get; set; }
     }
 }

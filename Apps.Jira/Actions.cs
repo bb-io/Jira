@@ -19,8 +19,7 @@ namespace Apps.Jira
         public Actions(InvocationContext invocationContext) : base(invocationContext) { }
         
         [Action("Get issue", Description = "Get the specified issue.")]
-        public async Task<IssueResponse> GetIssueByKey(
-            [ActionParameter] IssueRequest input)
+        public async Task<IssueResponse> GetIssueByKey([ActionParameter] IssueRequest input)
         {
             var client = new JiraClient(Creds);
             var request = new JiraRequest($"/issue/{input.IssueKey}", Method.Get, Creds);
@@ -40,9 +39,8 @@ namespace Apps.Jira
             };
         }
 
-        [Action("Issue transition", Description = "Perform issue transition.")]
-        public async Task IssueTransition(
-            [ActionParameter] IssueTransitionRequest input)
+        [Action("Transition issue", Description = "Perform issue transition.")]
+        public async Task TransitionIssue([ActionParameter] TransitionIssueRequest input)
         {
             var client = new JiraClient(Creds);
             var request = new JiraRequest($"/issue/{input.IssueKey}/transitions", Method.Post, Creds);
@@ -57,8 +55,7 @@ namespace Apps.Jira
         }
 
         [Action("Get issue transitions", Description = "Get a list of available transitions for specific issue.")]
-        public async Task<TransitionsResponse> GetIssueTransitions(
-            [ActionParameter] GetIssueTransitionsRequest input)
+        public async Task<TransitionsResponse> GetIssueTransitions([ActionParameter] GetIssueTransitionsRequest input)
         {
             var client = new JiraClient(Creds);
             var request = new JiraRequest($"/issue/{input.IssueKey}/transitions", Method.Get, Creds);
@@ -101,7 +98,7 @@ namespace Apps.Jira
                                     new
                                     {
                                         Type = "text",
-                                        Text = input.Description
+                                        Text = input.Description ?? ""
                                     }
                                 }
                             }
@@ -193,7 +190,7 @@ namespace Apps.Jira
         {
             var client = new JiraClient(Creds);
             var endpoint = QueryHelpers.AddQueryString($"/issue/{input.IssueKey}", 
-                new Dictionary<string, string> { { "deleteSubtasks", input.DeleteSubtasks } });
+                new Dictionary<string, string> { { "deleteSubtasks", input.DeleteSubtasks.ToString() } });
             var request = new JiraRequest(endpoint, Method.Delete, Creds);
             await client.ExecuteWithHandling(request);
         }

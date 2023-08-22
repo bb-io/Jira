@@ -4,7 +4,7 @@ namespace Apps.Jira.Dtos
 {
     public class UserDto
     {
-        [Display("Account ID")]
+        [Display("Account")]
         public string AccountId { get; set; }
         
         [Display("Email address")]
@@ -12,5 +12,8 @@ namespace Apps.Jira.Dtos
         
         [Display("Display name")]
         public string DisplayName { get; set; }
+        
+        [Display("Account type")]
+        public string AccountType { get; set; }
     }
 }

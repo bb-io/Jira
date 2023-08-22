@@ -5,7 +5,7 @@ namespace Apps.Jira.Models.Responses
 {
     public class IssueResponse
     {
-        [Display("Issue key")]
+        [Display("Issue")]
         public string IssueKey { get; set; }
         
         public string Summary { get; set; }

@@ -4,8 +4,11 @@ using Blackbird.Applications.Sdk.Common.Dynamic;
 
 namespace Apps.Jira.Models.Requests
 {
-    public class IssueRequest
+    public class TransitionIssueRequest
     {
+        [Display("Transition ID")]
+        public string TransitionId { get; set; }
+
         [Display("Issue")]
         [DataSource(typeof(IssueDataSourceHandler))]
         public string IssueKey { get; set; }

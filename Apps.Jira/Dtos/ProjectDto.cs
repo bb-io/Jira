@@ -10,3 +10,8 @@ public class ProjectDto
     [Display("Project name")]
     public string Name { get; set; }
 }
+
+public class ProjectWrapper
+{
+    public IEnumerable<ProjectDto> Values { get; set; }
+}
