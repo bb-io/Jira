@@ -7,7 +7,7 @@ using System.Net;
 
 namespace Apps.Jira.Webhooks
 {
-    [WebhookList]
+    //[WebhookList]
     public class IssueWebhooks
     {
         [Webhook("On issue updated", typeof(IssueUpdatedHandler), 
