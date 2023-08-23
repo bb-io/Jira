@@ -1,63 +1,40 @@
-﻿using Newtonsoft.Json;
+﻿using Blackbird.Applications.Sdk.Common;
 
 namespace Apps.Jira.Dtos
 {
     public class IssueDto
     {
-        public string Summary { get; set; }
+        public IssueDto() { }
+
+        public IssueDto(IssueWrapper issueWrapper)
+        {
+            IssueKey = issueWrapper.Key;
+            Summary = issueWrapper.Fields.Summary;
+            Status = issueWrapper.Fields.Status.Name;
+            Priority = issueWrapper.Fields.Priority.Name;
+            Assignee = issueWrapper.Fields.Assignee;
+            Project = issueWrapper.Fields.Project;
+            Description = issueWrapper.Fields.Description == null
+                ? ""
+                : string.Join('\n',
+                    issueWrapper.Fields.Description.Content
+                        .Select(x => string.Join('\n', x.Content.Select(c => c.Text)))
+                        .ToArray());
+        }
         
-        [JsonProperty("issuetype")]
-        public IssueType IssueType { get; set; }
+        [Display("Issue")]
+        public string IssueKey { get; set; }
+        
+        public string Summary { get; set; }
+
+        public string Status { get; set; }
+        
+        public string Priority { get; set; }
+        
+        public string? Description { get; set; }
         
         public ProjectDto Project { get; set; }
-        
-        public Priority Priority { get; set; }
-        
-        public Status Status { get; set; }
-        
+
         public UserDto? Assignee { get; set; }
-
-        public Description? Description { get; set; }
-        
-        public IEnumerable<AttachmentDto>? Attachment { get; set; }
-    }
-
-    public class Description
-    {
-        public string Type { get; set; }
-        public List<ContentObj> Content { get; set; }
-    }
-
-    public class ContentObj
-    {
-        public string Type { get; set; }
-        public List<ContentData> Content { get; set; }
-    }
-
-    public class ContentData
-    {
-        public string Type { get; set; }
-        public string Text { get; set; }
-    }
-
-    public class IssueType
-    {
-        public string Name { get; set; }
-    }
-
-    public class Priority
-    {
-        public string Name { get; set; }
-    }
-
-    public class Status
-    {
-        public string Name { get; set; }
-    }
-
-    public class IssueWrapper
-    {
-        public string Key { get; set; }
-        public IssueDto Fields { get; set; }
     }
 }

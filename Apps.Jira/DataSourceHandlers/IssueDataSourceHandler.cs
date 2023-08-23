@@ -28,8 +28,3 @@ public class IssueDataSourceHandler : BaseInvocable, IAsyncDataSourceHandler
         return response.Issues.ToDictionary(i => i.Key, i => $"{i.Fields.Summary} ({i.Fields.Project.Name} project)");
     }
 }
-
-public class IssuesWrapper 
-{
-    public IEnumerable<IssueWrapper> Issues { get; set; }
-}

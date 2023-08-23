@@ -22,23 +22,27 @@ namespace Apps.Jira
         #region GET
         
         [Action("Get issue", Description = "Get the specified issue.")]
-        public async Task<IssueResponse> GetIssueByKey([ActionParameter] IssueIdentifier input)
+        public async Task<IssueDto> GetIssueByKey([ActionParameter] IssueIdentifier input)
         {
             var client = new JiraClient(Creds);
             var request = new JiraRequest($"/issue/{input.IssueKey}", Method.Get, Creds);
             var issue = await client.ExecuteWithHandling<IssueWrapper>(request);
-            return new IssueResponse
+            return new IssueDto(issue);
+        }
+        
+        [Action("List recently created issues", Description = "List issues created during past hours in a specific project." +
+                                                              "If number of hours is not specified, issues created during " +
+                                                              "past 24 hours are listed.")]
+        public async Task<IssuesResponse> ListRecentlyCreatedIssues([ActionParameter] ProjectIdentifier project,
+            [ActionParameter] [Display("Hours")] int? hours)
+        {
+            var client = new JiraClient(Creds);
+            var request = new JiraRequest($"/search?jql=project={project.ProjectKey} and Created >-{hours ?? 24}h", 
+                Method.Get, Creds);
+            var issues = await client.ExecuteWithHandling<IssuesWrapper>(request);
+            return new IssuesResponse
             {
-                IssueKey = issue.Key,
-                Summary = issue.Fields.Summary,
-                Status = issue.Fields.Status.Name,
-                Priority = issue.Fields.Priority.Name,
-                Assignee = issue.Fields.Assignee,
-                Project = issue.Fields.Project,
-                Description = issue.Fields.Description == null ? ""
-                    : string.Join('\n',
-                        issue.Fields.Description.Content.Select(x => string.Join('\n', x.Content.Select(c => c.Text)))
-                            .ToArray())
+                Issues = issues.Issues.Select(i => new IssueDto(i))
             };
         }
         
@@ -66,7 +70,7 @@ namespace Apps.Jira
             var client = new JiraClient(Creds);
             var request = new JiraRequest($"/issue/{issue.IssueKey}", Method.Get, Creds);
             var result = await client.ExecuteWithHandling<IssueWrapper>(request);
-            var attachments = result.Fields.Attachment;
+            var attachments = result.Fields.Attachment ?? new AttachmentDto[] { };
             return new AttachmentsResponse { Attachments = attachments };
         }
         
