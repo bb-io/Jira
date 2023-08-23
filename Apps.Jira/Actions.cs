@@ -108,7 +108,7 @@ namespace Apps.Jira
         }
         
         [Action("Create issue", Description = "Create a new issue.")]
-        public async Task CreateIssue([ActionParameter] AssigneeIdentifier assignee, 
+        public async Task<CreatedIssueDto> CreateIssue([ActionParameter] AssigneeIdentifier assignee, 
             [ActionParameter] ProjectIdentifier project, [ActionParameter] CreateIssueRequest input)
         {
             var client = new JiraClient(Creds);
@@ -143,7 +143,8 @@ namespace Apps.Jira
                     issuetype = new { name = input.IssueType }
                 }
             });
-            await client.ExecuteWithHandling(request);
+            var createdIssue = await client.ExecuteWithHandling<CreatedIssueDto>(request);
+            return createdIssue;
         }
         
         [Action("Add attachment", Description = "Add attachment to an issue.")]
