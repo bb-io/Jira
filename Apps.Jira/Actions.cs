@@ -145,6 +145,18 @@ namespace Apps.Jira
             });
             await client.ExecuteWithHandling(request);
         }
+        
+        [Action("Add attachment", Description = "Add attachment to an issue.")]
+        public async Task<AttachmentDto> AddAttachment([ActionParameter] IssueIdentifier issue,
+            [ActionParameter] AddAttachmentRequest input)
+        {
+            var client = new JiraClient(Creds);
+            var request = new JiraRequest($"/issue/{issue.IssueKey}/attachments", Method.Post, Creds);
+            request.AddHeader("X-Atlassian-Token", "no-check");
+            request.AddFile("file", input.File, input.Filename);
+            var response = await client.ExecuteWithHandling<IEnumerable<AttachmentDto>>(request);
+            return response.First();
+        }
 
         #endregion
 
