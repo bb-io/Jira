@@ -1,7 +1,8 @@
-﻿namespace Apps.Jira.Models.Responses;
+﻿using File = Blackbird.Applications.Sdk.Common.Files.File;
+
+namespace Apps.Jira.Models.Responses;
 
 public class DownloadAttachmentResponse
 {
-    public string Filename { get; set; }
-    public byte[] File { get; set; }
+    public File Attachment { get; set; }
 }

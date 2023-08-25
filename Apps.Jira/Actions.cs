@@ -8,6 +8,7 @@ using Apps.Jira.Models.Identifiers;
 using Blackbird.Applications.Sdk.Common.Actions;
 using Blackbird.Applications.Sdk.Common.Invocation;
 using Microsoft.AspNetCore.WebUtilities;
+using File = Blackbird.Applications.Sdk.Common.Files.File;
 
 namespace Apps.Jira
 {
@@ -83,11 +84,15 @@ namespace Apps.Jira
             var fileBytes = response.RawBytes;
             var filenameHeader = response.ContentHeaders.First(h => h.Name == "Content-Disposition");
             var filename = filenameHeader.Value.ToString().Split('"')[1];
+            var contentType = response.ContentHeaders.First(h => h.Name == "Content-Type").Value.ToString();
             
             return new DownloadAttachmentResponse
             {
-                Filename = filename,
-                File = fileBytes
+                Attachment = new File(fileBytes)
+                {
+                    Name = filename,
+                    ContentType = contentType
+                } 
             };
         }
 
@@ -158,7 +163,7 @@ namespace Apps.Jira
             var client = new JiraClient(Creds);
             var request = new JiraRequest($"/issue/{issue.IssueKey}/attachments", Method.Post, Creds);
             request.AddHeader("X-Atlassian-Token", "no-check");
-            request.AddFile("file", input.File, input.Filename);
+            request.AddFile("file", input.Attachment.Bytes, input.Attachment.Name);
             var response = await client.ExecuteWithHandling<IEnumerable<AttachmentDto>>(request);
             return response.First();
         }

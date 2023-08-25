@@ -1,7 +1,8 @@
-﻿namespace Apps.Jira.Models.Requests;
+﻿using File = Blackbird.Applications.Sdk.Common.Files.File;
+
+namespace Apps.Jira.Models.Requests;
 
 public class AddAttachmentRequest
 {
-    public string Filename { get; set; }
-    public byte[] File { get; set; }
+    public File Attachment { get; set; }
 }
