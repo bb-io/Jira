@@ -4,6 +4,8 @@ Blackbird is the new automation backbone for the language technology industry. B
 
 ## Introduction
 
+<!-- begin docs -->
+
 Jira is a widely used project management and issue tracking tool developed by Atlassian. It provides teams with a platform to plan, track, and manage tasks, projects, and software development processes, helping to streamline collaboration and improve project visibility. This Jira app primarily focuses on issues management.
 
 ## Before setting up
@@ -34,7 +36,7 @@ Before you can connect you need to make sure that:
 - **List recently created issues** returns issues created during past hours in a specific project.
 - **Get issue transitions** returns either all transitions or a transition that can be performed by the user on an issue. Transition can also be thought of as status (e.g. To Do/In Progress/Done).
 - **List attachments** returns a list of files attached to an issue.
-- **Download attachment** returns the contents of an attachment. 
+- **Download attachment** returns the contents of an attachment.
 - **Transition issue** performs an issue transition.
 - **Create issue**.
 - **Add attachment** adds attachment to an issue.
@@ -64,3 +66,5 @@ In the future we can add actions for:
 - Dashboards
 
 Let us know if you're interested!
+
+<!-- end docs -->
