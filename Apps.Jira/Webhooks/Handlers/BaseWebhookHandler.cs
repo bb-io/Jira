@@ -1,70 +1,53 @@
 ﻿using Apps.Jira.Webhooks.Payload;
-using Apps.Jira.Webhooks.Responses;
 using Blackbird.Applications.Sdk.Common.Authentication;
 using Blackbird.Applications.Sdk.Common.Webhooks;
 using RestSharp;
 
 namespace Apps.Jira.Webhooks.Handlers
 {
-    public abstract class BaseWebhookHandler : IWebhookEventHandler<IWebhookInput>
+    public abstract class BaseWebhookHandler : IWebhookEventHandler
     {
         private readonly string[] _subscriptionEvents;
-        private readonly string _jqlFilter;
-        protected readonly IWebhookInput? webhookInput;
 
         public BaseWebhookHandler(string[] subscriptionEvents)
         {
             _subscriptionEvents = subscriptionEvents;
-            _jqlFilter = GetJqlFilter();
         }
 
-        public BaseWebhookHandler(string[] subscriptionEvents, [WebhookParameter] IWebhookInput webhookInput)
-            : this(subscriptionEvents)
-        {
-            this.webhookInput = webhookInput;
-        }
-        
         public async Task SubscribeAsync(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders, 
             Dictionary<string, string> values)
         {
-            var client = new JiraClient(authenticationCredentialsProviders);
-            var request = new JiraRequest("/webhook", Method.Post, authenticationCredentialsProviders);
-
-            request.AddJsonBody(new 
+            var jiraHost = new Uri(authenticationCredentialsProviders.First(p => p.KeyName == "JiraUrl").Value).Host;
+            var payloadUrl = values["payloadUrl"];
+            var bridgeClient = new RestClient(ApplicationConstants.BridgeServiceUrl);
+            
+            foreach (var subscriptionEvent in _subscriptionEvents)
             {
-                url = values["payloadUrl"],
-                webhooks = new []
-                {
-                    new
-                    {
-                        events = _subscriptionEvents,
-                        jqlFilter = _jqlFilter
-                    }
-                }
-            });
-            await client.ExecuteAsync(request);
+                var bridgeSubscribeRequest = new RestRequest($"/{jiraHost}/{subscriptionEvent}", Method.Post);
+                bridgeSubscribeRequest.AddHeader("Blackbird-Token", ApplicationConstants.BlackbirdToken);
+                bridgeSubscribeRequest.AddBody(payloadUrl);
+                await bridgeClient.ExecuteAsync(bridgeSubscribeRequest);
+            }
         }
 
         public async Task UnsubscribeAsync(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders, 
             Dictionary<string, string> values)
         {
-            var client = new JiraClient(authenticationCredentialsProviders);
-            var request = new JiraRequest("/webhook", Method.Get, authenticationCredentialsProviders);
-            var webhooks = client.Get<WebhooksResponse>(request).Values;
-            var currentWebhookId = webhooks
-                .FirstOrDefault(w => w.Events.SequenceEqual(_subscriptionEvents) && w.JqlFilter == _jqlFilter)?.Id;
-            if (currentWebhookId == null)
-                return;
+            var jiraHost = new Uri(authenticationCredentialsProviders.First(p => p.KeyName == "JiraUrl").Value).Host;
+            var payloadUrl = values["payloadUrl"];
+            var bridgeClient = new RestClient(ApplicationConstants.BridgeServiceUrl);
             
-            var deleteRequest = new JiraRequest("/webhook", Method.Delete, authenticationCredentialsProviders);
-            var webhookId = int.Parse(currentWebhookId);
-            deleteRequest.AddJsonBody(new
+            foreach (var subscriptionEvent in _subscriptionEvents)
             {
-                webhooksIds = new[] { webhookId }
-            });
-            await client.ExecuteAsync(request);
+                var getWebhooksRequest = new RestRequest($"/{jiraHost}/{subscriptionEvent}");
+                getWebhooksRequest.AddHeader("Blackbird-Token", ApplicationConstants.BlackbirdToken);
+                var webhooks = await bridgeClient.GetAsync<List<BridgeGetResponse>>(getWebhooksRequest);
+                var webhook = webhooks.FirstOrDefault(w => w.Value == payloadUrl);
+                
+                var deleteWebhookRequest = new RestRequest($"/{jiraHost}/{subscriptionEvent}/{webhook.Id}", Method.Delete);
+                deleteWebhookRequest.AddHeader("Blackbird-Token", ApplicationConstants.BlackbirdToken);
+                await bridgeClient.ExecuteAsync(deleteWebhookRequest);
+            }
         }
-        
-        protected abstract string GetJqlFilter();
     }
 }

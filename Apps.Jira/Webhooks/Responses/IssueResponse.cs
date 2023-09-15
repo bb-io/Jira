@@ -12,18 +12,18 @@ namespace Apps.Jira.Webhooks.Responses
         
         public string Summary { get; set; }
         
-        public string Description { get; set; }
+        public string? Description { get; set; }
         
         [Display("Issue type")]
         public string IssueType { get; set; }
         
-        public string Priority { get; set; }
+        public string? Priority { get; set; }
         
         [Display("Assignee account ID")]
-        public string AssigneeAccountId { get; set; }
+        public string? AssigneeAccountId { get; set; }
         
         [Display("Assignee name")]
-        public string AssigneeName { get; set; }
+        public string? AssigneeName { get; set; }
         
         public string Status { get; set; }
     }

@@ -37,7 +37,7 @@ namespace Apps.Jira
         private static string GetJiraCloudId(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders)
         {
             const string atlassianResourcesUrl = "https://api.atlassian.com/oauth/token/accessible-resources";
-            string jiraUrl = authenticationCredentialsProviders.First(p => p.KeyName == "jira_url").Value;
+            string jiraUrl = authenticationCredentialsProviders.First(p => p.KeyName == "JiraUrl").Value;
             string authorizationHeader = authenticationCredentialsProviders.First(p => p.KeyName == "Authorization").Value;
             var restClient = new RestClient(new RestClientOptions 
                 { ThrowOnAnyError = true, BaseUrl = new Uri(atlassianResourcesUrl) });

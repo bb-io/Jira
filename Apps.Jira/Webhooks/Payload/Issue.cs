@@ -2,12 +2,7 @@
 
 namespace Apps.Jira.Webhooks.Payload
 {
-    public class IssueWrapper
-    {
-        public IssueDto Issue { get; set; }
-    }
-    
-    public class IssueDto
+    public class Issue
     {
         public string Id { get; set; }
         public string Self { get; set; }
@@ -20,11 +15,11 @@ namespace Apps.Jira.Webhooks.Payload
         [JsonPropertyName("issuetype")] 
         public IssueType IssueType { get; set; }
         public Project Project { get; set; }
-        public Priority Priority { get; set; }
-        public Assignee Assignee { get; set; }
+        public Priority? Priority { get; set; }
+        public Assignee? Assignee { get; set; }
         public Status Status { get; set; }
         public string Summary { get; set; }
-        public string Description { get; set; }
+        public string? Description { get; set; }
     }
     
     public class IssueType

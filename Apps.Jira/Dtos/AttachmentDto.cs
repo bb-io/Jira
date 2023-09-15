@@ -4,7 +4,7 @@ namespace Apps.Jira.Dtos;
 
 public class AttachmentDto
 {
-    [Display("Attachment")]
+    [Display("Attachment ID")]
     public string Id { get; set; }
     
     public string Filename { get; set; }

@@ -16,6 +16,20 @@ Before you can connect you need to make sure that:
 - You have a [project created](https://support.atlassian.com/jira-software-cloud/docs/create-a-new-project/).
 - You have the right [permissions](https://support.atlassian.com/jira-cloud-administration/docs/permissions-for-company-managed-projects/#Issue-permissions).
 
+### Enable webhooks
+
+If you want to use Jira webhooks, you need to:
+
+- Log in as a user with Administer Jira [global permission](https://support.atlassian.com/jira-cloud-administration/docs/manage-global-permissions/).
+- In top right corner choose ![Settings](Images/README/settings.png) > _System_. Under _Advanced_, select _WebHooks_.
+- In top right corner choose _Create a WebHook_.
+- In _URL_ field specify `https://bridge.blackbird.io/api/webhooks/jira`.
+- Make sure that _Status_ is _Enabled_.
+- Select everything under _Issue related events_ > _Issue_.
+- Scroll to the bottom of the page and click _Create_.
+
+![Selecting events](Images/README/issue_related_events.png)
+
 ## Connecting
 
 1. Navigate to apps and search for Jira. If you cannot find Jira then click _Add App_ in the top right corner, select Jira and add the app to your Blackbird environment.
@@ -49,6 +63,16 @@ Before you can connect you need to make sure that:
 ### Users
 
 - **Get all users**.
+
+## Events
+
+- **On issue updated** is triggered when an issue is updated. If you want a bird to be triggered when specific issue is updated, specify the issue parameter. Otherwise, you can specify project parameter if you are interested in specific project's issues. 
+- **On issue created** is triggered when an issue is created. If you want a bird to be triggered when an issue is created in specific project, fill the project parameter. 
+- **On issue assigned** is triggered when an issue is assigned to specific user. You can specify project parameter if you're interested in specific project.
+- **On issue with specific type created** is triggered when an issue created has specific type (for example, a bug). Optionally, you can specify project parameter. 
+- **On issue with specific priority created** is triggered when an issue created has the specified priority or an existing issue was updated to have the specified priority.
+- **On issue deleted** is triggered when an issue is deleted. If you want a bird to be triggered when an issue is deleted in specific project, fill the project parameter.
+- **On file attached to issue** is triggered when a file is attached to an issue. If you want a bird to be triggered when a file is attached to specific issue, specify the issue parameter. Otherwise, you can specify project parameter if you are interested in specific project's issues.
 
 ## Example
 

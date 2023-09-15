@@ -32,7 +32,7 @@ namespace Apps.Jira.Connections
             var jiraUrl = new Uri(values.First(v => v.Key == "Jira URL").Value).GetLeftPart(UriPartial.Authority);
             yield return new AuthenticationCredentialsProvider(
                 AuthenticationCredentialsRequestLocation.None,
-                "jira_url",
+                "JiraUrl",
                 jiraUrl
             );
         }
