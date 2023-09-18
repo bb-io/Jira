@@ -69,13 +69,36 @@ namespace Apps.Jira.Webhooks
             var actualAssignee = payload.Changelog.Items.FirstOrDefault(item => item.FieldId == "assignee");
 
             if ((project.ProjectKey is not null && !project.ProjectKey.Equals(payload.Issue.Fields.Project.Key)) 
-                || actualAssignee == null 
-                || !assignee.AccountId.Equals(actualAssignee.To))
+                || actualAssignee is null)
                 return new WebhookResponse<IssueResponse>
                 {
                     HttpResponseMessage = new HttpResponseMessage(HttpStatusCode.OK),
                     ReceivedWebhookRequestType = WebhookRequestType.Preflight
                 };
+
+            if (assignee.AccountId == "-1")
+            {
+                var jiraClient = new JiraClient(Creds);
+                var getProjectRequest = new JiraRequest($"/project/{payload.Issue.Fields.Project.Key}", Method.Get, Creds);
+                var projectDto = await jiraClient.ExecuteWithHandling<DetailedProjectDto>(getProjectRequest);
+                if ((projectDto.DefaultAssignee == "UNASSIGNED" && actualAssignee.To is not null) 
+                    || (projectDto.DefaultAssignee == "PROJECT_LEAD" && actualAssignee.To != projectDto.Lead.AccountId)) 
+                    return new WebhookResponse<IssueResponse>
+                    {
+                        HttpResponseMessage = new HttpResponseMessage(HttpStatusCode.OK),
+                        ReceivedWebhookRequestType = WebhookRequestType.Preflight
+                    };
+                
+            }
+            else
+            {
+                if (!assignee.AccountId.Equals(actualAssignee.To))
+                    return new WebhookResponse<IssueResponse>
+                    {
+                        HttpResponseMessage = new HttpResponseMessage(HttpStatusCode.OK),
+                        ReceivedWebhookRequestType = WebhookRequestType.Preflight
+                    };
+            }
         
             var issueResponse = CreateIssueResponse(payload);
             return issueResponse;
