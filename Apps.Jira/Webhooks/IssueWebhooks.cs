@@ -110,9 +110,11 @@ namespace Apps.Jira.Webhooks
             [WebhookParameter] IssueTypeInput issueType, [WebhookParameter] ProjectInput project)
         {
             var payload = DeserializePayload(request);
+            var issueTypeItem = payload.Changelog.Items.FirstOrDefault(item => item.FieldId == "issuetype");
             
-            if ((project.ProjectKey is not null && !project.ProjectKey.Equals(payload.Issue.Fields.Project.Key)) ||
-                 !issueType.IssueType.Equals(payload.Issue.Fields.IssueType.Name))
+            if ((issueTypeItem is null && payload.WebhookEvent == "jira:issue_updated")
+                || (project.ProjectKey is not null && !project.ProjectKey.Equals(payload.Issue.Fields.Project.Key)) 
+                || !issueType.IssueType.Equals(payload.Issue.Fields.IssueType.Name))
                 return new WebhookResponse<IssueResponse>
                 {
                     HttpResponseMessage = new HttpResponseMessage(HttpStatusCode.OK),
@@ -129,10 +131,11 @@ namespace Apps.Jira.Webhooks
             [WebhookParameter] PriorityInput priority, [WebhookParameter] ProjectInput project)
         {
             var payload = DeserializePayload(request);
+            var priorityItem = payload.Changelog.Items.FirstOrDefault(item => item.FieldId == "priority");
             
-            if ((project.ProjectKey is not null && !project.ProjectKey.Equals(payload.Issue.Fields.Project.Key)) ||
-                !payload.Changelog.Items.Any(item => item.FieldId == "priority") ||
-                !priority.PriorityId.Equals(payload.Changelog.Items.First(item => item.FieldId == "priority").To))
+            if (priorityItem == null 
+                || (project.ProjectKey is not null && !project.ProjectKey.Equals(payload.Issue.Fields.Project.Key))
+                || !priority.PriorityId.Equals(priorityItem.To))
                 return new WebhookResponse<IssueResponse>
                 {
                     HttpResponseMessage = new HttpResponseMessage(HttpStatusCode.OK),
@@ -161,14 +164,14 @@ namespace Apps.Jira.Webhooks
             return issueResponse;
         }
         
-        [Webhook("On file attached to issue", typeof(IssueCreatedOrUpdatedHandler), 
+        [Webhook("On file attached to issue", typeof(IssueUpdatedHandler), 
             Description = "This webhook is triggered when a file is attached to an issue.")]
         public async Task<WebhookResponse<IssueAttachmentResponse>> OnFileAttachedToIssue(WebhookRequest request, 
             [WebhookParameter] IssueInput issue, [WebhookParameter] ProjectInput project)
         {
             var payload = DeserializePayload(request);
             var attachmentItem = payload.Changelog.Items.FirstOrDefault(item => item.FieldId == "attachment");
-        
+            
             if (attachmentItem is null 
                 || (project.ProjectKey is not null && !project.ProjectKey.Equals(payload.Issue.Fields.Project.Key)) 
                 || (issue.IssueKey is not null && !issue.IssueKey.Equals(payload.Issue.Key)))
@@ -177,11 +180,8 @@ namespace Apps.Jira.Webhooks
                     HttpResponseMessage = new HttpResponseMessage(HttpStatusCode.OK),
                     ReceivedWebhookRequestType = WebhookRequestType.Preflight
                 };
-        
-            var jiraClient = new JiraClient(Creds);
-            var getAttachmentRequest = new JiraRequest($"/attachment/{attachmentItem.To}", Method.Get, Creds);
-            var attachment = await jiraClient.ExecuteWithHandling<AttachmentDto>(getAttachmentRequest);
-        
+            
+            var attachment = payload.Issue.Fields.Attachment.First(a => a.Id == attachmentItem.To);
             return new WebhookResponse<IssueAttachmentResponse>
             {
                 HttpResponseMessage = new HttpResponseMessage(statusCode: HttpStatusCode.OK),
@@ -192,6 +192,27 @@ namespace Apps.Jira.Webhooks
                     Attachment = attachment
                 }
             };
+        }
+        
+        [Webhook("On issue status changed", typeof(IssueUpdatedHandler), 
+            Description = "This webhook is triggered when issue status is changed.")]
+        public async Task<WebhookResponse<IssueResponse>> OnIssueStatusChanged(WebhookRequest request, 
+            [WebhookParameter] IssueInput issue, [WebhookParameter] ProjectInput project)
+        {
+            var payload = DeserializePayload(request);
+            var statusItem = payload.Changelog.Items.FirstOrDefault(item => item.FieldId == "status");
+
+            if (statusItem is null 
+                || (project.ProjectKey is not null && !project.ProjectKey.Equals(payload.Issue.Fields.Project.Key)) 
+                || (issue.IssueKey is not null && !issue.IssueKey.Equals(payload.Issue.Key)))
+                return new WebhookResponse<IssueResponse>
+                {
+                    HttpResponseMessage = new HttpResponseMessage(HttpStatusCode.OK),
+                    ReceivedWebhookRequestType = WebhookRequestType.Preflight
+                };
+
+            var issueResponse = CreateIssueResponse(payload);
+            return issueResponse;
         }
 
         private WebhookPayload DeserializePayload(WebhookRequest request)
@@ -221,7 +242,8 @@ namespace Apps.Jira.Webhooks
                     Priority = issue.Fields.Priority?.Name,
                     AssigneeName = issue.Fields.Assignee?.DisplayName,
                     AssigneeAccountId = issue.Fields.Assignee?.AccountId,
-                    Status = issue.Fields.Status.Name
+                    Status = issue.Fields.Status.Name,
+                    Attachments = issue.Fields.Attachment
                 }
             };
         }

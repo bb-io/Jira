@@ -1,4 +1,5 @@
 ﻿using System.Text.Json.Serialization;
+using Apps.Jira.Dtos;
 
 namespace Apps.Jira.Webhooks.Payload
 {
@@ -19,6 +20,7 @@ namespace Apps.Jira.Webhooks.Payload
         public Assignee? Assignee { get; set; }
         public Status Status { get; set; }
         public string Summary { get; set; }
+        public IEnumerable<AttachmentDto> Attachment { get; set; }
         public string? Description { get; set; }
     }
     
