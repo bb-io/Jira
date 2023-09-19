@@ -8,6 +8,7 @@ using Apps.Jira.Models.Identifiers;
 using Blackbird.Applications.Sdk.Common.Actions;
 using Blackbird.Applications.Sdk.Common.Invocation;
 using Microsoft.AspNetCore.WebUtilities;
+using Newtonsoft.Json.Linq;
 using File = Blackbird.Applications.Sdk.Common.Files.File;
 
 namespace Apps.Jira
@@ -94,6 +95,18 @@ namespace Apps.Jira
                     ContentType = contentType
                 } 
             };
+        }
+
+        [Action("Get value of custom string field", Description = "Get value of custom string field of specific issue.")]
+        public async Task<GetCustomFieldValueResponse<string>> GetCustomStringFieldValue(
+            [ActionParameter] IssueIdentifier issue, [ActionParameter] CustomStringFieldIdentifier customStringField)
+        {
+            var client = new JiraClient(Creds);
+            var request = new JiraRequest($"/issue/{issue.IssueKey}", Method.Get, Creds);
+            var result = await client.ExecuteWithHandling(request);
+            var issueFields = JObject.Parse(result.Content)["fields"];
+            var requestedField = issueFields[customStringField.CustomStringFieldId]?.ToString();
+            return new GetCustomFieldValueResponse<string> { Value = requestedField };
         }
 
         #endregion
@@ -248,6 +261,30 @@ namespace Apps.Jira
                 }
             });
             await client.ExecuteWithHandling(request);
+        }
+        
+        [Action("Set value of custom string field", Description = "Set value of custom string field of specific issue.")]
+        public async Task SetCustomStringFieldValue([ActionParameter] IssueIdentifier issue, 
+            [ActionParameter] CustomStringFieldIdentifier customStringField,
+            [ActionParameter] [Display("Value")] string value)
+        {
+            var client = new JiraClient(Creds);
+            var request = new JiraRequest($"/issue/{issue.IssueKey}", Method.Put, Creds);
+            request.AddJsonBody($@"
+                {{
+                    ""fields"": {{
+                        ""{customStringField.CustomStringFieldId}"": ""{value}""
+                    }}
+                }}");
+            try
+            {
+                await client.ExecuteWithHandling(request);
+            }
+            catch
+            {
+                throw new Exception("Couldn't set field value. Please make sure that field exists for specific issue " +
+                                    "type in the project.");
+            }
         }
         
         #endregion

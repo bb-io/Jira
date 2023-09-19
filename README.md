@@ -51,6 +51,7 @@ If you want to use Jira webhooks, you need to:
 - **Get issue transitions** returns either all transitions or a transition that can be performed by the user on an issue. Transition can also be thought of as status (e.g. To Do/In Progress/Done).
 - **List attachments** returns a list of files attached to an issue.
 - **Download attachment** returns the contents of an attachment.
+- **Get value of custom string field** returns the value of custom string field of specific issue. If value is not set, empty value is returned.
 - **Transition issue** performs an issue transition.
 - **Create issue**.
 - **Add attachment** adds attachment to an issue.
@@ -58,6 +59,7 @@ If you want to use Jira webhooks, you need to:
 - **Update issue summary**.
 - **Update issue description**.
 - **Prioritize issue** sets priority for an issue (e.g. High/Medium/Low).
+- **Set value of custom string field** sets the value of custom string field of specific issue. 
 - **Delete issue**.
 
 ### Users
