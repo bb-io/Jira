@@ -25,7 +25,7 @@ namespace Apps.Jira.Webhooks
         
         [Webhook("On issue updated", typeof(IssueUpdatedHandler), 
             Description = "This webhook is triggered when an issue is updated.")]
-        public async Task<WebhookResponse<IssueResponse>> IssueUpdated(WebhookRequest request, 
+        public async Task<WebhookResponse<IssueResponse>> OnIssueUpdated(WebhookRequest request, 
             [WebhookParameter] IssueInput issue, [WebhookParameter] ProjectInput project)
         {
             var payload = DeserializePayload(request);
@@ -44,7 +44,7 @@ namespace Apps.Jira.Webhooks
         
         [Webhook("On issue created", typeof(IssueCreatedHandler), 
             Description = "This webhook is triggered when an issue is created.")]
-        public async Task<WebhookResponse<IssueResponse>> IssueCreated(WebhookRequest request,
+        public async Task<WebhookResponse<IssueResponse>> OnIssueCreated(WebhookRequest request,
             [WebhookParameter] ProjectInput project)
         {
             var payload = DeserializePayload(request);
@@ -105,7 +105,7 @@ namespace Apps.Jira.Webhooks
         }
         
         [Webhook("On issue with specific type created", typeof(IssueCreatedOrUpdatedHandler), 
-            Description = "This webhook is triggered when an issue created has specific type.")]
+            Description = "This webhook is triggered when an issue created has specific type or issue was updated to have specific type.")]
         public async Task<WebhookResponse<IssueResponse>> OnIssueWithSpecificTypeCreated(WebhookRequest request, 
             [WebhookParameter] IssueTypeInput issueType, [WebhookParameter] ProjectInput project)
         {
@@ -126,8 +126,8 @@ namespace Apps.Jira.Webhooks
         }
         
         [Webhook("On issue with specific priority created", typeof(IssueCreatedOrUpdatedHandler), 
-            Description = "This webhook is triggered when an issue created has specified priority or was updated to have specified priority.")]
-        public async Task<WebhookResponse<IssueResponse>> IssueWithHighPriorityCreated(WebhookRequest request,
+            Description = "This webhook is triggered when an issue created has specified priority or issue was updated to have specified priority.")]
+        public async Task<WebhookResponse<IssueResponse>> OnIssueWithSpecificPriorityCreated(WebhookRequest request,
             [WebhookParameter] PriorityInput priority, [WebhookParameter] ProjectInput project)
         {
             var payload = DeserializePayload(request);
@@ -148,7 +148,7 @@ namespace Apps.Jira.Webhooks
         
         [Webhook("On issue deleted", typeof(IssueDeletedHandler), 
             Description = "This webhook is triggered when an issue is deleted.")]
-        public async Task<WebhookResponse<IssueResponse>> IssueDeleted(WebhookRequest request,
+        public async Task<WebhookResponse<IssueResponse>> OnIssueDeleted(WebhookRequest request,
             [WebhookParameter] ProjectInput project)
         {
             var payload = DeserializePayload(request);

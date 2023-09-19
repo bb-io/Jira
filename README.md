@@ -71,7 +71,7 @@ If you want to use Jira webhooks, you need to:
 - **On issue updated** is triggered when an issue is updated. If you want a bird to be triggered when specific issue is updated, specify the issue parameter. Otherwise, you can specify project parameter if you are interested in specific project's issues. 
 - **On issue created** is triggered when an issue is created. If you want a bird to be triggered when an issue is created in specific project, fill the project parameter. 
 - **On issue assigned** is triggered when an issue is assigned to specific user. You can specify project parameter if you're interested in specific project.
-- **On issue with specific type created** is triggered when an issue created has specific type (for example, a bug). Optionally, you can specify project parameter. 
+- **On issue with specific type created** is triggered when an issue created has specific type (for example, a bug) or an existing issue was updated to have specific type. Optionally, you can specify project parameter. 
 - **On issue with specific priority created** is triggered when an issue created has the specified priority or an existing issue was updated to have the specified priority.
 - **On issue deleted** is triggered when an issue is deleted. If you want a bird to be triggered when an issue is deleted in specific project, fill the project parameter.
 - **On file attached to issue** is triggered when a file is attached to an issue. If you want a bird to be triggered when a file is attached to specific issue, specify the issue parameter. Otherwise, you can specify project parameter if you are interested in specific project's issues.
