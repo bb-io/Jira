@@ -30,6 +30,20 @@ If you want to use Jira webhooks, you need to:
 
 ![Selecting events](Images/README/issue_related_events.png)
 
+### Adding custom fields
+
+To create custom fields, follow [this guide](https://confluence.atlassian.com/adminjiraserver/adding-custom-fields-1047552713.html). Once the custom fields you need are created, you need to:
+
+- Choose ![Settings](Images/README/settings.png) > _Projects_ in top right corner.
+- For the project you are interested in, select ![More](Images/README/more_button.png) > _Project settings_.
+- Select _Issue types_ from the left panel.
+- Click on issue type to which you want to add created custom fields.
+- Locate _Search all fields_ search bar in the right panel.
+- Search for the field you are interested in and drag it to issue's fields.
+- Click _Save changes_ button.
+
+Note: this app currently supports only short text (plain text only) custom fields.
+
 ## Connecting
 
 1. Navigate to apps and search for Jira. If you cannot find Jira then click _Add App_ in the top right corner, select Jira and add the app to your Blackbird environment.
@@ -87,6 +101,7 @@ This example bird fetches newest issues and assigns those with highest priority 
 
 In the future we can add actions for:
 
+- Different custom fields 
 - Projects
 - Users
 - Issue comments
