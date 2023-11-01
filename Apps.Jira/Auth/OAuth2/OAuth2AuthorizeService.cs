@@ -24,7 +24,7 @@ namespace Apps.Jira.Auth.OAuth2
                 { "state", values["state"] },
                 { "response_type", "code" },
                 { "prompt", "consent" },
-                { "authorization_url", bridgeOauthUrl},
+                { "authorization_url", atlassianAuthorizeUrl},
                 { "actual_redirect_uri", InvocationContext.UriInfo.AuthorizationCodeRedirectUri.ToString() },
             };
             return QueryHelpers.AddQueryString(bridgeOauthUrl, parameters);
