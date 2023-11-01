@@ -1,12 +1,18 @@
-﻿using Blackbird.Applications.Sdk.Common.Authentication.OAuth2;
+﻿using Blackbird.Applications.Sdk.Common;
+using Blackbird.Applications.Sdk.Common.Authentication.OAuth2;
+using Blackbird.Applications.Sdk.Common.Invocation;
 using System.Text.Json;
 
 namespace Apps.Jira.Auth.OAuth2
 {
-    public class OAuth2TokenService : IOAuth2TokenService
+    public class OAuth2TokenService : BaseInvocable, IOAuth2TokenService
     {
         private const string AtlassianTokenUrl = "https://auth.atlassian.com/oauth/token";
         private const string ExpiresAtKeyName = "expires_at";
+
+        public OAuth2TokenService(InvocationContext invocationContext) : base(invocationContext)
+        {
+        }
 
         public bool IsRefreshToken(Dictionary<string, string> values) 
             => values.TryGetValue(ExpiresAtKeyName, out var expireValue) && DateTime.UtcNow > DateTime.Parse(expireValue);
@@ -36,7 +42,7 @@ namespace Apps.Jira.Auth.OAuth2
                 { "grant_type", "authorization_code" },
                 { "client_id", ApplicationConstants.ClientId },
                 { "client_secret", ApplicationConstants.ClientSecret },
-                { "redirect_uri", ApplicationConstants.RedirectUri },
+                { "redirect_uri", $"{InvocationContext.UriInfo.BridgeServiceUrl.ToString().TrimEnd('/')}/AuthorizationCode" },
                 { "code", code }
             };
             return await RequestToken(bodyParameters, cancellationToken);

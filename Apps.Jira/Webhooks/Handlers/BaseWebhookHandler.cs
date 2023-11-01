@@ -1,15 +1,17 @@
 ﻿using Apps.Jira.Webhooks.Payload;
+using Blackbird.Applications.Sdk.Common;
 using Blackbird.Applications.Sdk.Common.Authentication;
+using Blackbird.Applications.Sdk.Common.Invocation;
 using Blackbird.Applications.Sdk.Common.Webhooks;
 using RestSharp;
 
 namespace Apps.Jira.Webhooks.Handlers
 {
-    public abstract class BaseWebhookHandler : IWebhookEventHandler
+    public abstract class BaseWebhookHandler : BaseInvocable, IWebhookEventHandler
     {
         private readonly string[] _subscriptionEvents;
 
-        public BaseWebhookHandler(string[] subscriptionEvents)
+        protected BaseWebhookHandler(InvocationContext invocationContext, string[] subscriptionEvents) : base(invocationContext)
         {
             _subscriptionEvents = subscriptionEvents;
         }
@@ -19,7 +21,7 @@ namespace Apps.Jira.Webhooks.Handlers
         {
             var jiraHost = new Uri(authenticationCredentialsProviders.First(p => p.KeyName == "JiraUrl").Value).Host;
             var payloadUrl = values["payloadUrl"];
-            var bridgeClient = new RestClient(ApplicationConstants.BridgeServiceUrl);
+            var bridgeClient = new RestClient($"{InvocationContext.UriInfo.BridgeServiceUrl.ToString().TrimEnd('/')}/webhooks/jira");
             
             foreach (var subscriptionEvent in _subscriptionEvents)
             {
@@ -35,7 +37,7 @@ namespace Apps.Jira.Webhooks.Handlers
         {
             var jiraHost = new Uri(authenticationCredentialsProviders.First(p => p.KeyName == "JiraUrl").Value).Host;
             var payloadUrl = values["payloadUrl"];
-            var bridgeClient = new RestClient(ApplicationConstants.BridgeServiceUrl);
+            var bridgeClient = new RestClient($"{InvocationContext.UriInfo.BridgeServiceUrl.ToString().TrimEnd('/')}/webhooks/jira");
             
             foreach (var subscriptionEvent in _subscriptionEvents)
             {
