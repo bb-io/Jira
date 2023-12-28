@@ -7,19 +7,26 @@ using Apps.Jira.Dtos;
 using Apps.Jira.Models.Identifiers;
 using Blackbird.Applications.Sdk.Common.Actions;
 using Blackbird.Applications.Sdk.Common.Invocation;
+using Blackbird.Applications.SDK.Extensions.FileManagement.Interfaces;
+using Blackbird.Applications.Sdk.Utils.Extensions.Files;
 using Microsoft.AspNetCore.WebUtilities;
 using Newtonsoft.Json.Linq;
-using File = Blackbird.Applications.Sdk.Common.Files.File;
 
 namespace Apps.Jira
 {
     [ActionList]
     public class Actions : BaseInvocable
     {
+        private readonly IFileManagementClient _fileManagementClient;
+        
         private IEnumerable<AuthenticationCredentialsProvider> Creds =>
             InvocationContext.AuthenticationCredentialsProviders;
 
-        public Actions(InvocationContext invocationContext) : base(invocationContext) { }
+        public Actions(InvocationContext invocationContext, IFileManagementClient fileManagementClient) 
+            : base(invocationContext)
+        {
+            _fileManagementClient = fileManagementClient;
+        }
         
         #region GET
         
@@ -82,19 +89,13 @@ namespace Apps.Jira
             var client = new JiraClient(Creds);
             var request = new JiraRequest($"/attachment/content/{attachment.AttachmentId}", Method.Get, Creds);
             var response = await client.ExecuteWithHandling(request);
-            var fileBytes = response.RawBytes;
-            var filenameHeader = response.ContentHeaders.First(h => h.Name == "Content-Disposition");
-            var filename = filenameHeader.Value.ToString().Split('"')[1];
+            var filename = response.ContentHeaders.First(h => h.Name == "Content-Disposition").Value.ToString()
+                .Split('"')[1];
             var contentType = response.ContentHeaders.First(h => h.Name == "Content-Type").Value.ToString();
-            
-            return new DownloadAttachmentResponse
-            {
-                Attachment = new File(fileBytes)
-                {
-                    Name = filename,
-                    ContentType = contentType
-                } 
-            };
+
+            using var stream = new MemoryStream(response.RawBytes);
+            var file = await _fileManagementClient.UploadAsync(stream, contentType, filename);
+            return new DownloadAttachmentResponse { Attachment = file };
         }
 
         [Action("Get value of custom string field", Description = "Get value of custom string field of specific issue.")]
@@ -175,8 +176,10 @@ namespace Apps.Jira
         {
             var client = new JiraClient(Creds);
             var request = new JiraRequest($"/issue/{issue.IssueKey}/attachments", Method.Post, Creds);
+            var attachmentStream = await _fileManagementClient.DownloadAsync(input.Attachment);
+            var attachmentBytes = await attachmentStream.GetByteData();
             request.AddHeader("X-Atlassian-Token", "no-check");
-            request.AddFile("file", input.Attachment.Bytes, input.Attachment.Name);
+            request.AddFile("file", attachmentBytes, input.Attachment.Name);
             var response = await client.ExecuteWithHandling<IEnumerable<AttachmentDto>>(request);
             return response.First();
         }
