@@ -82,16 +82,26 @@ namespace Apps.Jira
             return new DownloadAttachmentResponse { Attachment = file };
         }
 
-        [Action("Get value of custom string field", Description = "Get value of custom string field of specific issue.")]
+        [Action("Get custom string or dropdown field value",
+            Description = "Get value of custom string or dropdown field of specific issue.")]
         public async Task<GetCustomFieldValueResponse<string>> GetCustomStringFieldValue(
             [ActionParameter] IssueIdentifier issue, [ActionParameter] CustomStringFieldIdentifier customStringField)
         {
             var client = new JiraClient(Creds);
-            var request = new JiraRequest($"/issue/{issue.IssueKey}", Method.Get, Creds);
-            var result = await client.ExecuteWithHandling(request);
-            var issueFields = JObject.Parse(result.Content)["fields"];
-            var requestedField = issueFields[customStringField.CustomStringFieldId]?.ToString();
-            return new GetCustomFieldValueResponse<string> { Value = requestedField };
+            var targetField = await GetCustomFieldData(customStringField.CustomStringFieldId);
+            var getIssueRequest = new JiraRequest($"/issue/{issue.IssueKey}", Method.Get, Creds);
+            var getIssueResponse = await client.ExecuteWithHandling(getIssueRequest);
+            var requestedField =
+                JObject.Parse(getIssueResponse.Content)["fields"][customStringField.CustomStringFieldId];
+
+            string requestedFieldValue;
+
+            if (targetField.Schema!.Type == "string")
+                requestedFieldValue = requestedField.ToString();
+            else
+                requestedFieldValue = requestedField["value"].ToString();
+            
+            return new GetCustomFieldValueResponse<string> { Value = requestedFieldValue };
         }
 
         #endregion
@@ -234,22 +244,39 @@ namespace Apps.Jira
             }
         }
         
-        [Action("Set value of custom string field", Description = "Set value of custom string field of specific issue.")]
+        [Action("Set custom string or dropdown field value", 
+            Description = "Set value of custom string or dropdown field of specific issue.")]
         public async Task SetCustomStringFieldValue([ActionParameter] IssueIdentifier issue, 
             [ActionParameter] CustomStringFieldIdentifier customStringField,
             [ActionParameter] [Display("Value")] string value)
         {
             var client = new JiraClient(Creds);
-            var request = new JiraRequest($"/issue/{issue.IssueKey}", Method.Put, Creds);
-            request.AddJsonBody($@"
+            var targetField = await GetCustomFieldData(customStringField.CustomStringFieldId);
+            string requestBody;
+            
+            if (targetField.Schema!.Type == "string")
+                requestBody = $@"
                 {{
                     ""fields"": {{
                         ""{customStringField.CustomStringFieldId}"": ""{value}""
                     }}
-                }}");
+                }}";
+            else
+                requestBody = $@"
+                {{
+                    ""fields"": {{
+                        ""{customStringField.CustomStringFieldId}"": {{
+                            ""value"": ""{value}""
+                        }}
+                    }}
+                }}";
+            
+            var updateFieldRequest = new JiraRequest($"/issue/{issue.IssueKey}", Method.Put, Creds);
+            updateFieldRequest.AddJsonBody(requestBody);
+            
             try
             {
-                await client.ExecuteWithHandling(request);
+                await client.ExecuteWithHandling(updateFieldRequest);
             }
             catch
             {
@@ -273,6 +300,18 @@ namespace Apps.Jira
             await client.ExecuteWithHandling(request);
         }
         
+        #endregion
+
+        #region Utils
+
+        public async Task<FieldDto> GetCustomFieldData(string customFieldId)
+        {
+            var client = new JiraClient(Creds);
+            var getFieldsRequest = new JiraRequest("/field", Method.Get, Creds);
+            var fields = await client.ExecuteWithHandling<IEnumerable<FieldDto>>(getFieldsRequest);
+            return fields.First(field => field.Id == customFieldId);
+        }
+
         #endregion
     }
 }

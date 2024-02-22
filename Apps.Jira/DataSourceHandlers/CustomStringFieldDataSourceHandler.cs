@@ -20,8 +20,11 @@ public class CustomStringFieldDataSourceHandler : BaseInvocable, IAsyncDataSourc
         var client = new JiraClient(Creds);
         var request = new JiraRequest("/field", Method.Get, Creds);
         var fields = await client.ExecuteWithHandling<IEnumerable<FieldDto>>(request);
-        var customStringFields = fields.Where(f =>
-            f.Custom && f.Schema.Custom == "com.atlassian.jira.plugin.system.customfieldtypes:textfield");
-        return customStringFields.ToDictionary(f => f.Id, f => f.Name);
+        var customStringFields = fields
+            .Where(field => field.Custom && (field.Schema!.Type == "string" || field.Schema.Type == "option"))
+            .Where(field => context.SearchString == null ||
+                            field.Name.Contains(context.SearchString, StringComparison.OrdinalIgnoreCase));
+        
+        return customStringFields.ToDictionary(field => field.Id, field => field.Name);
     }
 }
