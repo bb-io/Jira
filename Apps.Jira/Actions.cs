@@ -335,14 +335,16 @@ namespace Apps.Jira
         
         #region DELETE
         
-        [Action("Delete issue", Description = "Delete an issue. To delete an issue with subtasks, set DeleteSubtasks.")]
+        [Action("Delete issue", Description = "Delete an issue. To delete the issue along with its subtasks, " +
+                                              "set the optional input parameter 'Delete subtasks' to 'True'.")]
         public async Task DeleteIssue([ActionParameter] IssueIdentifier issue, 
-            [ActionParameter] [Display("Delete subtasks")] bool deleteSubtasks)
+            [ActionParameter] [Display("Delete subtasks")] bool? deleteSubtasks)
         {
             var client = new JiraClient(Creds);
-            var endpoint = QueryHelpers.AddQueryString($"/issue/{issue.IssueKey}", 
-                new Dictionary<string, string> { { "deleteSubtasks", deleteSubtasks.ToString() } });
-            var request = new JiraRequest(endpoint, Method.Delete, Creds);
+            var request =
+                new JiraRequest($"/issue/{issue.IssueKey}?deleteSubtasks={(deleteSubtasks ?? false).ToString()}",
+                    Method.Delete, Creds);
+            
             await client.ExecuteWithHandling(request);
         }
         
