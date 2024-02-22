@@ -18,8 +18,7 @@ public class PriorityDataSourceHandler : BaseInvocable, IAsyncDataSourceHandler
         CancellationToken cancellationToken)
     {
         var client = new JiraClient(Creds);
-        var endpoint = "/priority";
-        var request = new JiraRequest(endpoint, Method.Get, Creds);
+        var request = new JiraRequest("/priority", Method.Get, Creds);
         var response = await client.ExecuteWithHandling<IEnumerable<PriorityDto>>(request);
         return response.ToDictionary(p => p.Id, p => p.Name);
     }

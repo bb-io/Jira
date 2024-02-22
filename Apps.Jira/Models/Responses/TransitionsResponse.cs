@@ -2,7 +2,4 @@
 
 namespace Apps.Jira.Models.Responses;
 
-public class TransitionsResponse
-{
-    public IEnumerable<TransitionDto> Transitions { get; set; }
-}
+public record TransitionsResponse(IEnumerable<TransitionDto> Transitions);

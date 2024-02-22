@@ -7,12 +7,12 @@ using RestSharp;
 
 namespace Apps.Jira.DataSourceHandlers;
 
-public class CustomStringFieldDataSourceHandler : BaseInvocable, IAsyncDataSourceHandler
+public class CustomDateFieldDataSourceHandler : BaseInvocable, IAsyncDataSourceHandler
 {
     private IEnumerable<AuthenticationCredentialsProvider> Creds =>
         InvocationContext.AuthenticationCredentialsProviders;
 
-    public CustomStringFieldDataSourceHandler(InvocationContext invocationContext): base(invocationContext) { }
+    public CustomDateFieldDataSourceHandler(InvocationContext invocationContext): base(invocationContext) { }
 
     public async Task<Dictionary<string, string>> GetDataAsync(DataSourceContext context,
         CancellationToken cancellationToken)
@@ -20,11 +20,11 @@ public class CustomStringFieldDataSourceHandler : BaseInvocable, IAsyncDataSourc
         var client = new JiraClient(Creds);
         var request = new JiraRequest("/field", Method.Get, Creds);
         var fields = await client.ExecuteWithHandling<IEnumerable<FieldDto>>(request);
-        var customStringFields = fields
-            .Where(field => field.Custom && (field.Schema!.Type == "string" || field.Schema.Type == "option"))
+        var customDateFields = fields
+            .Where(field => field.Custom && (field.Schema!.Type == "date" || field.Schema.Type == "datetime"))
             .Where(field => context.SearchString == null ||
                             field.Name.Contains(context.SearchString, StringComparison.OrdinalIgnoreCase));
         
-        return customStringFields.ToDictionary(field => field.Id, field => field.Name);
+        return customDateFields.ToDictionary(field => field.Id, field => field.Name);
     }
 }

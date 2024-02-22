@@ -1,6 +1,7 @@
 ﻿namespace Apps.Jira.Dtos;
 
-public class IssueTypeDto
-{
-    public string Name { get; set; }
-}
+public record IssueTypeDto(string Id, string Name, IssueTypeScopeDto? Scope);
+
+public record IssueTypeScopeDto(string Type, ProjectScopeDto? Project);
+
+public record ProjectScopeDto(string Id);

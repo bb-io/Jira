@@ -8,14 +8,14 @@ using RestSharp;
 
 namespace Apps.Jira.DataSourceHandlers;
 
-public class IssueTypeDataSourceHandler : BaseInvocable, IAsyncDataSourceHandler
+public class IssueStatusDataSourceHandler : BaseInvocable, IAsyncDataSourceHandler
 {
     private IEnumerable<AuthenticationCredentialsProvider> Creds =>
         InvocationContext.AuthenticationCredentialsProviders;
 
     private readonly ProjectIdentifier _projectIdentifier;
 
-    public IssueTypeDataSourceHandler(InvocationContext invocationContext,
+    public IssueStatusDataSourceHandler(InvocationContext invocationContext, 
         [ActionParameter] ProjectIdentifier projectIdentifier) : base(invocationContext)
     {
         _projectIdentifier = projectIdentifier;
@@ -26,17 +26,16 @@ public class IssueTypeDataSourceHandler : BaseInvocable, IAsyncDataSourceHandler
     {
         if (_projectIdentifier.ProjectKey == null)
             throw new Exception("Please specify project key first.");
-
-        var client = new JiraClient(Creds);
-        var getProjectRequest = new JiraRequest($"/project/{_projectIdentifier.ProjectKey}", Method.Get, Creds);
-        var project = await client.ExecuteWithHandling<ProjectDto>(getProjectRequest);
         
-        var getIssueTypesRequest = new JiraRequest("/issuetype", Method.Get, Creds);
-        var issueTypes = await client.ExecuteWithHandling<IEnumerable<IssueTypeDto>>(getIssueTypesRequest);
-        return issueTypes
-            .Where(type => type.Scope?.Type == "PROJECT" && type.Scope.Project!.Id == project.Id)
-            .Where(type => context.SearchString == null 
-                           || type.Name.Contains(context.SearchString, StringComparison.OrdinalIgnoreCase))
-            .ToDictionary(type => type.Id, type => type.Name);
+        var client = new JiraClient(Creds);
+        var request = new JiraRequest($"/project/{_projectIdentifier.ProjectKey}/statuses", Method.Get,
+            Creds);
+        var response = await client.ExecuteWithHandling<IEnumerable<StatusesWrapper>>(request);
+        
+        return response
+            .SelectMany(statuses => statuses.Statuses)
+            .DistinctBy(status => status.Id)
+            .OrderBy(status => status.Id)
+            .ToDictionary(status => status.Id, status => status.Name);
     }
 }

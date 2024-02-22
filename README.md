@@ -73,7 +73,7 @@ Note: this app currently supports only short text (plain text only) custom field
 - **Update issue summary**.
 - **Update issue description**.
 - **Prioritize issue** sets priority for an issue (e.g. High/Medium/Low).
-- **Set value of custom string field** sets the value of custom string field of specific issue. 
+- **Set value of custom string field** sets the value of custom string field of specific issue.
 - **Delete issue**.
 
 ### Users
@@ -82,10 +82,10 @@ Note: this app currently supports only short text (plain text only) custom field
 
 ## Events
 
-- **On issue updated** is triggered when an issue is updated. If you want a bird to be triggered when specific issue is updated, specify the issue parameter. Otherwise, you can specify project parameter if you are interested in specific project's issues. 
-- **On issue created** is triggered when an issue is created. If you want a bird to be triggered when an issue is created in specific project, fill the project parameter. 
+- **On issue updated** is triggered when an issue is updated. If you want a bird to be triggered when specific issue is updated, specify the issue parameter. Otherwise, you can specify project parameter if you are interested in specific project's issues.
+- **On issue created** is triggered when an issue is created. If you want a bird to be triggered when an issue is created in specific project, fill the project parameter.
 - **On issue assigned** is triggered when an issue is assigned to specific user. You can specify project parameter if you're interested in specific project.
-- **On issue with specific type created** is triggered when an issue created has specific type (for example, a bug) or an existing issue was updated to have specific type. Optionally, you can specify project parameter. 
+- **On issue with specific type created** is triggered when an issue created has specific type (for example, a bug) or an existing issue was updated to have specific type. Optionally, you can specify project parameter.
 - **On issue with specific priority created** is triggered when an issue created has the specified priority or an existing issue was updated to have the specified priority.
 - **On issue deleted** is triggered when an issue is deleted. If you want a bird to be triggered when an issue is deleted in specific project, fill the project parameter.
 - **On file attached to issue** is triggered when a file is attached to an issue. If you want a bird to be triggered when a file is attached to specific issue, specify the issue parameter. Otherwise, you can specify project parameter if you are interested in specific project's issues.
@@ -97,11 +97,15 @@ Note: this app currently supports only short text (plain text only) custom field
 
 This example bird fetches newest issues and assigns those with highest priority to a specific assignee.
 
+![example_2](image/README/1708600402619.png)
+
+This example shows how to create new TMS (Phrase) projects from issues
+
 ## Missing features
 
 In the future we can add actions for:
 
-- Different custom fields 
+- Different custom fields
 - Projects
 - Users
 - Issue comments
