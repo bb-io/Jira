@@ -9,7 +9,9 @@ using Blackbird.Applications.Sdk.Common.Actions;
 using Blackbird.Applications.Sdk.Common.Invocation;
 using Blackbird.Applications.SDK.Extensions.FileManagement.Interfaces;
 using Blackbird.Applications.Sdk.Utils.Extensions.Files;
+using Blackbird.Applications.Sdk.Utils.Extensions.Http;
 using Microsoft.AspNetCore.WebUtilities;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 namespace Apps.Jira
@@ -55,24 +57,6 @@ namespace Apps.Jira
             };
         }
         
-        [Action("Get issue transitions", Description = "Get a list of available transitions for specific issue.")]
-        public async Task<TransitionsResponse> GetIssueTransitions([ActionParameter] IssueIdentifier issue)
-        {
-            var client = new JiraClient(Creds);
-            var request = new JiraRequest($"/issue/{issue.IssueKey}/transitions", Method.Get, Creds);
-            var transitions = await client.ExecuteWithHandling<TransitionsResponse>(request);
-            return transitions;
-        }
-
-        [Action("Get all users", Description = "Get a list of users.")]
-        public async Task<UsersResponse> GetAllUsers()
-        {
-            var client = new JiraClient(Creds);
-            var request = new JiraRequest("/users/search", Method.Get, Creds);
-            var users = await client.ExecuteWithHandling<UsersResponse>(request);
-            return users;
-        }
-        
         [Action("List attachments", Description = "List files attached to an issue.")]
         public async Task<AttachmentsResponse> ListAttachments([ActionParameter] IssueIdentifier issue)
         {
@@ -114,22 +98,6 @@ namespace Apps.Jira
         
         #region POST
         
-        [Action("Transition issue", Description = "Perform issue transition.")]
-        public async Task TransitionIssue([ActionParameter] IssueIdentifier issue, 
-            [ActionParameter] TransitionIdentifier transition)
-        {
-            var client = new JiraClient(Creds);
-            var request = new JiraRequest($"/issue/{issue.IssueKey}/transitions", Method.Post, Creds);
-            request.AddJsonBody(new
-            {
-                transition = new
-                {
-                    id = transition.TransitionId
-                }
-            });
-            await client.ExecuteWithHandling(request);
-        }
-        
         [Action("Create issue", Description = "Create a new issue.")]
         public async Task<CreatedIssueDto> CreateIssue([ActionParameter] AssigneeIdentifier assignee, 
             [ActionParameter] ProjectIdentifier project, [ActionParameter] CreateIssueRequest input)
@@ -145,25 +113,25 @@ namespace Apps.Jira
                     summary = input.Summary,
                     description = new
                     {
-                        Version = 1,
-                        Type = "doc",
-                        Content = new[]
+                        version = 1,
+                        type = "doc",
+                        content = new[]
                         {
                             new
                             {
-                                Type = "paragraph", 
-                                Content = new[]
+                                type = "paragraph", 
+                                content = new[]
                                 {
                                     new
                                     {
-                                        Type = "text",
-                                        Text = input.Description ?? ""
+                                        type = "text",
+                                        xext = input.Description ?? ""
                                     }
                                 }
                             }
                         }
                     },
-                    issuetype = new { name = input.IssueType }
+                    issuetype = new { id = input.IssueTypeId }
                 }
             });
             var createdIssue = await client.ExecuteWithHandling<CreatedIssueDto>(request);
@@ -187,83 +155,83 @@ namespace Apps.Jira
         #endregion
 
         #region PUT
-        
-        [Action("Assign issue", Description = "Assign an issue to a user. If assignee is not specified, the issue is " +
-                                               "set to unassigned.")]
-        public async Task AssignIssue([ActionParameter] IssueIdentifier issue, 
-            [ActionParameter] AssigneeIdentifier assignee)
-        {
-            var client = new JiraClient(Creds);
-            var request = new JiraRequest($"/issue/{issue.IssueKey}/assignee", Method.Put, Creds);
-            request.AddJsonBody(new { accountId = assignee.AccountId });
-            await client.ExecuteWithHandling(request);
-        }
 
-        [Action("Update issue summary", Description = "Update summary for an issue.")]
-        public async Task UpdateIssueSummary([ActionParameter] IssueIdentifier issue, 
-            [ActionParameter] [Display("Summary")] string summary)
+        [Action("Update issue", Description = "Update issue, specifying only the fields that require updating.")]
+        public async Task UpdateIssue([ActionParameter] ProjectIdentifier projectIdentifier,
+            [ActionParameter] IssueIdentifier issue,
+            [ActionParameter] UpdateIssueRequest input)
         {
             var client = new JiraClient(Creds);
-            var request = new JiraRequest($"/issue/{issue.IssueKey}", Method.Put, Creds);
-            request.AddJsonBody(new
+            
+            if (input.AssigneeAccountId != null)
             {
-                fields = new { summary }
-            });
-            await client.ExecuteWithHandling(request);
-        }
+                var accountId = input.AssigneeAccountId;
 
-        [Action("Update issue description", Description = "Update description for an issue.")]
-        public async Task UpdateIssueDescription([ActionParameter] IssueIdentifier issue, 
-            [ActionParameter] [Display("Description")] string description)
-        {
-            var client = new JiraClient(Creds);
-            var request = new JiraRequest($"/issue/{issue.IssueKey}", Method.Put, Creds);
-            request.AddJsonBody(new
+                if (int.TryParse(accountId, out var accountIntId) && accountIntId == int.MinValue)
+                    accountId = null;
+
+                var request = new JiraRequest($"/issue/{issue.IssueKey}/assignee", Method.Put, Creds)
+                    .WithJsonBody(new { accountId });
+                
+                await client.ExecuteWithHandling(request);
+            }
+
+            if (input.Summary != null || input.Description != null || input.IssueTypeId != null)
             {
-                fields = new
+                var jsonBody = new
                 {
-                    description = new
+                    fields = new
                     {
-                        Version = 1,
-                        Type = "doc",
-                        Content = new[]
-                        {
-                            new
+                        summary = input.Summary,
+                        description = input.Description != null
+                            ? new
                             {
-                                Type = "paragraph", 
-                                Content = new[]
+                                version = 1,
+                                type = "doc",
+                                content = new[]
                                 {
                                     new
                                     {
-                                        Type = "text",
-                                        Text = description
+                                        type = "paragraph",
+                                        content = new[]
+                                        {
+                                            new
+                                            {
+                                                type = "text",
+                                                text = input.Description
+                                            }
+                                        }
                                     }
                                 }
                             }
-                        }
+                            : null,
+                        issuetype = input.IssueTypeId != null ? new { id = input.IssueTypeId } : null
                     }
-                }
-            });
-            await client.ExecuteWithHandling(request);
-        }
+                };
 
-        [Action("Prioritize issue", Description = "Set priority for an issue.")]
-        public async Task PrioritizeIssue([ActionParameter] IssueIdentifier issue, 
-            [ActionParameter] PriorityIdentifier priority)
-        {
-            var client = new JiraClient(Creds);
-            var request = new JiraRequest($"/issue/{issue.IssueKey}", Method.Put, Creds);
-            request.AddJsonBody(new
+                var request = new JiraRequest($"/issue/{issue.IssueKey}", Method.Put, Creds)
+                    .WithJsonBody(jsonBody,
+                        new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore });
+                await client.ExecuteWithHandling(request);
+            }
+
+            if (input.StatusId != null)
             {
-                fields = new
+                var getTransitionsRequest = new JiraRequest($"/issue/{issue.IssueKey}/transitions", Method.Get, 
+                    Creds);
+                var transitions = await client.ExecuteWithHandling<TransitionsResponse>(getTransitionsRequest);
+
+                var targetTransition = transitions.Transitions
+                    .FirstOrDefault(transition => transition.To.Id == input.StatusId);
+
+                if (targetTransition != null)
                 {
-                    priority = new
-                    {
-                        id = priority.PriorityId
-                    }
+                    var transitionRequest = new JiraRequest($"/issue/{issue.IssueKey}/transitions", Method.Post, Creds)
+                        .WithJsonBody(new { transition = new { id = targetTransition.Id } });
+                
+                    await client.ExecuteWithHandling(transitionRequest);
                 }
-            });
-            await client.ExecuteWithHandling(request);
+            }
         }
         
         [Action("Set value of custom string field", Description = "Set value of custom string field of specific issue.")]

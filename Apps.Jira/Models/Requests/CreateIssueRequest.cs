@@ -8,9 +8,9 @@ namespace Apps.Jira.Models.Requests
     {
         public string Summary { get; set; }
 
-        [Display("Issue type")]
+        [Display("Issue type ID")]
         [DataSource(typeof(IssueTypeDataSourceHandler))]
-        public string IssueType { get; set; }
+        public string IssueTypeId { get; set; }
         
         public string? Description { get; set; }
     }

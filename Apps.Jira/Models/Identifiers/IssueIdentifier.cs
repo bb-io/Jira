@@ -6,7 +6,7 @@ namespace Apps.Jira.Models.Identifiers;
 
 public class IssueIdentifier
 {
-    [Display("Issue")]
+    [Display("Issue key")]
     [DataSource(typeof(IssueDataSourceHandler))]
     public string IssueKey { get; set; }
 }

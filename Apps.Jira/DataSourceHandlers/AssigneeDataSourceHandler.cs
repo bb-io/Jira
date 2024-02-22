@@ -41,6 +41,7 @@ public class AssigneeDataSourceHandler : BaseInvocable, IAsyncDataSourceHandler
 
         var accountsDictionary = accounts.ToDictionary(a => a.AccountId, a => a.DisplayName); 
         accountsDictionary.Add("-1", "Default assignee");
+        accountsDictionary.Add(int.MinValue.ToString(), "Unassigned");
         return accountsDictionary;
     }
 }
