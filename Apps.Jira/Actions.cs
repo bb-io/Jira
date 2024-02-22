@@ -83,7 +83,7 @@ namespace Apps.Jira
         }
 
         [Action("Get custom string or dropdown field value",
-            Description = "Get value of custom string or dropdown field of specific issue.")]
+            Description = "Retrieve the value of a custom string or dropdown field for a specific issue.")]
         public async Task<GetCustomFieldValueResponse<string>> GetCustomStringFieldValue(
             [ActionParameter] IssueIdentifier issue, [ActionParameter] CustomStringFieldIdentifier customStringField)
         {
@@ -102,6 +102,21 @@ namespace Apps.Jira
                 requestedFieldValue = requestedField["value"].ToString();
             
             return new GetCustomFieldValueResponse<string> { Value = requestedFieldValue };
+        }
+        
+        [Action("Get custom date field value",
+            Description = "Retrieve the value of a custom date field for a specific issue.")]
+        public async Task<GetCustomFieldValueResponse<DateTime>> GetCustomDateFieldValue(
+            [ActionParameter] IssueIdentifier issue, [ActionParameter] CustomDateFieldIdentifier customStringField)
+        {
+            var client = new JiraClient(Creds);
+            var getIssueRequest = new JiraRequest($"/issue/{issue.IssueKey}", Method.Get, Creds);
+            var getIssueResponse = await client.ExecuteWithHandling(getIssueRequest);
+            var requestedFieldValue =
+                DateTime.Parse(JObject.Parse(getIssueResponse.Content)["fields"][customStringField.CustomDateFieldId]
+                    .ToString());
+            
+            return new GetCustomFieldValueResponse<DateTime> { Value = requestedFieldValue };
         }
 
         #endregion
@@ -135,7 +150,7 @@ namespace Apps.Jira
                                     new
                                     {
                                         type = "text",
-                                        xext = input.Description ?? ""
+                                        text = input.Description ?? ""
                                     }
                                 }
                             }
@@ -245,7 +260,7 @@ namespace Apps.Jira
         }
         
         [Action("Set custom string or dropdown field value", 
-            Description = "Set value of custom string or dropdown field of specific issue.")]
+            Description = "Set the value of a custom string or dropdown field for a specific issue.")]
         public async Task SetCustomStringFieldValue([ActionParameter] IssueIdentifier issue, 
             [ActionParameter] CustomStringFieldIdentifier customStringField,
             [ActionParameter] [Display("Value")] string value)
@@ -285,6 +300,37 @@ namespace Apps.Jira
             }
         }
         
+        [Action("Set custom date field value", 
+            Description = "Set the value of a custom date field for a specific issue.")]
+        public async Task SetCustomDateFieldValue([ActionParameter] IssueIdentifier issue, 
+            [ActionParameter] CustomDateFieldIdentifier customDateField,
+            [ActionParameter] [Display("Value")] DateTime value)
+        {
+            var client = new JiraClient(Creds);
+            var targetField = await GetCustomFieldData(customDateField.CustomDateFieldId);
+            var dateString = targetField.Schema!.Type == "date"
+                ? value.ToString("yyyy-MM-dd")
+                : value.ToString("yyyy-MM-ddTHH:mm:ss.fffzzz");
+            
+            var updateFieldRequest = new JiraRequest($"/issue/{issue.IssueKey}", Method.Put, Creds);
+            updateFieldRequest.AddJsonBody($@"
+                {{
+                    ""fields"": {{
+                        ""{customDateField.CustomDateFieldId}"": ""{dateString}""
+                    }}
+                }}");
+            
+            try
+            {
+                await client.ExecuteWithHandling(updateFieldRequest);
+            }
+            catch
+            {
+                throw new Exception("Couldn't set field value. Please make sure that field exists for specific issue " +
+                                    "type in the project.");
+            }
+        }
+        
         #endregion
         
         #region DELETE
@@ -304,7 +350,7 @@ namespace Apps.Jira
 
         #region Utils
 
-        public async Task<FieldDto> GetCustomFieldData(string customFieldId)
+        private async Task<FieldDto> GetCustomFieldData(string customFieldId)
         {
             var client = new JiraClient(Creds);
             var getFieldsRequest = new JiraRequest("/field", Method.Get, Creds);
