@@ -10,8 +10,8 @@ namespace Apps.Jira.Dtos
         {
             IssueKey = issueWrapper.Key;
             Summary = issueWrapper.Fields.Summary;
-            Status = issueWrapper.Fields.Status.Name;
-            Priority = issueWrapper.Fields.Priority.Name;
+            Status = issueWrapper.Fields.Status;
+            Priority = issueWrapper.Fields.Priority;
             Assignee = issueWrapper.Fields.Assignee;
             Project = issueWrapper.Fields.Project;
             Description = issueWrapper.Fields.Description == null
@@ -26,12 +26,12 @@ namespace Apps.Jira.Dtos
         public string IssueKey { get; set; }
         
         public string Summary { get; set; }
-
-        public string Status { get; set; }
-        
-        public string Priority { get; set; }
         
         public string? Description { get; set; }
+
+        public StatusDto Status { get; set; }
+        
+        public PriorityDto Priority { get; set; }
         
         public ProjectDto Project { get; set; }
 
