@@ -6,7 +6,7 @@ namespace Apps.Jira.Models.Identifiers;
 
 public class CustomStringFieldIdentifier
 {
-    [Display("Custom string field ID")]
+    [Display("Custom text field ID")]
     [DataSource(typeof(CustomStringFieldDataSourceHandler))]
     public string CustomStringFieldId { get; set; }
 }

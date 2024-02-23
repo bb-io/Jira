@@ -5,9 +5,9 @@ using RestSharp;
 
 namespace Apps.Jira.DataSourceHandlers.CustomFields;
 
-public class CustomStringFieldDataSourceHandler : JiraInvocable, IAsyncDataSourceHandler
+public class CustomOptionFieldDataSourceHandler : JiraInvocable, IAsyncDataSourceHandler
 {
-    public CustomStringFieldDataSourceHandler(InvocationContext invocationContext): base(invocationContext) { }
+    public CustomOptionFieldDataSourceHandler(InvocationContext invocationContext) : base(invocationContext) { }
 
     public async Task<Dictionary<string, string>> GetDataAsync(DataSourceContext context,
         CancellationToken cancellationToken)
@@ -15,7 +15,7 @@ public class CustomStringFieldDataSourceHandler : JiraInvocable, IAsyncDataSourc
         var request = new JiraRequest("/field", Method.Get);
         var fields = await Client.ExecuteWithHandling<IEnumerable<FieldDto>>(request);
         var customStringFields = fields
-            .Where(field => field.Custom && field.Schema!.Type == "string")
+            .Where(field => field.Custom && field.Schema!.Type == "option")
             .Where(field => context.SearchString == null ||
                             field.Name.Contains(context.SearchString, StringComparison.OrdinalIgnoreCase));
         
