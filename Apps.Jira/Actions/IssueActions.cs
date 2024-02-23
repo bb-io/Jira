@@ -78,15 +78,21 @@ public class IssueActions : JiraInvocable
         #region POST
         
         [Action("Create issue", Description = "Create a new issue.")]
-        public async Task<CreatedIssueDto> CreateIssue([ActionParameter] AssigneeIdentifier assignee, 
-            [ActionParameter] ProjectIdentifier project, [ActionParameter] CreateIssueRequest input)
+        public async Task<CreatedIssueDto> CreateIssue([ActionParameter] ProjectIdentifier project, 
+            [ActionParameter] CreateIssueRequest input)
         {
             var request = new JiraRequest("/issue", Method.Post);
+            
+            var accountId = input.AccountId;
+
+            if (int.TryParse(accountId, out var accountIntId) && accountIntId == int.MinValue)
+                accountId = null;
+            
             request.AddJsonBody(new
             {
                 fields = new
                 {
-                    assignee = new { id = assignee.AccountId },
+                    assignee = new { id = accountId },
                     project = new { key = project.ProjectKey },
                     summary = input.Summary,
                     description = new

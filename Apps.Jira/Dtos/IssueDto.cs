@@ -22,7 +22,7 @@ namespace Apps.Jira.Dtos
                         .ToArray());
         }
         
-        [Display("Issue")]
+        [Display("Issue key")]
         public string IssueKey { get; set; }
         
         public string Summary { get; set; }
