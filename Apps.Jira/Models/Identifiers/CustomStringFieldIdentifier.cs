@@ -1,4 +1,4 @@
-﻿using Apps.Jira.DataSourceHandlers;
+﻿using Apps.Jira.DataSourceHandlers.CustomFields;
 using Blackbird.Applications.Sdk.Common;
 using Blackbird.Applications.Sdk.Common.Dynamic;
 

@@ -1,25 +1,19 @@
 ﻿using Apps.Jira.Dtos;
-using Blackbird.Applications.Sdk.Common;
-using Blackbird.Applications.Sdk.Common.Authentication;
 using Blackbird.Applications.Sdk.Common.Dynamic;
 using Blackbird.Applications.Sdk.Common.Invocation;
 using RestSharp;
 
-namespace Apps.Jira.DataSourceHandlers;
+namespace Apps.Jira.DataSourceHandlers.CustomFields;
 
-public class CustomStringFieldDataSourceHandler : BaseInvocable, IAsyncDataSourceHandler
+public class CustomStringFieldDataSourceHandler : JiraInvocable, IAsyncDataSourceHandler
 {
-    private IEnumerable<AuthenticationCredentialsProvider> Creds =>
-        InvocationContext.AuthenticationCredentialsProviders;
-
     public CustomStringFieldDataSourceHandler(InvocationContext invocationContext): base(invocationContext) { }
 
     public async Task<Dictionary<string, string>> GetDataAsync(DataSourceContext context,
         CancellationToken cancellationToken)
     {
-        var client = new JiraClient(Creds);
-        var request = new JiraRequest("/field", Method.Get, Creds);
-        var fields = await client.ExecuteWithHandling<IEnumerable<FieldDto>>(request);
+        var request = new JiraRequest("/field", Method.Get);
+        var fields = await Client.ExecuteWithHandling<IEnumerable<FieldDto>>(request);
         var customStringFields = fields
             .Where(field => field.Custom && (field.Schema!.Type == "string" || field.Schema.Type == "option"))
             .Where(field => context.SearchString == null ||

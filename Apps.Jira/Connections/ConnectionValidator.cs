@@ -11,7 +11,7 @@ public class ConnectionValidator : IConnectionValidator
         CancellationToken cancellationToken)
     {
         var client = new JiraClient(authenticationCredentialsProviders);
-        var request = new JiraRequest("/myself", Method.Get, authenticationCredentialsProviders);
+        var request = new JiraRequest("/myself", Method.Get);
         
         try
         {
