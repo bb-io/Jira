@@ -6,7 +6,7 @@ namespace Apps.Jira.Models.Identifiers;
 
 public class ProjectIdentifier
 {
-    [Display("Project")]
+    [Display("Project key")]
     [DataSource(typeof(ProjectDataSourceHandler))]
     public string ProjectKey { get; set; }
 }

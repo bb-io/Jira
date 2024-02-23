@@ -13,5 +13,9 @@ namespace Apps.Jira.Models.Requests
         public string IssueTypeId { get; set; }
         
         public string? Description { get; set; }
+        
+        [Display("Assignee account ID")]
+        [DataSource(typeof(AssigneeDataSourceHandler))]
+        public string? AccountId { get; set; }
     }
 }

@@ -7,9 +7,13 @@ namespace Apps.Jira
 {
     public class JiraClient : RestClient
     {
-        public JiraClient(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders) 
-            : base(new RestClientOptions 
-                { ThrowOnAnyError = false, BaseUrl = GetUri(authenticationCredentialsProviders) }) { }
+        public JiraClient(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders)
+            : base(new RestClientOptions
+                { ThrowOnAnyError = false, BaseUrl = GetUri(authenticationCredentialsProviders) })
+        {
+            this.AddDefaultHeader("Authorization", 
+                authenticationCredentialsProviders.First(p => p.KeyName == "Authorization").Value);
+        }
         
         public async Task<T> ExecuteWithHandling<T>(RestRequest request)
         {

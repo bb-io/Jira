@@ -6,7 +6,6 @@ using Newtonsoft.Json;
 using System.Net;
 using Apps.Jira.Dtos;
 using Apps.Jira.Webhooks.Inputs;
-using Blackbird.Applications.Sdk.Common;
 using Blackbird.Applications.Sdk.Common.Authentication;
 using Blackbird.Applications.Sdk.Common.Invocation;
 using RestSharp;
@@ -14,7 +13,7 @@ using RestSharp;
 namespace Apps.Jira.Webhooks
 {
     [WebhookList]
-    public class IssueWebhooks : BaseInvocable
+    public class IssueWebhooks : JiraInvocable
     {
         private IEnumerable<AuthenticationCredentialsProvider> Creds =>
             InvocationContext.AuthenticationCredentialsProviders;
@@ -78,9 +77,8 @@ namespace Apps.Jira.Webhooks
 
             if (assignee.AccountId == "-1")
             {
-                var jiraClient = new JiraClient(Creds);
-                var getProjectRequest = new JiraRequest($"/project/{payload.Issue.Fields.Project.Key}", Method.Get, Creds);
-                var projectDto = await jiraClient.ExecuteWithHandling<DetailedProjectDto>(getProjectRequest);
+                var getProjectRequest = new JiraRequest($"/project/{payload.Issue.Fields.Project.Key}", Method.Get);
+                var projectDto = await Client.ExecuteWithHandling<DetailedProjectDto>(getProjectRequest);
                 if ((projectDto.DefaultAssignee == "UNASSIGNED" && actualAssignee.To is not null) 
                     || (projectDto.DefaultAssignee == "PROJECT_LEAD" && actualAssignee.To != projectDto.Lead.AccountId)) 
                     return new WebhookResponse<IssueResponse>
