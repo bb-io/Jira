@@ -62,23 +62,21 @@ Note: this app currently supports only short text (plain text only) custom field
 
 - **Get issue** returns the details for an issue (summary, description, status, priority, assignee, project).
 - **List recently created issues** returns issues created during past hours in a specific project.
-- **Get issue transitions** returns either all transitions or a transition that can be performed by the user on an issue. Transition can also be thought of as status (e.g. To Do/In Progress/Done).
 - **List attachments** returns a list of files attached to an issue.
 - **Download attachment** returns the contents of an attachment.
-- **Get value of custom string field** returns the value of custom string field of specific issue. If value is not set, empty value is returned.
-- **Transition issue** performs an issue transition.
 - **Create issue**.
 - **Add attachment** adds attachment to an issue.
-- **Assign issue**.
-- **Update issue summary**.
-- **Update issue description**.
-- **Prioritize issue** sets priority for an issue (e.g. High/Medium/Low).
-- **Set value of custom string field** sets the value of custom string field of specific issue.
+- **Update issue**. Specify only the fields that require updating.
 - **Delete issue**.
 
-### Users
+### Issue custom fields
 
-- **Get all users**.
+- **Get custom text field value** returns the value of a custom string field (e.g., plain text or URL) for a specific issue.
+- **Set custom text field value** sets the value of a custom string field for a specific issue.
+- **Get custom dropdown field value** returns the value of a custom dropdown field for a specific issue.
+- **Set custom dropdown field value** sets the value of a custom dropdown field for a specific issue.
+- **Get custom date field value** returns the value of a custom date field for a specific issue.
+- **Set custom date field value** sets the value of a custom date field for a specific issue.
 
 ## Events
 
@@ -99,13 +97,13 @@ This example bird fetches newest issues and assigns those with highest priority 
 
 ![example_2](image/README/1708600402619.png)
 
-This example shows how to create new TMS (Phrase) projects from issues
+This example shows how to create new TMS (Phrase) projects from issues.
 
 ## Missing features
 
 In the future we can add actions for:
 
-- Different custom fields
+- Other custom field types
 - Projects
 - Users
 - Issue comments
