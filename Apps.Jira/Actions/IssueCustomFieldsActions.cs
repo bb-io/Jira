@@ -1,7 +1,4 @@
-﻿using System.Dynamic;
-using System.Text.Json;
-using System.Text.RegularExpressions;
-using Apps.Jira.DataSourceHandlers.CustomFields;
+﻿using Apps.Jira.DataSourceHandlers.CustomFields;
 using Apps.Jira.Dtos;
 using Apps.Jira.Models.Identifiers;
 using Apps.Jira.Models.Responses;
