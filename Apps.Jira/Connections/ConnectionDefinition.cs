@@ -16,7 +16,7 @@ namespace Apps.Jira.Connections
                 {
                     new("Jira URL")
                 }
-            }
+            },
         };
 
         public IEnumerable<AuthenticationCredentialsProvider> CreateAuthorizationCredentialsProviders(
