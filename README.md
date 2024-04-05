@@ -135,10 +135,7 @@ This example shows how to create new TMS (Phrase) projects from issues.
 
 In the future we can add actions for:
 
-- Other custom field types
 - Projects
-- Users
-- Issue comments
 - Dashboards
 
 Let us know if you're interested!
