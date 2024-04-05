@@ -78,6 +78,38 @@ Note: this app currently supports only short text (plain text only) custom field
 - **Get custom date field value** returns the value of a custom date field for a specific issue.
 - **Set custom date field value** sets the value of a custom date field for a specific issue.
 
+### User Actions
+
+- **List users**: Lists a predefined number of users (up to 20 by default) from Jira.
+- **Get user**: Retrieves detailed information about a specific user identified by their account ID.
+- **Delete user**: Deletes a user from Jira based on their account ID. This action is irreversible.
+- **Create user**: Creates a new user in Jira with the specified details.
+- **Get groups**: Retrieves the groups associated with a specified user.
+- **Get user email**: Fetches the email address for a specified user.
+- **Get user columns**: Gets the column configuration for a specified user.
+- **Reset user default columns**: Resets the column configuration to default for a specified user.
+- **Set user columns**: Sets the column configuration for a specified user.
+- **Bulk get users**: Retrieves information for a bulk list of users based on their account IDs.
+
+### Issue Comment Actions
+
+- **Get sssue comments**: Fetches comments for a specified issue. It can retrieve comments for multiple issues if IDs are provided.
+- **Get issue comment**: Retrieves a specific comment from a specified issue.
+- **Delete issue comment**: Deletes a comment from a specified issue.
+- **Add issue comment**: Adds a new comment to a specified issue.
+- **UpdateIssue comment**: Updates an existing comment on a specified issue.
+
+### User Properties Actions
+
+- **Get user properties**: Retrieves all properties for a specified user. This can include a variety of user-specific settings and data stored in Jira.
+- **Get boolean user property**: Fetches the value of a specific boolean property for a given user. Useful for true/false user settings.
+- **Get string user property**: Retrieves the value of a specific string property for a specified user. This can include text-based user settings or information.
+- **Get integer user property**: Gets the value of a specific integer property for a user. Ideal for numeric user settings such as limits or thresholds.
+- **Get dateuser property**: Fetches the value of a specific date property for a user. Useful for date-based settings or milestones related to the user.
+- **GetArray user property**: Retrieves the values of a specific array property for a user. This can be used for lists of user settings or preferences that are stored as arrays.
+- **Set user property**: Sets the value of a specified property for a user. This method allows for the dynamic updating of user properties based on provided input.
+- **Delete user property**: Deletes a specified property for a user. This action removes the selected property from the user's profile in Jira.
+
 ## Events
 
 - **On issue updated** is triggered when an issue is updated. If you want a bird to be triggered when specific issue is updated, specify the issue parameter. Otherwise, you can specify project parameter if you are interested in specific project's issues.
