@@ -1,4 +1,5 @@
-﻿using Apps.Jira.Dtos;
+﻿using System.Text;
+using Apps.Jira.Dtos;
 using Apps.Jira.Extensions;
 using Blackbird.Applications.Sdk.Common.Authentication;
 using RestSharp;
@@ -9,10 +10,13 @@ namespace Apps.Jira
     {
         public JiraClient(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders)
             : base(new RestClientOptions
-                { ThrowOnAnyError = false, BaseUrl = GetUri(authenticationCredentialsProviders) })
+                { ThrowOnAnyError = false, BaseUrl = new Uri(authenticationCredentialsProviders.First(p => p.KeyName == "JiraUrl").Value) })
         {
-            this.AddDefaultHeader("Authorization", 
-                authenticationCredentialsProviders.First(p => p.KeyName == "Authorization").Value);
+            var username = authenticationCredentialsProviders.First(p => p.KeyName == "User").Value;
+            var password = authenticationCredentialsProviders.First(p => p.KeyName == "Authorization").Value;
+            var encodedCredentials = Convert.ToBase64String(Encoding.ASCII.GetBytes($"{username}:{password}"));
+
+            this.AddDefaultHeader("Authorization", $"Basic {encodedCredentials}");
         }
         
         public async Task<T> ExecuteWithHandling<T>(RestRequest request)
@@ -42,11 +46,11 @@ namespace Apps.Jira
         {
             const string atlassianResourcesUrl = "https://api.atlassian.com/oauth/token/accessible-resources";
             string jiraUrl = authenticationCredentialsProviders.First(p => p.KeyName == "JiraUrl").Value;
-            string authorizationHeader = authenticationCredentialsProviders.First(p => p.KeyName == "Authorization").Value;
+            var authorizationHeader = GetAuthorizationHeader(authenticationCredentialsProviders);
             var restClient = new RestClient(new RestClientOptions 
                 { ThrowOnAnyError = true, BaseUrl = new Uri(atlassianResourcesUrl) });
             var request = new RestRequest("");
-            request.AddHeader("Authorization", authorizationHeader);
+            request.AddHeader("Authorization", $"Basic {authorizationHeader}");
             var atlassianCloudResources = restClient.Get<List<AtlassianCloudResourceDto>>(request);
             var cloudId = atlassianCloudResources.First(jiraResource => jiraUrl.Contains(jiraResource.Url)).Id
                           ?? throw new ArgumentException("The Jira URL is incorrect.");
@@ -58,6 +62,13 @@ namespace Apps.Jira
             var error = response.Content.Deserialize<ErrorDto>();
             var errorMessages = string.Join(" ", error.ErrorMessages);
             return new(errorMessages);
+        }
+        
+        private static string GetAuthorizationHeader(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders)
+        {
+            var username = authenticationCredentialsProviders.First(p => p.KeyName == "User").Value;
+            var password = authenticationCredentialsProviders.First(p => p.KeyName == "Authorization").Value;
+            return Convert.ToBase64String(Encoding.ASCII.GetBytes($"{username}:{password}"));
         }
     }
 }
