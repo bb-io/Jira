@@ -12,11 +12,8 @@ namespace Apps.Jira
             : base(new RestClientOptions
                 { ThrowOnAnyError = false, BaseUrl = new Uri(authenticationCredentialsProviders.First(p => p.KeyName == "JiraUrl").Value) })
         {
-            var username = authenticationCredentialsProviders.First(p => p.KeyName == "User").Value;
-            var password = authenticationCredentialsProviders.First(p => p.KeyName == "Authorization").Value;
-            var encodedCredentials = Convert.ToBase64String(Encoding.ASCII.GetBytes($"{username}:{password}"));
-
-            this.AddDefaultHeader("Authorization", $"Basic {encodedCredentials}");
+            this.AddDefaultHeader("Authorization", 
+                authenticationCredentialsProviders.First(p => p.KeyName == "Authorization").Value);
         }
         
         public async Task<T> ExecuteWithHandling<T>(RestRequest request)
@@ -46,11 +43,11 @@ namespace Apps.Jira
         {
             const string atlassianResourcesUrl = "https://api.atlassian.com/oauth/token/accessible-resources";
             string jiraUrl = authenticationCredentialsProviders.First(p => p.KeyName == "JiraUrl").Value;
-            var authorizationHeader = GetAuthorizationHeader(authenticationCredentialsProviders);
+            string authorizationHeader = authenticationCredentialsProviders.First(p => p.KeyName == "Authorization").Value;
             var restClient = new RestClient(new RestClientOptions 
                 { ThrowOnAnyError = true, BaseUrl = new Uri(atlassianResourcesUrl) });
             var request = new RestRequest("");
-            request.AddHeader("Authorization", $"Basic {authorizationHeader}");
+            request.AddHeader("Authorization", authorizationHeader);
             var atlassianCloudResources = restClient.Get<List<AtlassianCloudResourceDto>>(request);
             var cloudId = atlassianCloudResources.First(jiraResource => jiraUrl.Contains(jiraResource.Url)).Id
                           ?? throw new ArgumentException("The Jira URL is incorrect.");
@@ -62,13 +59,6 @@ namespace Apps.Jira
             var error = response.Content.Deserialize<ErrorDto>();
             var errorMessages = string.Join(" ", error.ErrorMessages);
             return new(errorMessages);
-        }
-        
-        private static string GetAuthorizationHeader(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders)
-        {
-            var username = authenticationCredentialsProviders.First(p => p.KeyName == "User").Value;
-            var password = authenticationCredentialsProviders.First(p => p.KeyName == "Authorization").Value;
-            return Convert.ToBase64String(Encoding.ASCII.GetBytes($"{username}:{password}"));
         }
     }
 }
