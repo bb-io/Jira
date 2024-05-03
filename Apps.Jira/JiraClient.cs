@@ -10,7 +10,7 @@ namespace Apps.Jira
     {
         public JiraClient(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders)
             : base(new RestClientOptions
-                { ThrowOnAnyError = false, BaseUrl = new Uri(authenticationCredentialsProviders.First(p => p.KeyName == "JiraUrl").Value) })
+                { ThrowOnAnyError = false, BaseUrl = GetUri(authenticationCredentialsProviders) })
         {
             this.AddDefaultHeader("Authorization", 
                 authenticationCredentialsProviders.First(p => p.KeyName == "Authorization").Value);
