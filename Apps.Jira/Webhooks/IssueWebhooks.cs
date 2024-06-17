@@ -9,6 +9,7 @@ using Apps.Jira.Webhooks.Inputs;
 using Blackbird.Applications.Sdk.Common.Authentication;
 using Blackbird.Applications.Sdk.Common.Invocation;
 using RestSharp;
+using Apps.Jira.Models.Identifiers;
 
 namespace Apps.Jira.Webhooks
 {
@@ -194,14 +195,15 @@ namespace Apps.Jira.Webhooks
         
         [Webhook("On issue status changed", typeof(IssueUpdatedHandler), 
             Description = "This webhook is triggered when issue status is changed.")]
-        public async Task<WebhookResponse<IssueResponse>> OnIssueStatusChanged(WebhookRequest request, 
-            [WebhookParameter] IssueInput issue, [WebhookParameter] ProjectInput project)
+        public async Task<WebhookResponse<IssueResponse>> OnIssueStatusChanged(WebhookRequest request,
+            [WebhookParameter] ProjectIdentifier project, [WebhookParameter] OptionalStatusInput status, [WebhookParameter] IssueInput issue)
         {
             var payload = DeserializePayload(request);
             var statusItem = payload.Changelog.Items.FirstOrDefault(item => item.FieldId == "status");
 
             if (statusItem is null 
-                || (project.ProjectKey is not null && !project.ProjectKey.Equals(payload.Issue.Fields.Project.Key)) 
+                || (project.ProjectKey is not null && !project.ProjectKey.Equals(payload.Issue.Fields.Project.Key))
+                || (status.StatusId is not null && payload.Issue.Fields.Status.Id != status.StatusId)
                 || (issue.IssueKey is not null && !issue.IssueKey.Equals(payload.Issue.Key)))
                 return new WebhookResponse<IssueResponse>
                 {
