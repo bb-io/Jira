@@ -81,7 +81,7 @@ public class IssueCommentActions : JiraInvocable
             visibility = new
             {
                 type = comment.VisibilityType ?? "role",
-                value = comment.VisibilityValue ?? "Administrators",
+                value = comment.VisibilityValue ?? null,
                 identifier = comment.VisibilityIdentifier ?? "Administrators"
             }
         });
