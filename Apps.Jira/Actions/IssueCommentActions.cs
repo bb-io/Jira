@@ -4,6 +4,7 @@ using Apps.Jira.Models.Requests;
 using Blackbird.Applications.Sdk.Common;
 using Blackbird.Applications.Sdk.Common.Actions;
 using Blackbird.Applications.Sdk.Common.Invocation;
+using Newtonsoft.Json;
 using RestSharp;
 
 namespace Apps.Jira.Actions;
@@ -56,7 +57,7 @@ public class IssueCommentActions : JiraInvocable
         [ActionParameter] AddIssueCommentRequest comment)
     {
         var request = new JiraRequest($"/issue/{input.IssueKey}/comment", Method.Post);
-        request.AddJsonBody(new
+        request.AddStringBody(JsonConvert.SerializeObject(new
         {
             body = new
             {
@@ -84,7 +85,11 @@ public class IssueCommentActions : JiraInvocable
                 value = comment.VisibilityValue ?? null,
                 identifier = comment.VisibilityIdentifier ?? "Administrators"
             }
-        });
+        }, Formatting.None,
+           new JsonSerializerSettings
+           {
+                NullValueHandling = NullValueHandling.Ignore
+           }), DataFormat.Json);
         
         return await Client.ExecuteWithHandling<IssueCommentDto>(request);
     }
