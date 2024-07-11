@@ -12,9 +12,4 @@ public class AddIssueCommentRequest
         
     public string? Version { get; set; }
         
-    public string? VisibilityType { get; set; }
-        
-    public string? VisibilityValue { get; set; }
-        
-    public string? VisibilityIdentifier { get; set; }
 }
