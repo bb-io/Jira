@@ -2,6 +2,7 @@
 using Apps.Jira.Dtos;
 using Apps.Jira.Extensions;
 using Blackbird.Applications.Sdk.Common.Authentication;
+using Newtonsoft.Json.Linq;
 using RestSharp;
 
 namespace Apps.Jira
@@ -58,6 +59,15 @@ namespace Apps.Jira
         {
             var error = response.Content.Deserialize<ErrorDto>();
             var errorMessages = string.Join(" ", error.ErrorMessages);
+            if (string.IsNullOrEmpty(errorMessages))
+            {
+                var errorData = error.Errors.Values().Select(x => x.ToString());
+                if(errorData.Any())
+                {
+                    return new(errorData.First());
+                }
+                return new("Internal system error");
+            }
             return new(errorMessages);
         }
     }
