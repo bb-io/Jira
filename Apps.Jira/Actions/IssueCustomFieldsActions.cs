@@ -82,6 +82,16 @@ public class IssueCustomFieldsActions : JiraInvocable
             {
                 values.Add(customField["value"].ToString());
             }
+            else if (customField.Type == JTokenType.String || customField.Type == JTokenType.Integer ||
+                     customField.Type == JTokenType.Float || customField.Type == JTokenType.Boolean ||
+                     customField.Type == JTokenType.Date)
+            {
+                values.Add(customField.ToString());
+            }
+            else 
+            {
+                values.Add(customField.ToString());
+            }
         }
         return values;
     }
