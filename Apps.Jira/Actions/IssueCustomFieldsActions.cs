@@ -58,7 +58,7 @@ public class IssueCustomFieldsActions : JiraInvocable
         return new GetCustomFieldValueResponse<DateTime> { Value = requestedFieldValue };
     }
 
-    [Action("Get custom multiselect field value",
+    [Action("Get custom multiselect field values",
     Description = "Retrieve the values of a custom multiselect field for a specific issue.")]
     public async Task<List<string>> GetCustomMultiselectFieldValue(
     [ActionParameter] IssueIdentifier issue, [ActionParameter] CustomMultiselectFieldIdentifier customMultiselectField)
