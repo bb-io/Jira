@@ -77,6 +77,7 @@ Note: this app currently supports only short text (plain text only) custom field
 - **Set custom dropdown field value** sets the value of a custom dropdown field for a specific issue.
 - **Get custom date field value** returns the value of a custom date field for a specific issue.
 - **Set custom date field value** sets the value of a custom date field for a specific issue.
+- **Get custom multiselect field values** gets the selected values of a multiple choice select list custom field for a specific issue.
 
 ### User Actions
 
