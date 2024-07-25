@@ -65,12 +65,23 @@ public class IssueCustomFieldsActions : JiraInvocable
     {
         var getIssueResponse = await GetIssue(issue.IssueKey);
         JObject Parsedissue = JObject.Parse(getIssueResponse.Content);
-        JArray customFieldArray = (JArray)Parsedissue["fields"]["customfield_10035"];
+        var customField = Parsedissue["fields"]["customfield_10035"];
 
         List<string> values = new List<string>();
-        foreach (var item in customFieldArray)
+
+        if (customField != null)
         {
-            values.Add(item["value"].ToString());
+            if (customField.Type == JTokenType.Array)
+            {
+                foreach (var item in customField)
+                {
+                    values.Add(item["value"].ToString());
+                }
+            }
+            else if (customField.Type == JTokenType.Object)
+            {
+                values.Add(customField["value"].ToString());
+            }
         }
         return values;
     }
