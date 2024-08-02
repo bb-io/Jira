@@ -65,7 +65,7 @@ public class IssueCustomFieldsActions : JiraInvocable
     {
         var getIssueResponse = await GetIssue(issue.IssueKey);
         JObject Parsedissue = JObject.Parse(getIssueResponse.Content);
-        var customField = Parsedissue["fields"]["customfield_10035"];
+        var customField = Parsedissue["fields"][customMultiselectField.CustomMultiselectFieldId];
 
         List<string> values = new List<string>();
 
