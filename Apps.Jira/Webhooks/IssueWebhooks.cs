@@ -10,23 +10,22 @@ using Blackbird.Applications.Sdk.Common.Authentication;
 using Blackbird.Applications.Sdk.Common.Invocation;
 using RestSharp;
 using Apps.Jira.Models.Identifiers;
+using Apps.Jira.Models.Requests;
 
 namespace Apps.Jira.Webhooks
 {
     [WebhookList]
-    public class IssueWebhooks : JiraInvocable
+    public class IssueWebhooks(InvocationContext invocationContext) : JiraInvocable(invocationContext)
     {
         private IEnumerable<AuthenticationCredentialsProvider> Creds =>
             InvocationContext.AuthenticationCredentialsProviders;
-        
-        public IssueWebhooks(InvocationContext invocationContext) : base(invocationContext)
-        {
-        }
-        
+
         [Webhook("On issue updated", typeof(IssueUpdatedHandler), 
             Description = "This webhook is triggered when an issue is updated.")]
         public async Task<WebhookResponse<IssueResponse>> OnIssueUpdated(WebhookRequest request, 
-            [WebhookParameter] IssueInput issue, [WebhookParameter] ProjectInput project)
+            [WebhookParameter] IssueInput issue, 
+            [WebhookParameter] ProjectInput project,
+            [WebhookParameter] LabelsOptionalInput labels)
         {
             var payload = DeserializePayload(request);
 
@@ -38,14 +37,15 @@ namespace Apps.Jira.Webhooks
                     ReceivedWebhookRequestType = WebhookRequestType.Preflight
                 };
 
-            var issueResponse = CreateIssueResponse(payload);
+            var issueResponse = CreateIssueResponse(payload, labels);
             return issueResponse;
         }
         
         [Webhook("On issue created", typeof(IssueCreatedHandler), 
             Description = "This webhook is triggered when an issue is created.")]
         public async Task<WebhookResponse<IssueResponse>> OnIssueCreated(WebhookRequest request,
-            [WebhookParameter] ProjectInput project)
+            [WebhookParameter] ProjectInput project,
+            [WebhookParameter] LabelsOptionalInput labels)
         {
             var payload = DeserializePayload(request);
         
@@ -56,14 +56,16 @@ namespace Apps.Jira.Webhooks
                     ReceivedWebhookRequestType = WebhookRequestType.Preflight
                 };
         
-            var issueResponse = CreateIssueResponse(payload);
+            var issueResponse = CreateIssueResponse(payload, labels);
             return issueResponse;
         }
         
         [Webhook("On issue assigned", typeof(IssueCreatedOrUpdatedHandler), 
             Description = "This webhook is triggered when an issue is assigned to specific user.")]
         public async Task<WebhookResponse<IssueResponse>> IssueAssigned(WebhookRequest request,
-            [WebhookParameter] AssigneeInput assignee, [WebhookParameter] ProjectInput project)
+            [WebhookParameter] AssigneeInput assignee, 
+            [WebhookParameter] ProjectInput project,
+            [WebhookParameter] LabelsOptionalInput labels)
         {
             var payload = DeserializePayload(request);
             var actualAssignee = payload.Changelog.Items.FirstOrDefault(item => item.FieldId == "assignee");
@@ -99,14 +101,16 @@ namespace Apps.Jira.Webhooks
                     };
             }
         
-            var issueResponse = CreateIssueResponse(payload);
+            var issueResponse = CreateIssueResponse(payload, labels);
             return issueResponse;
         }
         
         [Webhook("On issue with specific type created", typeof(IssueCreatedOrUpdatedHandler), 
             Description = "This webhook is triggered when an issue created has specific type or issue was updated to have specific type.")]
         public async Task<WebhookResponse<IssueResponse>> OnIssueWithSpecificTypeCreated(WebhookRequest request, 
-            [WebhookParameter] IssueTypeInput issueType, [WebhookParameter] ProjectInput project)
+            [WebhookParameter] IssueTypeInput issueType, 
+            [WebhookParameter] ProjectInput project,
+            [WebhookParameter] LabelsOptionalInput labels)
         {
             var payload = DeserializePayload(request);
             var issueTypeItem = payload.Changelog.Items.FirstOrDefault(item => item.FieldId == "issuetype");
@@ -120,14 +124,16 @@ namespace Apps.Jira.Webhooks
                     ReceivedWebhookRequestType = WebhookRequestType.Preflight
                 };
         
-            var issueResponse = CreateIssueResponse(payload);
+            var issueResponse = CreateIssueResponse(payload, labels);
             return issueResponse;
         }
         
         [Webhook("On issue with specific priority created", typeof(IssueCreatedOrUpdatedHandler), 
             Description = "This webhook is triggered when an issue created has specified priority or issue was updated to have specified priority.")]
         public async Task<WebhookResponse<IssueResponse>> OnIssueWithSpecificPriorityCreated(WebhookRequest request,
-            [WebhookParameter] PriorityInput priority, [WebhookParameter] ProjectInput project)
+            [WebhookParameter] PriorityInput priority, 
+            [WebhookParameter] ProjectInput project,
+            [WebhookParameter] LabelsOptionalInput labels)
         {
             var payload = DeserializePayload(request);
             var priorityItem = payload.Changelog.Items.FirstOrDefault(item => item.FieldId == "priority");
@@ -141,14 +147,15 @@ namespace Apps.Jira.Webhooks
                     ReceivedWebhookRequestType = WebhookRequestType.Preflight
                 };
         
-            var issueResponse = CreateIssueResponse(payload);
+            var issueResponse = CreateIssueResponse(payload, labels);
             return issueResponse;
         }
         
         [Webhook("On issue deleted", typeof(IssueDeletedHandler), 
             Description = "This webhook is triggered when an issue is deleted.")]
         public async Task<WebhookResponse<IssueResponse>> OnIssueDeleted(WebhookRequest request,
-            [WebhookParameter] ProjectInput project)
+            [WebhookParameter] ProjectInput project,
+            [WebhookParameter] LabelsOptionalInput labels)
         {
             var payload = DeserializePayload(request);
         
@@ -159,14 +166,15 @@ namespace Apps.Jira.Webhooks
                     ReceivedWebhookRequestType = WebhookRequestType.Preflight
                 };
         
-            var issueResponse = CreateIssueResponse(payload);
+            var issueResponse = CreateIssueResponse(payload, labels);
             return issueResponse;
         }
         
         [Webhook("On file attached to issue", typeof(IssueUpdatedHandler), 
             Description = "This webhook is triggered when a file is attached to an issue.")]
         public async Task<WebhookResponse<IssueAttachmentResponse>> OnFileAttachedToIssue(WebhookRequest request, 
-            [WebhookParameter] IssueInput issue, [WebhookParameter] ProjectInput project)
+            [WebhookParameter] IssueInput issue, 
+            [WebhookParameter] ProjectInput project)
         {
             var payload = DeserializePayload(request);
             var attachmentItem = payload.Changelog.Items.FirstOrDefault(item => item.FieldId == "attachment");
@@ -196,7 +204,10 @@ namespace Apps.Jira.Webhooks
         [Webhook("On issue status changed", typeof(IssueUpdatedHandler), 
             Description = "This webhook is triggered when issue status is changed.")]
         public async Task<WebhookResponse<IssueResponse>> OnIssueStatusChanged(WebhookRequest request,
-            [WebhookParameter] ProjectIdentifier project, [WebhookParameter] OptionalStatusInput status, [WebhookParameter] IssueInput issue)
+            [WebhookParameter] ProjectIdentifier project, 
+            [WebhookParameter] OptionalStatusInput status, 
+            [WebhookParameter] IssueInput issue,
+            [WebhookParameter] LabelsOptionalInput labels)
         {
             var payload = DeserializePayload(request);
             var statusItem = payload.Changelog.Items.FirstOrDefault(item => item.FieldId == "status");
@@ -211,7 +222,7 @@ namespace Apps.Jira.Webhooks
                     ReceivedWebhookRequestType = WebhookRequestType.Preflight
                 };
 
-            var issueResponse = CreateIssueResponse(payload);
+            var issueResponse = CreateIssueResponse(payload, labels);
             return issueResponse;
         }
 
@@ -225,13 +236,27 @@ namespace Apps.Jira.Webhooks
             return payload;
         }
         
-        private WebhookResponse<IssueResponse> CreateIssueResponse(WebhookPayload payload)
+        private WebhookResponse<IssueResponse> CreateIssueResponse(WebhookPayload payload, LabelsOptionalInput labelsInput)
         {
             var issue = payload.Issue;
+            
+            if (labelsInput.Labels is not null && labelsInput.Labels.Any())
+            {
+                var labelsMatch = labelsInput.Labels.All(label => issue.Fields.Labels.Contains(label));
+                if (!labelsMatch)
+                {
+                    return new WebhookResponse<IssueResponse>
+                    {
+                        HttpResponseMessage = new HttpResponseMessage(HttpStatusCode.OK),
+                        ReceivedWebhookRequestType = WebhookRequestType.Preflight
+                    };
+                }
+            }
 
             return new WebhookResponse<IssueResponse>
             {
                 HttpResponseMessage = new HttpResponseMessage(statusCode: HttpStatusCode.OK),
+                ReceivedWebhookRequestType = WebhookRequestType.Default,
                 Result = new IssueResponse
                 {
                     IssueKey = issue.Key,
@@ -243,7 +268,8 @@ namespace Apps.Jira.Webhooks
                     AssigneeName = issue.Fields.Assignee?.DisplayName,
                     AssigneeAccountId = issue.Fields.Assignee?.AccountId,
                     Status = issue.Fields.Status.Name,
-                    Attachments = issue.Fields.Attachment
+                    Attachments = issue.Fields.Attachment,
+                    Labels = issue.Fields.Labels
                 }
             };
         }

@@ -29,5 +29,8 @@ namespace Apps.Jira.Webhooks.Responses
         public string Status { get; set; }
         
         public IEnumerable<AttachmentDto> Attachments { get; set; }
+
+        [Display("Labels")]
+        public List<string> Labels { get; set; } = new();
     }
 }
