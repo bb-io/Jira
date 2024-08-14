@@ -15,13 +15,23 @@ namespace Apps.Jira.Webhooks.Payload
     {
         [JsonPropertyName("issuetype")] 
         public IssueType IssueType { get; set; }
+        
         public Project Project { get; set; }
+        
         public Priority? Priority { get; set; }
+        
         public Assignee? Assignee { get; set; }
+        
         public Status Status { get; set; }
+        
         public string Summary { get; set; }
+        
         public IEnumerable<AttachmentDto> Attachment { get; set; }
+        
         public string? Description { get; set; }
+        
+        [JsonPropertyName("labels")]
+        public List<string> Labels { get; set; } = new();
     }
     
     public class IssueType

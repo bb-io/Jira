@@ -31,6 +31,9 @@ public class IssueFields
     public Description? Description { get; set; }
         
     public IEnumerable<AttachmentDto>? Attachment { get; set; }
+
+    [JsonProperty("labels")]
+    public List<string> Labels { get; set; } = new ();
 }
 
 public class Description

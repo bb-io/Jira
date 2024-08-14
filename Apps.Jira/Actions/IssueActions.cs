@@ -135,6 +135,17 @@ public class IssueActions : JiraInvocable
         var response = await Client.ExecuteWithHandling<IEnumerable<AttachmentDto>>(request);
         return response.First();
     }
+    
+    [Action("Add labels to issue", Description = "Add labels to a specific issue.")]
+    public async Task<IssueDto> AddLabelsToIssue([ActionParameter] IssueIdentifier issue,
+        [ActionParameter] AddLabelsRequest input)
+    {
+        var request = new JiraRequest($"/issue/{issue.IssueKey}", Method.Put)
+            .WithJsonBody(new { update = new { labels = input.Labels.Select(label => new { add = label }) } });
+        await Client.ExecuteWithHandling(request);
+        
+        return await GetIssueByKey(issue);
+    }
 
     #endregion
 
