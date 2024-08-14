@@ -20,6 +20,7 @@ namespace Apps.Jira.Dtos
                     issueWrapper.Fields.Description.Content
                         .Select(x => string.Join('\n', x.Content.Select(c => c.Text)))
                         .ToArray());
+            Labels = issueWrapper.Fields.Labels;
         }
         
         [Display("Issue key")]
@@ -36,5 +37,7 @@ namespace Apps.Jira.Dtos
         public ProjectDto Project { get; set; }
 
         public UserDto? Assignee { get; set; }
+
+        public List<string> Labels { get; set; } = new();
     }
 }
