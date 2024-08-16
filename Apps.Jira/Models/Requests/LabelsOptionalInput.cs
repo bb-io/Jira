@@ -6,6 +6,6 @@ namespace Apps.Jira.Models.Requests;
 
 public class LabelsOptionalInput
 {
-    [Display("Labels", Description = "Use this input if you want to filter results based on labels"), DataSource(typeof(LabelDataHandler))]
+    [Display("Labels", Description = "Use this input if you want to filter results based on labels")]
     public IEnumerable<string>? Labels { get; set; }
 }
