@@ -206,7 +206,7 @@ public class IssueActions : JiraInvocable
 
             if (input.OverrideScreenSecurity.HasValue)
             {
-                endpoint = endpoint + "?overrideScreenSecurity=true";
+                endpoint += $"?overrideScreenSecurity={input.OverrideScreenSecurity.Value}";
             }
             
             if (input.NotifyUsers.HasValue)
