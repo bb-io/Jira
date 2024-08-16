@@ -21,4 +21,10 @@ public class UpdateIssueRequest
     public string? Summary { get; set; }
     
     public string? Description { get; set; }
+
+    [Display("Notify users", Description = "Whether a notification email about the issue update is sent to all watchers. To disable the notification, administer Jira or administer project permissions are required. If the user doesn't have the necessary permission the request is ignored.")]
+    public bool? NotifyUsers { get; set; }
+
+    [Display("Override screen security", Description = "Whether screen security is overridden to enable hidden fields to be edited.")]
+    public bool? OverrideScreenSecurity { get; set; }
 }

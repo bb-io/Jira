@@ -202,7 +202,19 @@ public class IssueActions : JiraInvocable
                 }
             };
 
-            var request = new JiraRequest($"/issue/{issue.IssueKey}", Method.Put)
+            var endpoint = $"/issue/{issue.IssueKey}";
+
+            if (input.OverrideScreenSecurity.HasValue)
+            {
+                endpoint = endpoint + "?overrideScreenSecurity=true";
+            }
+            
+            if (input.NotifyUsers.HasValue)
+            {
+                endpoint = endpoint + (input.OverrideScreenSecurity.HasValue ? "&" : "?") + $"notifyUsers={input.NotifyUsers}";
+            }
+            
+            var request = new JiraRequest(endpoint, Method.Put)
                 .WithJsonBody(jsonBody,
                     new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore });
             await Client.ExecuteWithHandling(request);
