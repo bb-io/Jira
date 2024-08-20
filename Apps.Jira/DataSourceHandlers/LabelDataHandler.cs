@@ -1,21 +1,27 @@
 ﻿using Apps.Jira.Dtos;
+using Apps.Jira.Models.Requests;
+using Blackbird.Applications.Sdk.Common;
 using Blackbird.Applications.Sdk.Common.Dynamic;
 using Blackbird.Applications.Sdk.Common.Invocation;
 using RestSharp;
 
 namespace Apps.Jira.DataSourceHandlers;
 
-public class LabelDataHandler(InvocationContext invocationContext)
+public class LabelDataHandler(InvocationContext invocationContext, [ActionParameter] LabelsOptionalInput input)
     : JiraInvocable(invocationContext), IAsyncDataSourceHandler
 {
     public async Task<Dictionary<string, string>> GetDataAsync(DataSourceContext context, CancellationToken cancellationToken)
     {
+        if (input.Labels is not null)
+        {
+            throw new InvalidOperationException("You can't use both manual and dropdown labels at the same time.");
+        }
+        
         const int maxResultsPerPage = 1000;
-        int startAt = 0;
-        bool isLast = false;
+        var startAt = 0;
+        var isLast = false;
 
         var allLabels = new List<string>();
-
         while (!isLast)
         {
             var request = new JiraRequest($"/label?startAt={startAt}&maxResults={maxResultsPerPage}", Method.Get);

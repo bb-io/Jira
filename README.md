@@ -123,6 +123,22 @@ Note: this app currently supports only short text (plain text only) custom field
 - **On file attached to issue** is triggered when a file is attached to an issue. If you want a bird to be triggered when a file is attached to specific issue, specify the issue parameter. Otherwise, you can specify project parameter if you are interested in specific project's issues.
 - **On issue status changed** is triggered when issue status is changed. If you want a bird to be triggered when specific issue's status is changed, specify the issue parameter. Otherwise, you can specify project parameter if you are interested in specific project's issues. You can also limit the event to trigger only on certain statusses.
 
+## Optional inputs
+
+We may provide two options for inputting one property to filter results:
+
+1. **Manual**:
+    - **Description**: Allows the user to manually enter value without the assistance of a dropdown list.
+    - **Use Case**: This option is ideal when the user knows the exact value they want to use or when the dropdown may not be effective due to the large number of values available through the API.
+
+2. **Dropdown selection**:
+    - **Description**: Allows the user to select a value from a dropdown list.
+    - **Use Case**: This option is suitable when there are fewer labels, making it convenient for users to select from a predefined list. However, this approach can be less effective if the number of labels is very large, potentially leading to timeout errors during data retrieval.
+
+### Why do we use this approach?
+
+This approach ensures flexibility by providing two methods for inputs, accommodating both situations where the user may need to manually enter specific values and where selecting from a predefined list is more practical. The 'manual' option is particularly useful when dealing with a large number of labels, which could otherwise lead to performance issues when retrieving values from the API.
+
 ## Example
 
 ![example](Images/README/example.png)

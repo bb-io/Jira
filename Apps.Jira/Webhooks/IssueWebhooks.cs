@@ -28,7 +28,7 @@ namespace Apps.Jira.Webhooks
             [WebhookParameter] LabelsOptionalInput labels)
         {
             var payload = DeserializePayload(request);
-
+            
             if ((project.ProjectKey is not null && !project.ProjectKey.Equals(payload.Issue.Fields.Project.Key)) ||
                 (issue.IssueKey is not null && !issue.IssueKey.Equals(payload.Issue.Key)))
                 return new WebhookResponse<IssueResponse>
