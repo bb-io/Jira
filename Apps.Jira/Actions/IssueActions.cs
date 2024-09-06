@@ -82,21 +82,11 @@ public class IssueActions : JiraInvocable
     public async Task<CreatedIssueDto> CreateIssue([ActionParameter] ProjectIdentifier project,
         [ActionParameter] CreateIssueRequest input)
     {
-        var request = new JiraRequest("/issue", Method.Post);
-
-        var accountId = input.AccountId;
-
-        if (int.TryParse(accountId, out var accountIntId) && accountIntId == int.MinValue)
-            accountId = null;
-
-        request.AddJsonBody(new
+        var fields = new Dictionary<string, object>
         {
-            fields = new
-            {
-                assignee = new { id = accountId },
-                project = new { key = project.ProjectKey },
-                summary = input.Summary,
-                description = new
+            { "project", new { key = project.ProjectKey } },
+            { "summary", input.Summary },
+            { "description", new
                 {
                     version = 1,
                     type = "doc",
@@ -115,10 +105,22 @@ public class IssueActions : JiraInvocable
                             }
                         }
                     }
-                },
-                issuetype = new { id = input.IssueTypeId }
-            }
+                }
+            },
+            { "issuetype", new { id = input.IssueTypeId } }
+        };
+
+        var accountId = input.AccountId;
+        if (!string.IsNullOrEmpty(accountId))
+        {
+            fields.Add("assignee", new { id = accountId });
+        }
+
+        var request = new JiraRequest("/issue", Method.Post).AddJsonBody(new
+        {
+            fields = fields
         });
+
         var createdIssue = await Client.ExecuteWithHandling<CreatedIssueDto>(request);
         return createdIssue;
     }
