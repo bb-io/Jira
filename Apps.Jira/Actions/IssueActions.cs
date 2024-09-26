@@ -11,6 +11,7 @@ using Blackbird.Applications.Sdk.Utils.Extensions.Http;
 using Newtonsoft.Json;
 using RestSharp;
 using Method = RestSharp.Method;
+using Apps.Jira.Webhooks.Payload;
 
 namespace Apps.Jira.Actions;
 
@@ -137,7 +138,26 @@ public class IssueActions : JiraInvocable
         var response = await Client.ExecuteWithHandling<IEnumerable<AttachmentDto>>(request);
         return response.First();
     }
-    
+
+    [Action("Get issue type details", Description = "Get issue type details by name")]
+    public async Task<IssueTypeDto> GetIssueTypeDetails([ActionParameter] ProjectIdentifier projectIdentifier, [Display("Type name")][ActionParameter] string TypeName)
+    {
+        var getProjectRequest = new JiraRequest($"/project/{projectIdentifier.ProjectKey}", Method.Get);
+        var project = await Client.ExecuteWithHandling<ProjectDto>(getProjectRequest);
+
+        var getIssueTypesRequest = new JiraRequest("/issuetype", Method.Get);
+        var issueTypes = await Client.ExecuteWithHandling<IEnumerable<IssueTypeDto>>(getIssueTypesRequest);
+        try 
+        {
+            return issueTypes.Where(type => type.Scope?.Type == "PROJECT" && type.Scope.Project!.Id == project.Id)
+            .First(x => x.Name.ToLower() == TypeName.ToLower());
+        }
+        catch 
+        {
+            return null;
+        }
+    }
+
     [Action("Add labels to issue", Description = "Add labels to a specific issue.")]
     public async Task<IssueDto> AddLabelsToIssue([ActionParameter] IssueIdentifier issue,
         [ActionParameter] AddLabelsRequest input)
