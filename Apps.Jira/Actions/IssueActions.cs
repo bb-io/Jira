@@ -75,6 +75,24 @@ public class IssueActions : JiraInvocable
         return new DownloadAttachmentResponse { Attachment = file };
     }
 
+    [Action("Get issue type details", Description = "Get issue type details by name")]
+    public async Task<IssueTypeDto> GetIssueTypeDetails([ActionParameter] ProjectIdentifier projectIdentifier, [Display("Type name")][ActionParameter] string TypeName)
+    {
+        var getProjectRequest = new JiraRequest($"/project/{projectIdentifier.ProjectKey}", Method.Get);
+        var project = await Client.ExecuteWithHandling<ProjectDto>(getProjectRequest);
+
+        var getIssueTypesRequest = new JiraRequest("/issuetype", Method.Get);
+        var issueTypes = await Client.ExecuteWithHandling<IEnumerable<IssueTypeDto>>(getIssueTypesRequest);
+        try
+        {
+            return issueTypes.Where(type => type.Scope is null || type.Scope?.Type == "PROJECT" && type.Scope.Project!.Id == project.Id)
+            .First(x => x.Name.ToLower() == TypeName.ToLower());
+        }
+        catch
+        {
+            return null;
+        }
+    }
     #endregion
 
     #region POST
@@ -137,25 +155,6 @@ public class IssueActions : JiraInvocable
         request.AddFile("file", attachmentBytes, input.Attachment.Name);
         var response = await Client.ExecuteWithHandling<IEnumerable<AttachmentDto>>(request);
         return response.First();
-    }
-
-    [Action("Get issue type details", Description = "Get issue type details by name")]
-    public async Task<IssueTypeDto> GetIssueTypeDetails([ActionParameter] ProjectIdentifier projectIdentifier, [Display("Type name")][ActionParameter] string TypeName)
-    {
-        var getProjectRequest = new JiraRequest($"/project/{projectIdentifier.ProjectKey}", Method.Get);
-        var project = await Client.ExecuteWithHandling<ProjectDto>(getProjectRequest);
-
-        var getIssueTypesRequest = new JiraRequest("/issuetype", Method.Get);
-        var issueTypes = await Client.ExecuteWithHandling<IEnumerable<IssueTypeDto>>(getIssueTypesRequest);
-        try 
-        {
-            return issueTypes.Where(type => type.Scope?.Type == "PROJECT" && type.Scope.Project!.Id == project.Id)
-            .First(x => x.Name.ToLower() == TypeName.ToLower());
-        }
-        catch 
-        {
-            return null;
-        }
     }
 
     [Action("Add labels to issue", Description = "Add labels to a specific issue.")]
