@@ -29,7 +29,7 @@ public class IssueTypeDataSourceHandler : JiraInvocable, IAsyncDataSourceHandler
         var getIssueTypesRequest = new JiraRequest("/issuetype", Method.Get);
         var issueTypes = await Client.ExecuteWithHandling<IEnumerable<IssueTypeDto>>(getIssueTypesRequest);
         return issueTypes
-            .Where(type => type.Scope?.Type == "PROJECT" && type.Scope.Project!.Id == project.Id)
+            .Where(type => type.Scope is null || type.Scope?.Type == "PROJECT" && type.Scope.Project!.Id == project.Id)
             .Where(type => context.SearchString == null 
                            || type.Name.Contains(context.SearchString, StringComparison.OrdinalIgnoreCase))
             .ToDictionary(type => type.Id, type => type.Name);
