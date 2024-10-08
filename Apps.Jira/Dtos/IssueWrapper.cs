@@ -38,18 +38,40 @@ public class IssueFields
 
 public class Description
 {
-    public string Type { get; set; }
-    public List<ContentObj> Content { get; set; }
+    public string Type { get; set; } = default!;
+    
+    public int Version { get; set; }
+
+    public List<ContentElement> Content { get; set; } = new();
 }
 
-public class ContentObj
+public class ContentElement
 {
-    public string Type { get; set; }
-    public List<ContentData> Content { get; set; }
+    public string Type { get; set; } = default!;
+    
+    public List<ContentElement>? Content { get; set; } = default!;
+    
+    public string Text { get; set; } = default!;
+    
+    public List<Mark>? Marks { get; set; } = default!;
+    
+    public Attributes? Attrs { get; set; } = default!;
+}
+
+public class Mark
+{
+    public string Type { get; set; } = default!;
+    
+    public Attributes Attrs { get; set; } = default!;
+}
+
+public class Attributes
+{
+    public string Href { get; set; } = default!;
 }
 
 public class ContentData
 {
-    public string Type { get; set; }
-    public string Text { get; set; }
+    public string Type { get; set; } = default!;
+    public string Text { get; set; } = default!;
 }

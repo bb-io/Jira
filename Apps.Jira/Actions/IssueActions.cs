@@ -2,6 +2,7 @@
 using Apps.Jira.Models.Identifiers;
 using Apps.Jira.Models.Requests;
 using Apps.Jira.Models.Responses;
+using Apps.Jira.Utils;
 using Blackbird.Applications.Sdk.Common;
 using Blackbird.Applications.Sdk.Common.Actions;
 using Blackbird.Applications.Sdk.Common.Invocation;
@@ -16,16 +17,9 @@ using Apps.Jira.Webhooks.Payload;
 namespace Apps.Jira.Actions;
 
 [ActionList]
-public class IssueActions : JiraInvocable
+public class IssueActions(InvocationContext invocationContext, IFileManagementClient fileManagementClient)
+    : JiraInvocable(invocationContext)
 {
-    private readonly IFileManagementClient _fileManagementClient;
-
-    public IssueActions(InvocationContext invocationContext, IFileManagementClient fileManagementClient)
-        : base(invocationContext)
-    {
-        _fileManagementClient = fileManagementClient;
-    }
-
     #region GET
 
     [Action("Get issue", Description = "Get the specified issue.")]
@@ -71,7 +65,7 @@ public class IssueActions : JiraInvocable
         var contentType = response.ContentHeaders.First(h => h.Name == "Content-Type").Value.ToString();
 
         using var stream = new MemoryStream(response.RawBytes);
-        var file = await _fileManagementClient.UploadAsync(stream, contentType, filename);
+        var file = await fileManagementClient.UploadAsync(stream, contentType, filename);
         return new DownloadAttachmentResponse { Attachment = file };
     }
 
@@ -149,7 +143,7 @@ public class IssueActions : JiraInvocable
         [ActionParameter] AddAttachmentRequest input)
     {
         var request = new JiraRequest($"/issue/{issue.IssueKey}/attachments", Method.Post);
-        var attachmentStream = await _fileManagementClient.DownloadAsync(input.Attachment);
+        var attachmentStream = await fileManagementClient.DownloadAsync(input.Attachment);
         var attachmentBytes = await attachmentStream.GetByteData();
         request.AddHeader("X-Atlassian-Token", "no-check");
         request.AddFile("file", attachmentBytes, input.Attachment.Name);
@@ -192,39 +186,21 @@ public class IssueActions : JiraInvocable
 
         if (input.Summary != null || input.Description != null || input.IssueTypeId != null)
         {
+            var descriptionJson = input.Description != null
+                ? MarkdownToJiraConverter.ConvertMarkdownToJiraDoc(input.Description)
+                : null;
+            
             var jsonBody = new
             {
                 fields = new
                 {
                     summary = input.Summary,
-                    description = input.Description != null
-                        ? new
-                        {
-                            version = 1,
-                            type = "doc",
-                            content = new[]
-                            {
-                                new
-                                {
-                                    type = "paragraph",
-                                    content = new[]
-                                    {
-                                        new
-                                        {
-                                            type = "text",
-                                            text = input.Description
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        : null,
+                    description = descriptionJson,
                     issuetype = input.IssueTypeId != null ? new { id = input.IssueTypeId } : null
                 }
             };
-
+            
             var endpoint = $"/issue/{issue.IssueKey}";
-
             if (input.OverrideScreenSecurity.HasValue)
             {
                 endpoint += $"?overrideScreenSecurity={input.OverrideScreenSecurity.Value}";
