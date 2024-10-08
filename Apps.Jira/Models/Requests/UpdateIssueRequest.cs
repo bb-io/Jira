@@ -20,6 +20,7 @@ public class UpdateIssueRequest
     
     public string? Summary { get; set; }
     
+    [Display("Description", Description = "The description of the issue. Expected to be in markdown format but can be plain text.")]
     public string? Description { get; set; }
 
     [Display("Notify users", Description = "Whether a notification email about the issue update is sent to all watchers. To disable the notification, administer Jira or administer project permissions are required. If the user doesn't have the necessary permission the request is ignored.")]
