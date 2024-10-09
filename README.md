@@ -67,6 +67,7 @@ Note: this app currently supports only short text (plain text only) custom field
 - **Create issue**.
 - **Add attachment** adds attachment to an issue.
 - **Update issue**. Specify only the fields that require updating.
+- **Append to issue description** appends text to the description of an issue. Doesn't brake formatting, useful for adding text to the end of the description.
 - **Delete issue**.
 - **Add labels to issue** adds labels to an issue. Returns the updated issue.
 

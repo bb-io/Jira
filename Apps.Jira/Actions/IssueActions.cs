@@ -13,6 +13,7 @@ using Newtonsoft.Json;
 using RestSharp;
 using Method = RestSharp.Method;
 using Apps.Jira.Webhooks.Payload;
+using Newtonsoft.Json.Serialization;
 
 namespace Apps.Jira.Actions;
 
@@ -70,7 +71,8 @@ public class IssueActions(InvocationContext invocationContext, IFileManagementCl
     }
 
     [Action("Get issue type details", Description = "Get issue type details by name")]
-    public async Task<IssueTypeDto> GetIssueTypeDetails([ActionParameter] ProjectIdentifier projectIdentifier, [Display("Type name")][ActionParameter] string TypeName)
+    public async Task<IssueTypeDto> GetIssueTypeDetails([ActionParameter] ProjectIdentifier projectIdentifier,
+        [Display("Type name")] [ActionParameter] string TypeName)
     {
         var getProjectRequest = new JiraRequest($"/project/{projectIdentifier.ProjectKey}", Method.Get);
         var project = await Client.ExecuteWithHandling<ProjectDto>(getProjectRequest);
@@ -79,14 +81,16 @@ public class IssueActions(InvocationContext invocationContext, IFileManagementCl
         var issueTypes = await Client.ExecuteWithHandling<IEnumerable<IssueTypeDto>>(getIssueTypesRequest);
         try
         {
-            return issueTypes.Where(type => type.Scope is null || type.Scope?.Type == "PROJECT" && type.Scope.Project!.Id == project.Id)
-            .First(x => x.Name.ToLower() == TypeName.ToLower());
+            return issueTypes.Where(type =>
+                    type.Scope is null || type.Scope?.Type == "PROJECT" && type.Scope.Project!.Id == project.Id)
+                .First(x => x.Name.ToLower() == TypeName.ToLower());
         }
         catch
         {
             return null;
         }
     }
+
     #endregion
 
     #region POST
@@ -99,7 +103,8 @@ public class IssueActions(InvocationContext invocationContext, IFileManagementCl
         {
             { "project", new { key = project.ProjectKey } },
             { "summary", input.Summary },
-            { "description", new
+            {
+                "description", new
                 {
                     version = 1,
                     type = "doc",
@@ -158,7 +163,7 @@ public class IssueActions(InvocationContext invocationContext, IFileManagementCl
         var request = new JiraRequest($"/issue/{issue.IssueKey}", Method.Put)
             .WithJsonBody(new { update = new { labels = input.Labels.Select(label => new { add = label }) } });
         await Client.ExecuteWithHandling(request);
-        
+
         return await GetIssueByKey(issue);
     }
 
@@ -189,7 +194,7 @@ public class IssueActions(InvocationContext invocationContext, IFileManagementCl
             var descriptionJson = input.Description != null
                 ? MarkdownToJiraConverter.ConvertMarkdownToJiraDoc(input.Description)
                 : null;
-            
+
             var jsonBody = new
             {
                 fields = new
@@ -199,18 +204,19 @@ public class IssueActions(InvocationContext invocationContext, IFileManagementCl
                     issuetype = input.IssueTypeId != null ? new { id = input.IssueTypeId } : null
                 }
             };
-            
+
             var endpoint = $"/issue/{issue.IssueKey}";
             if (input.OverrideScreenSecurity.HasValue)
             {
                 endpoint += $"?overrideScreenSecurity={input.OverrideScreenSecurity.Value}";
             }
-            
+
             if (input.NotifyUsers.HasValue)
             {
-                endpoint = endpoint + (input.OverrideScreenSecurity.HasValue ? "&" : "?") + $"notifyUsers={input.NotifyUsers}";
+                endpoint = endpoint + (input.OverrideScreenSecurity.HasValue ? "&" : "?") +
+                           $"notifyUsers={input.NotifyUsers}";
             }
-            
+
             var request = new JiraRequest(endpoint, Method.Put)
                 .WithJsonBody(jsonBody,
                     new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore });
@@ -233,6 +239,44 @@ public class IssueActions(InvocationContext invocationContext, IFileManagementCl
                 await Client.ExecuteWithHandling(transitionRequest);
             }
         }
+    }
+
+    [Action("Append to issue description", Description = "Appends additional text with optional formatting to an issue's description.")]
+    public async Task AppendIssueDescription([ActionParameter] IssueIdentifier issueIdentifier,
+        [ActionParameter] AppendDescriptionRequest input)
+    {
+        var request = new JiraRequest($"/issue/{issueIdentifier.IssueKey}", Method.Get);
+        var issue = await Client.ExecuteWithHandling<IssueWrapper>(request);
+
+        var contentElement = new ContentElement() 
+        {
+            Type = "text",
+            Text = input.Text
+        };
+        
+        if(input.Formatting != null && input.Formatting != "none")
+        {
+            contentElement.Marks =
+            [
+                new Mark { Type = input.Formatting }
+            ];
+        }
+        
+        issue.Fields.Description?.Content.Add(new ContentElement
+            { Type = "paragraph", Content = new List<ContentElement> { contentElement } });
+        
+        var body = new { fields = new { description = issue.Fields.Description } };
+        var updateIssueRequest = new JiraRequest($"/issue/{issueIdentifier.IssueKey}", Method.Put)
+            .WithJsonBody(body, new JsonSerializerSettings
+            {
+                ContractResolver = new DefaultContractResolver()
+                {
+                    NamingStrategy = new SnakeCaseNamingStrategy()
+                },
+                NullValueHandling = NullValueHandling.Ignore
+            });
+
+        await Client.ExecuteWithHandling(updateIssueRequest);
     }
 
     #endregion

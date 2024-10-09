@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.Net.Mail;
+using System.Text;
 using Apps.Jira.Dtos;
 
 namespace Apps.Jira.Utils;
@@ -17,6 +18,22 @@ public static class JiraDocToMarkdownConverter
     {
         switch (element.Type)
         {
+            case "heading":
+                int level = 1;
+                if (element.Attrs != null && element.Attrs.ContainsKey("level"))
+                {
+                    level = Convert.ToInt32(element.Attrs["level"]);
+                }
+                string hashes = new string('#', level);
+                markdown.Append(hashes + " ");
+                if (element.Content != null)
+                {
+                    foreach (var content in element.Content)
+                        ProcessContentElement(content, markdown, indentLevel);
+                }
+                markdown.AppendLine("\n");
+                break;
+
             case "paragraph":
                 foreach (var content in element.Content)
                     ProcessContentElement(content, markdown, indentLevel);
@@ -30,7 +47,7 @@ public static class JiraDocToMarkdownConverter
                     var linkMark = element.Marks.FirstOrDefault(m => m.Type == "link");
                     if (linkMark != null)
                     {
-                        var href = linkMark.Attrs?.Href ?? "#";
+                        var href = linkMark.Attrs?.ContainsKey("href") == true ? linkMark.Attrs["href"].ToString() : "#";
                         text = $"[{text}]({href})";
                     }
                     foreach (var mark in element.Marks.Where(m => m.Type != "link"))
@@ -42,6 +59,13 @@ public static class JiraDocToMarkdownConverter
                                 break;
                             case "em":
                                 text = $"*{text}*";
+                                break;
+                            case "textColor":
+                                if (mark.Attrs != null && mark.Attrs.ContainsKey("color"))
+                                {
+                                    var color = mark.Attrs["color"].ToString();
+                                    text = $"<span style=\"color:{color};\">{text}</span>";
+                                }
                                 break;
                         }
                     }
@@ -72,6 +96,16 @@ public static class JiraDocToMarkdownConverter
                     {
                         ProcessContentElement(content, markdown, indentLevel);
                     }
+                }
+                break;
+
+            case "mediaInline":
+            case "mediaSingle":
+            case "media":
+                if (element.Attrs != null && element.Attrs.ContainsKey("id"))
+                {
+                    var mediaId = element.Attrs["id"]!.ToString();
+                    markdown.Append($"[Attachment: {mediaId}]");
                 }
                 break;
 
