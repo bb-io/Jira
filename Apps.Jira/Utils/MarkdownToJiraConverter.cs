@@ -1,4 +1,5 @@
-﻿using Markdig;
+﻿using System.Text.RegularExpressions;
+using Markdig;
 using Markdig.Syntax;
 using Markdig.Syntax.Inlines;
 
@@ -35,13 +36,8 @@ public static class MarkdownToJiraConverter
         switch (block)
         {
             case ParagraphBlock paragraphBlock:
-                var paragraphContent = new List<object>();
-                foreach (var inline in paragraphBlock.Inline)
-                {
-                    var content = ProcessInline(inline);
-                    if (content != null)
-                        AddContentToList(paragraphContent, content);
-                }
+                var inline = paragraphBlock.Inline?.FirstChild;
+                var paragraphContent = ProcessInlines(ref inline);
                 paragraphContent = CombineTextNodes(paragraphContent);
                 return new
                 {
@@ -65,24 +61,11 @@ public static class MarkdownToJiraConverter
 
             case ListItemBlock listItemBlock:
                 var listItemContent = new List<object>();
-                bool hasParagraph = false;
                 foreach (var subBlock in listItemBlock)
                 {
                     var contentElement = ProcessBlock(subBlock);
                     if (contentElement != null)
-                    {
-                        if (((dynamic)contentElement).type == "paragraph")
-                            hasParagraph = true;
                         listItemContent.Add(contentElement);
-                    }
-                }
-                if (!hasParagraph)
-                {
-                    listItemContent.Insert(0, new
-                    {
-                        type = "paragraph",
-                        content = new List<object>()
-                    });
                 }
                 return new
                 {
@@ -91,20 +74,13 @@ public static class MarkdownToJiraConverter
                 };
 
             case HeadingBlock headingBlock:
-                var headingContent = new List<object>();
-                foreach (var inline in headingBlock.Inline)
-                {
-                    var content = ProcessInline(inline);
-                    if (content != null)
-                    {
-                        ApplyMarkToContent(content, "strong");
-                        AddContentToList(headingContent, content);
-                    }
-                }
+                var headingInline = headingBlock.Inline?.FirstChild;
+                var headingContent = ProcessInlines(ref headingInline);
                 headingContent = CombineTextNodes(headingContent);
                 return new
                 {
-                    type = "paragraph",
+                    type = "heading",
+                    attrs = new { level = headingBlock.Level },
                     content = headingContent
                 };
 
@@ -113,55 +89,163 @@ public static class MarkdownToJiraConverter
         }
     }
 
-    private static List<object> ProcessInline(Inline inline)
+    private static List<object> ProcessInlines(ref Inline inline, List<Dictionary<string, object>> currentMarks = null)
+    {
+        var result = new List<object>();
+
+        while (inline != null)
+        {
+            var content = ProcessInline(ref inline, currentMarks);
+            if (content != null)
+                result.AddRange(content);
+        }
+
+        return result;
+    }
+
+    private static List<object> ProcessInline(ref Inline inline, List<Dictionary<string, object>> currentMarks = null)
     {
         var result = new List<object>();
 
         switch (inline)
         {
             case LiteralInline literalInline:
-                result.Add(new Dictionary<string, object>
+                var text = literalInline.Content.ToString();
+                var parts = Regex.Split(text, @"(\[Attachment:\s*.*?\])");
+
+                foreach (var part in parts)
                 {
-                    { "type", "text" },
-                    { "text", literalInline.Content.ToString() }
-                });
+                    if (string.IsNullOrEmpty(part))
+                        continue;
+
+                    var attachmentMatch = Regex.Match(part, @"^\[Attachment:\s*(.*?)\]$");
+                    if (attachmentMatch.Success)
+                    {
+                        var attachmentId = attachmentMatch.Groups[1].Value;
+                        var attachmentElement = new Dictionary<string, object>
+                        {
+                            { "type", "mediaInline" },
+                            { "attrs", new Dictionary<string, object>
+                                {
+                                    { "type", "file" },
+                                    { "id", attachmentId },
+                                    { "collection", "" }
+                                }
+                            }
+                        };
+
+                        if (currentMarks != null && currentMarks.Any())
+                        {
+                            attachmentElement["marks"] = currentMarks;
+                        }
+
+                        result.Add(attachmentElement);
+                    }
+                    else
+                    {
+                        var textElement = new Dictionary<string, object>
+                        {
+                            { "type", "text" },
+                            { "text", part }
+                        };
+
+                        if (currentMarks != null && currentMarks.Any())
+                        {
+                            textElement["marks"] = currentMarks;
+                        }
+
+                        result.Add(textElement);
+                    }
+                }
+                inline = inline.NextSibling;
                 break;
 
             case EmphasisInline emphasisInline:
-                var emphasisContent = new List<object>();
-                foreach (var childInline in emphasisInline)
-                {
-                    var content = ProcessInline(childInline);
-                    if (content != null)
-                    {
-                        foreach (var item in content)
-                        {
-                            ApplyMarkToContent(item, emphasisInline.DelimiterCount == 2 ? "strong" : "em");
-                        }
-                        emphasisContent.AddRange(content);
-                    }
-                }
+                var marks = new List<Dictionary<string, object>>(currentMarks ?? new List<Dictionary<string, object>>());
+                var markType = emphasisInline.DelimiterCount == 2 ? "strong" : "em";
+                marks.Add(new Dictionary<string, object> { { "type", markType } });
+
+                var childInline = emphasisInline.FirstChild;
+                var emphasisContent = ProcessInlines(ref childInline, marks);
                 result.AddRange(emphasisContent);
+                // Advance to next sibling
+                inline = inline.NextSibling;
                 break;
 
             case LinkInline linkInline:
-                var linkContent = new List<object>();
-                foreach (var childInline in linkInline)
+                var linkMarks = new List<Dictionary<string, object>>(currentMarks ?? new List<Dictionary<string, object>>())
                 {
-                    var content = ProcessInline(childInline);
-                    if (content != null)
+                    new ()
                     {
-                        foreach (var item in content)
+                        { "type", "link" },
+                        { "attrs", new Dictionary<string, object> { { "href", linkInline.Url } } }
+                    }
+                };
+
+                var linkChildInline = linkInline.FirstChild;
+                var linkContent = ProcessInlines(ref linkChildInline, linkMarks);
+                result.AddRange(linkContent);
+                inline = inline.NextSibling;
+                break;
+
+            case HtmlInline htmlInline:
+                var html = htmlInline.Tag;
+                if (html.StartsWith("<span") && html.Contains("style"))
+                {
+                    var styleMatch = Regex.Match(html, "style\\s*=\\s*\"([^\"]*)\"");
+                    if (styleMatch.Success)
+                    {
+                        var style = styleMatch.Groups[1].Value;
+                        var colorMatch = Regex.Match(style, "color\\s*:\\s*(#[0-9a-fA-F]{3,6}|[a-zA-Z]+);?");
+                        if (colorMatch.Success)
                         {
-                            ApplyLinkMarkToContent(item, linkInline.Url);
+                            var color = colorMatch.Groups[1].Value;
+                            var colorMark = new Dictionary<string, object>
+                            {
+                                { "type", "textColor" },
+                                { "attrs", new Dictionary<string, object> { { "color", color } } }
+                            };
+                            var marksWithColor = new List<Dictionary<string, object>>(currentMarks ?? new List<Dictionary<string, object>>())
+                            {
+                                colorMark
+                            };
+
+                            // Process inlines until the closing </span>
+                            var contentList = new List<object>();
+                            inline = inline.NextSibling;
+                            while (inline != null && !(inline is HtmlInline endSpan && endSpan.Tag == "</span>"))
+                            {
+                                var innerContent = ProcessInline(ref inline, marksWithColor);
+                                if (innerContent != null)
+                                {
+                                    contentList.AddRange(innerContent);
+                                }
+                            }
+
+                            // Skip the closing </span>
+                            if (inline is HtmlInline)
+                            {
+                                inline = inline.NextSibling;
+                            }
+
+                            result.AddRange(contentList);
+                            break;
                         }
-                        linkContent.AddRange(content);
                     }
                 }
-                result.AddRange(linkContent);
+                // If not a span with style, advance inline
+                inline = inline.NextSibling;
                 break;
 
             default:
+                if (inline is ContainerInline containerInline)
+                {
+                    var firstChildInline = containerInline.FirstChild;
+                    var containerContent = ProcessInlines(ref firstChildInline, currentMarks);
+                    result.AddRange(containerContent);
+                }
+                // Advance to next sibling
+                inline = inline.NextSibling;
                 break;
         }
 
@@ -179,8 +263,8 @@ public static class MarkdownToJiraConverter
             {
                 if (previousTextNode != null)
                 {
-                    var prevMarks = previousTextNode.ContainsKey("marks") ? previousTextNode["marks"] as List<object> : null;
-                    var currentMarks = currentNode.ContainsKey("marks") ? currentNode["marks"] as List<object> : null;
+                    var prevMarks = previousTextNode.ContainsKey("marks") ? previousTextNode["marks"] as List<Dictionary<string, object>> : null;
+                    var currentMarks = currentNode.ContainsKey("marks") ? currentNode["marks"] as List<Dictionary<string, object>> : null;
 
                     if (MarksAreEqual(prevMarks, currentMarks))
                     {
@@ -201,7 +285,7 @@ public static class MarkdownToJiraConverter
         return combinedNodes;
     }
 
-    private static bool MarksAreEqual(List<object> marks1, List<object> marks2)
+    private static bool MarksAreEqual(List<Dictionary<string, object>> marks1, List<Dictionary<string, object>> marks2)
     {
         if (marks1 == null && marks2 == null) return true;
         if (marks1 == null || marks2 == null) return false;
@@ -209,9 +293,9 @@ public static class MarkdownToJiraConverter
 
         for (int i = 0; i < marks1.Count; i++)
         {
-            var mark1 = marks1[i] as IDictionary<string, object>;
-            var mark2 = marks2[i] as IDictionary<string, object>;
-            if (mark1["type"] as string != mark2["type"] as string) return false;
+            var mark1 = marks1[i];
+            var mark2 = marks2[i];
+            if (!mark1["type"].Equals(mark2["type"])) return false;
 
             if (mark1.ContainsKey("attrs") || mark2.ContainsKey("attrs"))
             {
@@ -238,54 +322,5 @@ public static class MarkdownToJiraConverter
 
         return true;
     }
-
-    private static void ApplyMarkToContent(object content, string markType)
-    {
-        if (content is IDictionary<string, object> contentDict)
-        {
-            if (!contentDict.TryGetValue("marks", out var marksObj))
-            {
-                marksObj = new List<object>();
-                contentDict["marks"] = marksObj;
-            }
-            var marks = (List<object>)marksObj;
-            marks.Add(new Dictionary<string, object> { { "type", markType } });
-        }
-        else if (content is List<object> contentList)
-        {
-            foreach (var item in contentList)
-                ApplyMarkToContent(item, markType);
-        }
-    }
-
-    private static void ApplyLinkMarkToContent(object content, string href)
-    {
-        if (content is IDictionary<string, object> contentDict)
-        {
-            if (!contentDict.TryGetValue("marks", out var marksObj))
-            {
-                marksObj = new List<object>();
-                contentDict["marks"] = marksObj;
-            }
-            var marks = (List<object>)marksObj;
-            marks.Add(new Dictionary<string, object>
-            {
-                { "type", "link" },
-                { "attrs", new Dictionary<string, object> { { "href", href } } }
-            });
-        }
-        else if (content is List<object> contentList)
-        {
-            foreach (var item in contentList)
-                ApplyLinkMarkToContent(item, href);
-        }
-    }
-
-    private static void AddContentToList(List<object> contentList, object content)
-    {
-        if (content is List<object> list)
-            contentList.AddRange(list);
-        else if (content != null)
-            contentList.Add(content);
-    }
 }
+

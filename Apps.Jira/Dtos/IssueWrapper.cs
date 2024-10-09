@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace Apps.Jira.Dtos;
 
@@ -53,21 +54,16 @@ public class ContentElement
     
     public string Text { get; set; } = default!;
     
-    public List<Mark>? Marks { get; set; } = default!;
+    public List<Mark> Marks { get; set; } = default!;
     
-    public Attributes? Attrs { get; set; } = default!;
+    public JObject? Attrs { get; set; } = default!;
 }
 
 public class Mark
 {
     public string Type { get; set; } = default!;
     
-    public Attributes Attrs { get; set; } = default!;
-}
-
-public class Attributes
-{
-    public string Href { get; set; } = default!;
+    public JObject Attrs { get; set; } = default!;
 }
 
 public class ContentData
