@@ -252,6 +252,19 @@ namespace Apps.Jira.Webhooks
                     };
                 }
             }
+            
+            if(labelsInput.LabelsDropDown is not null && labelsInput.LabelsDropDown.Any())
+            {
+                var labelsMatch = labelsInput.LabelsDropDown.All(label => issue.Fields.Labels.Contains(label));
+                if (!labelsMatch)
+                {
+                    return new WebhookResponse<IssueResponse>
+                    {
+                        HttpResponseMessage = new HttpResponseMessage(HttpStatusCode.OK),
+                        ReceivedWebhookRequestType = WebhookRequestType.Preflight
+                    };
+                }
+            }
 
             return new WebhookResponse<IssueResponse>
             {
