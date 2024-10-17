@@ -51,11 +51,13 @@ public class IssueCustomFieldsActions : JiraInvocable
         [ActionParameter] IssueIdentifier issue, [ActionParameter] CustomDateFieldIdentifier customStringField)
     {
         var getIssueResponse = await GetIssue(issue.IssueKey);
-        var requestedFieldValue =
-            DateTime.Parse(JObject.Parse(getIssueResponse.Content)["fields"][customStringField.CustomDateFieldId]
-                .ToString());
 
-        return new GetCustomFieldValueResponse<DateTime> { Value = requestedFieldValue };
+        var requestedFieldValue =
+            JObject.Parse(getIssueResponse.Content)["fields"][customStringField.CustomDateFieldId]
+                .ToString();
+        if (String.IsNullOrEmpty(requestedFieldValue)){ return null; } 
+        
+        return new GetCustomFieldValueResponse<DateTime> { Value = DateTime.Parse(requestedFieldValue) };
     }
 
     [Action("Get custom multiselect field values",
