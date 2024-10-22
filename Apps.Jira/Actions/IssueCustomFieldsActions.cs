@@ -26,10 +26,18 @@ public class IssueCustomFieldsActions : JiraInvocable
         [ActionParameter] IssueIdentifier issue, [ActionParameter] CustomStringFieldIdentifier customStringField)
     {
         var getIssueResponse = await GetIssue(issue.IssueKey);
-        var requestedField = JObject.Parse(getIssueResponse.Content)["fields"][customStringField.CustomStringFieldId]
+        try 
+        {
+            var requestedField = JObject.Parse(getIssueResponse.Content)["fields"][customStringField.CustomStringFieldId]
             .ToString();
 
-        return new GetCustomFieldValueResponse<string> { Value = requestedField };
+            return new GetCustomFieldValueResponse<string> { Value = requestedField };
+        } 
+        catch 
+        {
+            return new GetCustomFieldValueResponse<string> ();
+        }
+
     }
     
     [Action("Get custom dropdown field value",
@@ -38,11 +46,16 @@ public class IssueCustomFieldsActions : JiraInvocable
         [ActionParameter] IssueIdentifier issue, [ActionParameter] CustomOptionFieldIdentifier customOptionField)
     {
         var getIssueResponse = await GetIssue(issue.IssueKey);
-        var requestedField =
-            JObject.Parse(getIssueResponse.Content)["fields"][customOptionField.CustomOptionFieldId]["value"]
+        try 
+        {
+           var requestedField = JObject.Parse(getIssueResponse.Content)["fields"][customOptionField.CustomOptionFieldId]["value"]
                 .ToString();
-
-        return new GetCustomFieldValueResponse<string> { Value = requestedField };
+            return new GetCustomFieldValueResponse<string> { Value = requestedField };
+        } 
+        catch 
+        {
+            return new GetCustomFieldValueResponse<string>();
+        }     
     }
 
     [Action("Get custom date field value",
@@ -51,13 +64,20 @@ public class IssueCustomFieldsActions : JiraInvocable
         [ActionParameter] IssueIdentifier issue, [ActionParameter] CustomDateFieldIdentifier customStringField)
     {
         var getIssueResponse = await GetIssue(issue.IssueKey);
-
-        var requestedFieldValue =
+        try 
+        {
+            var requestedFieldValue =
             JObject.Parse(getIssueResponse.Content)["fields"][customStringField.CustomDateFieldId]
                 .ToString();
-        if (String.IsNullOrEmpty(requestedFieldValue)){ return null; } 
-        
-        return new GetCustomFieldValueResponse<DateTime> { Value = DateTime.Parse(requestedFieldValue) };
+            if (String.IsNullOrEmpty(requestedFieldValue)) { return new GetCustomFieldValueResponse<DateTime>(); }
+
+            return new GetCustomFieldValueResponse<DateTime> { Value = DateTime.Parse(requestedFieldValue) };
+
+        }
+        catch 
+        {
+            return new GetCustomFieldValueResponse<DateTime>();
+        }
     }
 
     [Action("Get custom multiselect field values",
