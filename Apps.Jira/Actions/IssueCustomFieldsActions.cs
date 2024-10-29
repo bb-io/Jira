@@ -60,7 +60,7 @@ public class IssueCustomFieldsActions : JiraInvocable
 
     [Action("Get custom date field value",
         Description = "Retrieve the value of a custom date field for a specific issue.")]
-    public async Task<DateTime?> GetCustomDateFieldValue(
+    public async Task<GetCustomFieldValueResponse<DateTime>> GetCustomDateFieldValue(
         [ActionParameter] IssueIdentifier issue, [ActionParameter] CustomDateFieldIdentifier customStringField)
     {
         var getIssueResponse = await GetIssue(issue.IssueKey);
@@ -69,15 +69,13 @@ public class IssueCustomFieldsActions : JiraInvocable
             var requestedFieldValue =
             JObject.Parse(getIssueResponse.Content)["fields"][customStringField.CustomDateFieldId]
                 .ToString();
-            if (String.IsNullOrEmpty(requestedFieldValue)) { return null; }
-            var date = DateTime.Parse(requestedFieldValue);
-            if (date == DateTime.MinValue) { return null; }
-            return date;
+            if (String.IsNullOrEmpty(requestedFieldValue)) { return new GetCustomFieldValueResponse<DateTime>(); }
+            return new GetCustomFieldValueResponse<DateTime> { Value = DateTime.Parse(requestedFieldValue) };
 
         }
         catch 
         {
-            return null;
+            return new GetCustomFieldValueResponse<DateTime>();
         }
     }
 
