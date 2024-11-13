@@ -14,6 +14,7 @@ public class IssueDto
         Status = issueWrapper.Fields.Status;
         Priority = issueWrapper.Fields.Priority;
         Assignee = issueWrapper.Fields.Assignee;
+        Reporter = issueWrapper.Fields.Reporter;
         Project = issueWrapper.Fields.Project;
         Description = issueWrapper.Fields.Description == null ? string.Empty : JiraDocToMarkdownConverter.ConvertToMarkdown(issueWrapper.Fields.Description);
         Labels = issueWrapper.Fields.Labels;
@@ -33,6 +34,8 @@ public class IssueDto
     public ProjectDto Project { get; set; }
 
     public UserDto? Assignee { get; set; }
+
+    public UserDto? Reporter { get; set; }
 
     public List<string> Labels { get; set; } = new();
 }
