@@ -29,6 +29,8 @@ public class IssueFields
         
     public UserDto? Assignee { get; set; }
 
+    public UserDto? Reporter { get; set; }
+
     public Description? Description { get; set; }
         
     public IEnumerable<AttachmentDto>? Attachment { get; set; }
