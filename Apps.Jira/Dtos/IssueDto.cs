@@ -18,6 +18,13 @@ public class IssueDto
         Project = issueWrapper.Fields.Project;
         Description = issueWrapper.Fields.Description == null ? string.Empty : JiraDocToMarkdownConverter.ConvertToMarkdown(issueWrapper.Fields.Description);
         Labels = issueWrapper.Fields.Labels;
+        SubTasks = issueWrapper.Fields.SubTasks?
+            .Select(subTask => new SubTaskDto
+            {
+                Id = subTask.Id,
+                Key = subTask.Key,
+                Summary = subTask.Fields.Summary
+            }).ToList() ?? new List<SubTaskDto>();
     }
         
     [Display("Issue key")]
@@ -38,4 +45,13 @@ public class IssueDto
     public UserDto? Reporter { get; set; }
 
     public List<string> Labels { get; set; } = new();
+    [Display("Subtasks info")]
+    public List<SubTaskDto> SubTasks { get; set; } = new();
+}
+
+public class SubTaskDto
+{
+    public string Id { get; set; } = default!;
+    public string Key { get; set; } = default!;
+    public string Summary { get; set; } = default!;
 }

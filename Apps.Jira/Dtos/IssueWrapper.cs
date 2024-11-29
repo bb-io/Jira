@@ -37,6 +37,9 @@ public class IssueFields
 
     [JsonProperty("labels")]
     public List<string> Labels { get; set; } = new ();
+
+    [JsonProperty("subtasks")]
+    public List<SubTaskWrapper> SubTasks { get; set; } = new();
 }
 
 public class Description
@@ -72,4 +75,17 @@ public class ContentData
 {
     public string Type { get; set; } = default!;
     public string Text { get; set; } = default!;
+}
+
+public class SubTaskWrapper
+{
+    public string Id { get; set; } = default!;
+    public string Key { get; set; } = default!;
+
+    public SubTaskFields Fields { get; set; } = default!;
+}
+
+public class SubTaskFields
+{
+    public string Summary { get; set; } = default!;
 }
