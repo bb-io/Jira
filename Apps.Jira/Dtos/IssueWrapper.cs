@@ -1,4 +1,6 @@
-﻿using Newtonsoft.Json;
+﻿
+using Blackbird.Applications.Sdk.Common;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 namespace Apps.Jira.Dtos;
@@ -37,6 +39,9 @@ public class IssueFields
 
     [JsonProperty("labels")]
     public List<string> Labels { get; set; } = new ();
+
+    [JsonProperty("subtasks")]
+    public List<SubTaskWrapper> SubTasks { get; set; } = new();
 }
 
 public class Description
@@ -72,4 +77,21 @@ public class ContentData
 {
     public string Type { get; set; } = default!;
     public string Text { get; set; } = default!;
+}
+
+public class SubTaskWrapper
+{
+    [Display("Subtask ID")]
+    public string Id { get; set; } = default!;
+
+    [Display("Subtask key")]
+    public string Key { get; set; } = default!;
+
+    public SubTaskFields Fields { get; set; } = default!;
+}
+
+public class SubTaskFields
+{
+    [Display("Summary of subtask")]
+    public string Summary { get; set; } = default!;
 }
