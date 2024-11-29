@@ -1,4 +1,6 @@
-﻿using Newtonsoft.Json;
+﻿
+using Blackbird.Applications.Sdk.Common;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 namespace Apps.Jira.Dtos;
@@ -79,7 +81,10 @@ public class ContentData
 
 public class SubTaskWrapper
 {
+    [Display("Subtask ID")]
     public string Id { get; set; } = default!;
+
+    [Display("Subtask key")]
     public string Key { get; set; } = default!;
 
     public SubTaskFields Fields { get; set; } = default!;
@@ -87,5 +92,6 @@ public class SubTaskWrapper
 
 public class SubTaskFields
 {
+    [Display("Summary of subtask")]
     public string Summary { get; set; } = default!;
 }

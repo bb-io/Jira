@@ -51,7 +51,12 @@ public class IssueDto
 
 public class SubTaskDto
 {
+    [Display("Subtask ID")]
     public string Id { get; set; } = default!;
+
+    [Display("Subtask key")]
     public string Key { get; set; } = default!;
+
+    [Display("Subtask summary")]
     public string Summary { get; set; } = default!;
 }
