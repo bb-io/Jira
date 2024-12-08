@@ -16,7 +16,7 @@ namespace Apps.Jira.Actions
     {
 
         //Only works with App API Key
-        [Action("Get relevant Sprint for date", Description = "Get Sprint corresponding to the specified date for a selected board.")]
+        [Action("Get relevant sprint for date", Description = "Get Sprint corresponding to the specified date for a selected board.")]
         public async Task<SprintsResponse> GetRelevantSprintForDate(
             [ActionParameter] GetSprintByDateRequest requestModel)
         {
