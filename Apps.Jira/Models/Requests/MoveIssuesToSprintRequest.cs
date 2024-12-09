@@ -17,7 +17,7 @@ namespace Apps.Jira.Models.Requests
         [DataSource(typeof(BoardDataSourceHandler))]
         public string BoardId { get; set; }
 
-        [Display("Board ID")]
+        [Display("Sprint ID")]
         [DataSource(typeof(SprintDataHandler))]
         public string SprintId { get; set; }
 
