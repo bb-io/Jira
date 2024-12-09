@@ -19,9 +19,6 @@ namespace Apps.Jira.DataSourceHandlers
         {   
             var endpoint = "/rest/agile/1.0/board";
 
-            if (!string.IsNullOrWhiteSpace(context.SearchString))
-                endpoint += $"&name={context.SearchString}";
-
             var request = new JiraRequest(endpoint, Method.Get);
             var response = await Client.ExecuteWithHandling<BoardsResponse>(request);
 
