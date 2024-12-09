@@ -1,5 +1,6 @@
 ﻿using Apps.Jira;
 using Apps.Jira.Dtos;
+using Apps.Jira.Models.Requests;
 using Apps.Jira.Models.Responses;
 using Blackbird.Applications.Sdk.Common;
 using Blackbird.Applications.Sdk.Common.Dynamic;
@@ -8,7 +9,7 @@ using RestSharp;
 
 namespace Apps.MemoQ.DataSourceHandlers
 {
-    public class SprintDataHandler(InvocationContext invocationContext, [ActionParameter] BoardIdentifier input)
+    public class SprintDataHandler(InvocationContext invocationContext, [ActionParameter] MoveIssuesToSprintRequest input)
     : JiraInvocable(invocationContext), IAsyncDataSourceHandler
     {
         public async Task<Dictionary<string, string>> GetDataAsync(DataSourceContext context, CancellationToken cancellationToken)
