@@ -1,14 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿
+
+using Blackbird.Applications.Sdk.Common;
 
 namespace Apps.Jira.Models.Responses
 {
     public class MoveIssuesToSprintResponse
     {
+        [Display("Status")]
         public bool Success { get; set; }
+
+        [Display("Message")]
         public string? Message { get; set; }
     }
 }
