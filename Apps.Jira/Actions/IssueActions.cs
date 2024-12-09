@@ -167,6 +167,45 @@ public class IssueActions(InvocationContext invocationContext, IFileManagementCl
         return await GetIssueByKey(issue);
     }
 
+
+    //[Action("Move issues to sprint", Description = "Moves issues to a specific sprint and ranks them.")]
+    //public async Task<MoveIssuesToSprintResponse> MoveIssuesToSprint(
+    //[ActionParameter] int SprintId,
+    //[ActionParameter] MoveIssuesToSprintRequest input)
+    //{
+    //    var request = new JiraRequest($"/rest/agile/1.0/sprint/{SprintId}/issue", Method.Post)
+    //        .WithJsonBody(new
+    //        {
+    //            issues = input.Issues,
+    //            rankAfterIssue = input.RankAfterIssue,
+    //            rankBeforeIssue = input.RankBeforeIssue,
+    //            rankCustomFieldId = input.RankCustomFieldId
+    //        });
+
+    //    try
+    //    {
+    //        var response = await Client.ExecuteWithHandling(request);
+
+    //        return new MoveIssuesToSprintResponse
+    //        {
+    //            Success = true,
+    //            Message = "Issues moved successfully."
+    //        };
+    //    }
+    //    catch (Exception ex)
+    //    {
+    //        return new MoveIssuesToSprintResponse
+    //        {
+    //            Success = false,
+    //            Message = $"Error: {ex.Message}"
+    //        };
+    //    }
+    //}
+
+
+
+
+
     #endregion
 
     #region PUT
