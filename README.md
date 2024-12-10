@@ -70,6 +70,7 @@ Note: this app currently supports only short text (plain text only) custom field
 - **Append to issue description** appends text to the description of an issue. Doesn't brake formatting, useful for adding text to the end of the description.
 - **Delete issue**.
 - **Add labels to issue** adds labels to an issue. Returns the updated issue.
+- **Move issues to sprint** Moves issues to a specific sprint
 
 ### Issue custom fields
 
@@ -101,6 +102,11 @@ Note: this app currently supports only short text (plain text only) custom field
 - **Delete issue comment**: Deletes a comment from a specified issue.
 - **Add issue comment**: Adds a new comment to a specified issue.
 - **UpdateIssue comment**: Updates an existing comment on a specified issue.
+
+### Sprint Actions
+
+- **Get relevant sprint for date** get Sprint corresponding to the specified date for a selected board
+
 
 ### User Properties Actions
 

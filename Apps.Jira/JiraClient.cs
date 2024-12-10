@@ -20,6 +20,7 @@ namespace Apps.Jira
         public async Task<T> ExecuteWithHandling<T>(RestRequest request)
         {
             var response = await ExecuteWithHandling(request);
+
             return response.Content.Deserialize<T>();
         }
 

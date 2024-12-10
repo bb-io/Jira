@@ -18,6 +18,7 @@ namespace Apps.Jira.DataSourceHandlers
 
             var endpoint = "/board";
             var request = new JiraRequest(endpoint, Method.Get);
+
             var response = await client.ExecuteWithHandling<BoardsResponse>(request);
 
             return response.Values.ToDictionary(board => board.Id.ToString(), board => board.Name);
