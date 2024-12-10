@@ -9,34 +9,42 @@ namespace Apps.Jira
 {
     public class JiraClient : RestClient
     {
-        public JiraClient(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders)
+        public JiraClient(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders, string routeType = "api")
             : base(new RestClientOptions
-                { ThrowOnAnyError = false, BaseUrl = GetUri(authenticationCredentialsProviders) })
+            { ThrowOnAnyError = false, BaseUrl = GetUri(authenticationCredentialsProviders, routeType) })
         {
-            this.AddDefaultHeader("Authorization", 
+            this.AddDefaultHeader("Authorization",
                 authenticationCredentialsProviders.First(p => p.KeyName == "Authorization").Value);
         }
-        
+
         public async Task<T> ExecuteWithHandling<T>(RestRequest request)
         {
             var response = await ExecuteWithHandling(request);
             return response.Content.Deserialize<T>();
         }
-    
+
         public async Task<RestResponse> ExecuteWithHandling(RestRequest request)
         {
             var response = await ExecuteAsync(request);
-        
+
             if (response.IsSuccessful)
                 return response;
 
             throw ConfigureErrorException(response);
         }
-        
-        private static Uri GetUri(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders)
+
+        private static Uri GetUri(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders, string routeType)
         {
             var cloudId = GetJiraCloudId(authenticationCredentialsProviders);
-            var uri = $"https://api.atlassian.com/ex/jira/{cloudId}/rest/api/3";
+
+            string basePath = routeType switch
+            {
+                "agile" => $"/rest/agile/1.0",
+                "api" => $"/rest/api/3",
+                _ => throw new ArgumentException("Invalid route type")
+            };
+
+            var uri = $"https://api.atlassian.com/ex/jira/{cloudId}{basePath}";
             return new Uri(uri);
         }
 
@@ -45,8 +53,8 @@ namespace Apps.Jira
             const string atlassianResourcesUrl = "https://api.atlassian.com/oauth/token/accessible-resources";
             string jiraUrl = authenticationCredentialsProviders.First(p => p.KeyName == "JiraUrl").Value;
             string authorizationHeader = authenticationCredentialsProviders.First(p => p.KeyName == "Authorization").Value;
-            var restClient = new RestClient(new RestClientOptions 
-                { ThrowOnAnyError = true, BaseUrl = new Uri(atlassianResourcesUrl) });
+            var restClient = new RestClient(new RestClientOptions
+            { ThrowOnAnyError = true, BaseUrl = new Uri(atlassianResourcesUrl) });
             var request = new RestRequest("");
             request.AddHeader("Authorization", authorizationHeader);
             var atlassianCloudResources = restClient.Get<List<AtlassianCloudResourceDto>>(request);
@@ -54,7 +62,7 @@ namespace Apps.Jira
                           ?? throw new ArgumentException("The Jira URL is incorrect.");
             return cloudId;
         }
-        
+
         private Exception ConfigureErrorException(RestResponse response)
         {
             var error = response.Content.Deserialize<ErrorDto>();
@@ -62,7 +70,7 @@ namespace Apps.Jira
             if (string.IsNullOrEmpty(errorMessages))
             {
                 var errorData = error.Errors.Values().Select(x => x.ToString());
-                if(errorData.Any())
+                if (errorData.Any())
                 {
                     return new(errorData.First());
                 }
@@ -70,9 +78,5 @@ namespace Apps.Jira
             }
             return new(errorMessages);
         }
-
-
-
-
     }
 }

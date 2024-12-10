@@ -172,18 +172,21 @@ public class IssueActions(InvocationContext invocationContext, IFileManagementCl
     public async Task<MoveIssuesToSprintResponse> MoveIssuesToSprint(
     [ActionParameter] MoveIssuesToSprintRequest input)
     {
-        var request = new JiraRequest($"/rest/agile/1.0/sprint/{input.SprintId}/issue", Method.Post)
-            .WithJsonBody(new
-            {
-                issues = input.Issues,
-                rankAfterIssue = input.RankAfterIssue,
-                rankBeforeIssue = input.RankBeforeIssue,
-                rankCustomFieldId = input.RankCustomFieldId
-            });
+        var authenticationProviders = InvocationContext.AuthenticationCredentialsProviders;
+        var agileClient = new JiraClient(authenticationProviders, "agile");
+
+        var request = new JiraRequest($"/sprint/{input.SprintId}/issue", Method.Post)
+         .WithJsonBody(new
+         {
+             issues = input.Issues,
+             rankAfterIssue = input.RankAfterIssue,
+             rankBeforeIssue = input.RankBeforeIssue,
+             rankCustomFieldId = input.RankCustomFieldId
+         });
 
         try
         {
-            var response = await Client.ExecuteWithHandling(request);
+            var response = await agileClient.ExecuteWithHandling(request);
 
             return new MoveIssuesToSprintResponse
             {
