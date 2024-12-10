@@ -26,7 +26,6 @@ namespace Apps.Jira.Actions
             var endpoint = $"/board/{requestModel.BoardId}/sprint";
             var jiraRequest = new JiraRequest(endpoint, Method.Get);
 
-
             var response = await client.ExecuteWithHandling<SprintsWrapper>(jiraRequest);
             var relevantSprints = response.Values
                 ?.Where(sprint =>sprint.StartDate <= requestModel.Date && sprint.EndDate >= requestModel.Date).ToList();

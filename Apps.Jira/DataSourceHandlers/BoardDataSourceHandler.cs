@@ -22,8 +22,6 @@ namespace Apps.Jira.DataSourceHandlers
             var response = await client.ExecuteWithHandling<BoardsResponse>(request);
 
             return response.Values.ToDictionary(board => board.Id.ToString(), board => board.Name);
-
-
         }
     }
 }
