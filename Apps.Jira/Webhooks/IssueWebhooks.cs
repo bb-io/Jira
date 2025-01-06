@@ -24,12 +24,12 @@ namespace Apps.Jira.Webhooks
             Description = "This webhook is triggered when an issue is updated.")]
         public async Task<WebhookResponse<IssueResponse>> OnIssueUpdated(WebhookRequest request, 
             [WebhookParameter] IssueInput issue, 
-            [WebhookParameter] ProjectInput project,
+            [WebhookParameter] ProjectIssueInput project,
             [WebhookParameter] LabelsOptionalInput labels)
         {
             var payload = DeserializePayload(request);
             
-            if ((project.ProjectKey is not null && !project.ProjectKey.Equals(payload.Issue.Fields.Project.Key)) ||
+            if ((project.ProjectKey is not null && !project.ProjectKey.Contains(payload.Issue.Fields.Project.Key)) ||
                 (issue.IssueKey is not null && !issue.IssueKey.Equals(payload.Issue.Key)))
                 return new WebhookResponse<IssueResponse>
                 {

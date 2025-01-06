@@ -367,3 +367,5 @@ FodyWeavers.xsd
 /Apps.Jira/ApplicationConstants.cs
 /ConsoleApp1/ConsoleApp1.csproj
 /ConsoleApp1/Program.cs
+/Tests.Jira/appsettings.json
+/Tests.Jira/DebugTest.cs
