@@ -11,7 +11,7 @@ namespace Apps.Jira.Webhooks.Inputs
 {
     public class ProjectIssueInput
     {
-        [Display("Project")]
+        [Display("Projects")]
         [DataSource(typeof(ProjectDataSourceHandler))]
         public IEnumerable<string>? ProjectKey { get; set; }
     }

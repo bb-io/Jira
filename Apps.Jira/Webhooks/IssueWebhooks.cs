@@ -64,13 +64,13 @@ namespace Apps.Jira.Webhooks
             Description = "This webhook is triggered when an issue is assigned to specific user.")]
         public async Task<WebhookResponse<IssueResponse>> IssueAssigned(WebhookRequest request,
             [WebhookParameter] AssigneeInput assignee, 
-            [WebhookParameter] ProjectInput project,
+            [WebhookParameter] ProjectIssueInput project,
             [WebhookParameter] LabelsOptionalInput labels)
         {
             var payload = DeserializePayload(request);
             var actualAssignee = payload.Changelog.Items.FirstOrDefault(item => item.FieldId == "assignee");
 
-            if ((project.ProjectKey is not null && !project.ProjectKey.Equals(payload.Issue.Fields.Project.Key)) 
+            if ((project.ProjectKey is not null && !project.ProjectKey.Contains(payload.Issue.Fields.Project.Key)) 
                 || actualAssignee is null)
                 return new WebhookResponse<IssueResponse>
                 {
@@ -109,14 +109,14 @@ namespace Apps.Jira.Webhooks
             Description = "This webhook is triggered when an issue created has specific type or issue was updated to have specific type.")]
         public async Task<WebhookResponse<IssueResponse>> OnIssueWithSpecificTypeCreated(WebhookRequest request, 
             [WebhookParameter] IssueTypeInput issueType, 
-            [WebhookParameter] ProjectInput project,
+            [WebhookParameter] ProjectIssueInput project,
             [WebhookParameter] LabelsOptionalInput labels)
         {
             var payload = DeserializePayload(request);
             var issueTypeItem = payload.Changelog.Items.FirstOrDefault(item => item.FieldId == "issuetype");
             
             if ((issueTypeItem is null && payload.WebhookEvent == "jira:issue_updated")
-                || (project.ProjectKey is not null && !project.ProjectKey.Equals(payload.Issue.Fields.Project.Key)) 
+                || (project.ProjectKey is not null && !project.ProjectKey.Contains(payload.Issue.Fields.Project.Key)) 
                 || !issueType.IssueType.Equals(payload.Issue.Fields.IssueType.Name))
                 return new WebhookResponse<IssueResponse>
                 {
@@ -132,14 +132,14 @@ namespace Apps.Jira.Webhooks
             Description = "This webhook is triggered when an issue created has specified priority or issue was updated to have specified priority.")]
         public async Task<WebhookResponse<IssueResponse>> OnIssueWithSpecificPriorityCreated(WebhookRequest request,
             [WebhookParameter] PriorityInput priority, 
-            [WebhookParameter] ProjectInput project,
+            [WebhookParameter] ProjectIssueInput project,
             [WebhookParameter] LabelsOptionalInput labels)
         {
             var payload = DeserializePayload(request);
             var priorityItem = payload.Changelog.Items.FirstOrDefault(item => item.FieldId == "priority");
             
             if (priorityItem == null 
-                || (project.ProjectKey is not null && !project.ProjectKey.Equals(payload.Issue.Fields.Project.Key))
+                || (project.ProjectKey is not null && !project.ProjectKey.Contains(payload.Issue.Fields.Project.Key))
                 || !priority.PriorityId.Equals(priorityItem.To))
                 return new WebhookResponse<IssueResponse>
                 {
@@ -154,12 +154,12 @@ namespace Apps.Jira.Webhooks
         [Webhook("On issue deleted", typeof(IssueDeletedHandler), 
             Description = "This webhook is triggered when an issue is deleted.")]
         public async Task<WebhookResponse<IssueResponse>> OnIssueDeleted(WebhookRequest request,
-            [WebhookParameter] ProjectInput project,
+            [WebhookParameter] ProjectIssueInput project,
             [WebhookParameter] LabelsOptionalInput labels)
         {
             var payload = DeserializePayload(request);
         
-            if (project.ProjectKey is not null && !project.ProjectKey.Equals(payload.Issue.Fields.Project.Key))
+            if (project.ProjectKey is not null && !project.ProjectKey.Contains(payload.Issue.Fields.Project.Key))
                 return new WebhookResponse<IssueResponse>
                 {
                     HttpResponseMessage = new HttpResponseMessage(HttpStatusCode.OK),
@@ -174,13 +174,13 @@ namespace Apps.Jira.Webhooks
             Description = "This webhook is triggered when a file is attached to an issue.")]
         public async Task<WebhookResponse<IssueAttachmentResponse>> OnFileAttachedToIssue(WebhookRequest request, 
             [WebhookParameter] IssueInput issue, 
-            [WebhookParameter] ProjectInput project)
+            [WebhookParameter] ProjectIssueInput project)
         {
             var payload = DeserializePayload(request);
             var attachmentItem = payload.Changelog.Items.FirstOrDefault(item => item.FieldId == "attachment");
             
             if (attachmentItem is null 
-                || (project.ProjectKey is not null && !project.ProjectKey.Equals(payload.Issue.Fields.Project.Key)) 
+                || (project.ProjectKey is not null && !project.ProjectKey.Contains(payload.Issue.Fields.Project.Key)) 
                 || (issue.IssueKey is not null && !issue.IssueKey.Equals(payload.Issue.Key)))
                 return new WebhookResponse<IssueAttachmentResponse>
                 {
