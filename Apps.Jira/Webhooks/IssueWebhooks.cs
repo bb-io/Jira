@@ -44,12 +44,12 @@ namespace Apps.Jira.Webhooks
         [Webhook("On issue created", typeof(IssueCreatedHandler), 
             Description = "This webhook is triggered when an issue is created.")]
         public async Task<WebhookResponse<IssueResponse>> OnIssueCreated(WebhookRequest request,
-            [WebhookParameter] ProjectInput project,
+            [WebhookParameter] ProjectIssueInput project,
             [WebhookParameter] LabelsOptionalInput labels)
         {
             var payload = DeserializePayload(request);
         
-            if (project.ProjectKey is not null && !project.ProjectKey.Equals(payload.Issue.Fields.Project.Key))
+            if (project.ProjectKey is not null && !project.ProjectKey.Contains(payload.Issue.Fields.Project.Key))
                 return new WebhookResponse<IssueResponse>
                 {
                     HttpResponseMessage = new HttpResponseMessage(HttpStatusCode.OK),
