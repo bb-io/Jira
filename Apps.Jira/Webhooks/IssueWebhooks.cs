@@ -200,7 +200,7 @@ namespace Apps.Jira.Webhooks
             var attachmentItem = payload.Changelog.Items.FirstOrDefault(item => item.FieldId == "attachment");
             
             if (attachmentItem is null 
-                || (project.ProjectKey is not null && !project.ProjectKey.Equals(payload.Issue.Fields.Project.Key)) 
+                || (project.ProjectKey is not null && !project.ProjectKey.Contains(payload.Issue.Fields.Project.Key)) 
                 || (issue.IssueKey is not null && !issue.IssueKey.Equals(payload.Issue.Key)))
                 return new WebhookResponse<IssueAttachmentResponse>
                 {
