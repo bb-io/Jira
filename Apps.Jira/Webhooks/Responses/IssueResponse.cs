@@ -25,7 +25,7 @@ namespace Apps.Jira.Webhooks.Responses
         
         [Display("Assignee name")]
         public string? AssigneeName { get; set; }
-        
+      
         public string Status { get; set; }
         
         public IEnumerable<AttachmentDto> Attachments { get; set; }

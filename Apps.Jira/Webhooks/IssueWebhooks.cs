@@ -24,7 +24,7 @@ namespace Apps.Jira.Webhooks
             Description = "This webhook is triggered when an issue is updated.")]
         public async Task<WebhookResponse<IssueResponse>> OnIssueUpdated(WebhookRequest request, 
             [WebhookParameter] IssueInput issue, 
-            [WebhookParameter] ProjectIssueInput project,
+            [WebhookParameter] ProjectInput project,
             [WebhookParameter] LabelsOptionalInput labels)
         {
             var payload = DeserializePayload(request);
@@ -36,6 +36,26 @@ namespace Apps.Jira.Webhooks
                     HttpResponseMessage = new HttpResponseMessage(HttpStatusCode.OK),
                     ReceivedWebhookRequestType = WebhookRequestType.Preflight
                 };
+
+            if (project.Field is { } fieldsToCheck && fieldsToCheck.Any())
+            {
+                var changedFields = payload.Changelog?.Items?
+                    .Select(i => i.Field)
+                    .Distinct()
+                    .ToList() ?? new List<string>();
+
+                bool isRelevantChange = changedFields
+                    .Any(changed => fieldsToCheck.Contains(changed, StringComparer.OrdinalIgnoreCase));
+
+                if (!isRelevantChange)
+                {
+                    return new WebhookResponse<IssueResponse>
+                    {
+                        HttpResponseMessage = new HttpResponseMessage(HttpStatusCode.OK),
+                        ReceivedWebhookRequestType = WebhookRequestType.Preflight
+                    };
+                }
+            }
 
             var issueResponse = CreateIssueResponse(payload, labels);
             return issueResponse;
@@ -180,7 +200,7 @@ namespace Apps.Jira.Webhooks
             var attachmentItem = payload.Changelog.Items.FirstOrDefault(item => item.FieldId == "attachment");
             
             if (attachmentItem is null 
-                || (project.ProjectKey is not null && !project.ProjectKey.Contains(payload.Issue.Fields.Project.Key)) 
+                || (project.ProjectKey is not null && !project.ProjectKey.Equals(payload.Issue.Fields.Project.Key)) 
                 || (issue.IssueKey is not null && !issue.IssueKey.Equals(payload.Issue.Key)))
                 return new WebhookResponse<IssueAttachmentResponse>
                 {
