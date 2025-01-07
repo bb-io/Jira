@@ -1,7 +1,7 @@
 {
     "ConnectionDefinition": {
-        "apiKey": "YOUR_API_KEY",
-        "url": "YOUR_URL"
+        "Authorization": "YOUR_API_KEY",
+        "JiraUrl": "YOUR_URL"
     },
-    "TestFolder": "YOUR_TEST_FOLDER"
+    "TestFolder": "TestFile"
 }

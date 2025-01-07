@@ -21,7 +21,7 @@ namespace Tests.Jira
         {
             var validator = new ConnectionValidator();
 
-            var newCreds = Creds.Select(x => new AuthenticationCredentialsProvider(AuthenticationCredentialsRequestLocation.None ,x.KeyName, x.Value + "_incorrect"));
+            var newCreds = Creds.Select(x => new AuthenticationCredentialsProvider(AuthenticationCredentialsRequestLocation.None, x.KeyName+"_incorrect", x.Value + "_incorrect"));
             var result = await validator.ValidateConnection(newCreds, CancellationToken.None);
             Assert.IsFalse(result.IsValid);
         }
