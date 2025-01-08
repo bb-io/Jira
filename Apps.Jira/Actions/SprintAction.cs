@@ -14,12 +14,10 @@ namespace Apps.Jira.Actions
     public class SprintActions(InvocationContext invocationContext, IFileManagementClient fileManagementClient)
     : JiraInvocable(invocationContext)
     {
-
         [Action("Get relevant sprint for date", Description = "Get Sprint corresponding to the specified date for a selected board.")]
         public async Task<SprintsResponse> GetRelevantSprintForDate(
             [ActionParameter] GetSprintByDateRequest requestModel)
         {
-
             var authenticationProviders = InvocationContext.AuthenticationCredentialsProviders;
             var client = new JiraClient(authenticationProviders, "agile");
 

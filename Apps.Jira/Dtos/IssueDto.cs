@@ -25,6 +25,14 @@ public class IssueDto
                 Key = subTask.Key,
                 Summary = subTask.Fields.Summary
             }).ToList() ?? new List<SubTaskDto>();
+        if (!string.IsNullOrEmpty(issueWrapper.Fields.DueDate) && DateTime.TryParse(issueWrapper.Fields.DueDate, out var dueDate))
+        {
+            DueDate = dueDate;
+        }
+        else
+        {
+            DueDate = DateTime.MinValue;
+        }
     }
         
     [Display("Issue key")]
@@ -45,8 +53,12 @@ public class IssueDto
     public UserDto? Reporter { get; set; }
 
     public List<string> Labels { get; set; } = new();
+    
     [Display("Subtasks info")]
     public List<SubTaskDto> SubTasks { get; set; } = new();
+
+    [Display("Due date")]
+    public DateTime DueDate { get; set; }
 }
 
 public class SubTaskDto

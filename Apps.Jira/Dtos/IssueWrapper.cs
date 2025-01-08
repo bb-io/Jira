@@ -42,6 +42,9 @@ public class IssueFields
 
     [JsonProperty("subtasks")]
     public List<SubTaskWrapper> SubTasks { get; set; } = new();
+
+    [JsonProperty("duedate")]
+    public string? DueDate { get; set; }
 }
 
 public class Description
