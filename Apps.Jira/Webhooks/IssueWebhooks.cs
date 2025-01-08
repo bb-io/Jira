@@ -302,6 +302,9 @@ namespace Apps.Jira.Webhooks
                     AssigneeAccountId = issue.Fields.Assignee?.AccountId,
                     Status = issue.Fields.Status.Name,
                     Attachments = issue.Fields.Attachment,
+                    DueDate = !string.IsNullOrEmpty(issue.Fields.DueDate) && DateTime.TryParse(issue.Fields.DueDate, out var dueDate) 
+                        ? dueDate
+                        : DateTime.MinValue,
                     Labels = issue.Fields.Labels
                 }
             };

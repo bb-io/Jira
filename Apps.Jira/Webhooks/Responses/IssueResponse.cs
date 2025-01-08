@@ -28,6 +28,9 @@ namespace Apps.Jira.Webhooks.Responses
       
         public string Status { get; set; }
         
+        [Display("Due date")]
+        public DateTime DueDate { get; set; }
+        
         public IEnumerable<AttachmentDto> Attachments { get; set; }
 
         [Display("Labels")]

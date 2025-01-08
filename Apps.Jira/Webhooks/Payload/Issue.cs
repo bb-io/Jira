@@ -1,5 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 using Apps.Jira.Dtos;
+using Newtonsoft.Json;
 
 namespace Apps.Jira.Webhooks.Payload
 {
@@ -32,6 +33,9 @@ namespace Apps.Jira.Webhooks.Payload
         
         [JsonPropertyName("labels")]
         public List<string> Labels { get; set; } = new();
+        
+        [JsonProperty("duedate")]
+        public string? DueDate { get; set; }
     }
     
     public class IssueType
