@@ -1,4 +1,7 @@
-﻿using Apps.Jira.DataSourceHandlers.CustomFields;
+﻿using Apps.Jira.Actions;
+using Apps.Jira.DataSourceHandlers.CustomFields;
+using Apps.Jira.Models.Identifiers;
+using Apps.Jira.Models.Requests;
 using Blackbird.Applications.Sdk.Common.Dynamic;
 using Tests.Jira.Base;
 
@@ -10,13 +13,10 @@ namespace Tests.Jira
         [TestMethod]
         public async Task CustomStringFieldHandlerReturnsValues()
         {
-            //Arrange
             var handler = new CustomStringFieldDataSourceHandler(InvocationContext);
 
-            //Act
             var response = await handler.GetDataAsync(new DataSourceContext { SearchString = "" }, CancellationToken.None);
 
-            //Assert
             foreach (var item in response)
             {
                 Console.WriteLine($"{item.Value}: {item.Key}");
@@ -24,7 +24,23 @@ namespace Tests.Jira
 
             Assert.IsNotNull(response);
 
-        }     
+        }
+   
+
+        [TestMethod]
+        public async Task MoveIssue_IsNotNull()
+        {
+            var handler = new IssueActions(InvocationContext, FileManager);
+
+            var input = new MoveIssuesToSprintRequest { BoardId="1", SprintId = "1", Issues= ["TES-6", "TES-4", "TES-2"] };
+
+            for (int i = 0; i < 50; i++)
+            {
+                var response = await handler.MoveIssuesToSprint(input);
+                Console.WriteLine($"{response.Success} {response.Message}");
+                Assert.IsTrue(response.Success);
+            }
+        }
 
     }
 }
