@@ -3,18 +3,23 @@ using Apps.Jira.Dtos;
 using Apps.Jira.Extensions;
 using Blackbird.Applications.Sdk.Common.Authentication;
 using Newtonsoft.Json.Linq;
+using Polly.Retry;
 using RestSharp;
 
 namespace Apps.Jira
 {
     public class JiraClient : RestClient
     {
+        private readonly AsyncRetryPolicy<RestResponse> _retryPolicy;
+
         public JiraClient(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders, string routeType = "api")
             : base(new RestClientOptions
             { ThrowOnAnyError = false, BaseUrl = GetUri(authenticationCredentialsProviders, routeType) })
         {
             this.AddDefaultHeader("Authorization",
                 authenticationCredentialsProviders.First(p => p.KeyName == "Authorization").Value);
+
+            _retryPolicy = JiraPollyPolicies.GetTooManyRequestsRetryPolicy();
         }
 
         public async Task<T> ExecuteWithHandling<T>(RestRequest request)
@@ -26,7 +31,7 @@ namespace Apps.Jira
 
         public async Task<RestResponse> ExecuteWithHandling(RestRequest request)
         {
-            var response = await ExecuteAsync(request);
+            var response = await _retryPolicy.ExecuteAsync(() => base.ExecuteAsync(request));
 
             if (response.IsSuccessful)
                 return response;
