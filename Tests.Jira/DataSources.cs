@@ -25,7 +25,68 @@ namespace Tests.Jira
             Assert.IsNotNull(response);
 
         }
-   
+
+        [TestMethod]
+        public async Task CustomNumericFieldHandlerReturnsValues()
+        {
+            var handler = new CustomNumericFieldDataSourceHandler(InvocationContext);
+
+            var response = await handler.GetDataAsync(new DataSourceContext { SearchString = "" }, CancellationToken.None);
+
+            foreach (var item in response)
+            {
+                Console.WriteLine($"{item.Value}: {item.Key}");
+            }
+
+            Assert.IsNotNull(response);
+
+        }
+
+        [TestMethod]
+        public async Task Get_NumericFieldHandlerReturnsValues()
+        {
+            var handler = new IssueCustomFieldsActions(InvocationContext);
+
+            var input1 = new IssueIdentifier 
+            { 
+                IssueKey = "TES-4"
+            };
+
+            var input2 = new CustomNumericFieldIdentifier
+            {
+                CustomNumberFieldId = "customfield_10054"
+            };
+            var response = await handler.GetCustomNumericFieldValue(input1,input2);
+            
+                Console.WriteLine($"{response.Value}");
+
+            Assert.IsNotNull(response);
+
+        }
+
+        [TestMethod]
+        public async Task Set_NumericFieldHandlerReturnsValues()
+        {
+            var handler = new IssueCustomFieldsActions(InvocationContext);
+
+            var input1 = new IssueIdentifier
+            {
+                IssueKey = "TES-4"
+            };
+
+            var input2 = new CustomNumericFieldIdentifier
+            {
+                CustomNumberFieldId = "customfield_10054"
+            };
+            var input3 = 10230.0;
+            await handler.SetCustomNumericFieldValue(input1, input2,input3);
+
+            var response = await handler.GetCustomNumericFieldValue(input1, input2);
+            Console.WriteLine($"{response.Value}");
+            Assert.IsNotNull(response);
+
+        }
+
 
         [TestMethod]
         public async Task MoveIssue_IsNotNull()

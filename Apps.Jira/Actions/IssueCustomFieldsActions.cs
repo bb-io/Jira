@@ -5,6 +5,7 @@ using Apps.Jira.Models.Responses;
 using Blackbird.Applications.Sdk.Common;
 using Blackbird.Applications.Sdk.Common.Actions;
 using Blackbird.Applications.Sdk.Common.Dynamic;
+using Blackbird.Applications.Sdk.Common.Exceptions;
 using Blackbird.Applications.Sdk.Common.Invocation;
 using Newtonsoft.Json.Linq;
 using RestSharp;
@@ -39,7 +40,29 @@ public class IssueCustomFieldsActions : JiraInvocable
         }
 
     }
-    
+
+
+    [Action("Get custom number field value",
+        Description = "Retrieve the value of a custom number field for a specific issue.")]
+    public async Task<GetCustomFieldValueResponse<string>> GetCustomNumericFieldValue(
+        [ActionParameter] IssueIdentifier issue, [ActionParameter] CustomNumericFieldIdentifier customStringField)
+    {
+        var getIssueResponse = await GetIssue(issue.IssueKey);
+        try
+        {
+            var requestedField = JObject.Parse(getIssueResponse.Content)["fields"][customStringField.CustomNumberFieldId]
+            .ToString();
+
+            return new GetCustomFieldValueResponse<string> { Value = requestedField };
+        }
+        catch
+        {
+            return new GetCustomFieldValueResponse<string>();
+        }
+
+    }
+
+
     [Action("Get custom dropdown field value",
         Description = "Retrieve the value of a custom dropdown field for a specific issue.")]
     public async Task<GetCustomFieldValueResponse<string>> GetCustomOptionFieldValue(
@@ -135,6 +158,20 @@ public class IssueCustomFieldsActions : JiraInvocable
         await SetCustomFieldValue(requestBody, issue.IssueKey);
     }
 
+    [Action("Set custom text field value",
+        Description = "Set the value of a custom string field for a specific issue.")]
+    public async Task SetCustomNumericFieldValue([ActionParameter] IssueIdentifier issue,
+        [ActionParameter] CustomNumericFieldIdentifier customStringField,
+        [ActionParameter][Display("Value")] double value)
+    {
+        var requestBody = new
+        {
+            fields = new Dictionary<string, double> { { customStringField.CustomNumberFieldId, value } }
+        };
+
+        await SetCustomFieldValue(requestBody, issue.IssueKey);
+    }
+
     [Action("Set custom dropdown field value",
         Description = "Set the value of a custom dropdown field for a specific issue.")]
     public async Task SetCustomOptionFieldValue([ActionParameter] IssueIdentifier issue,
@@ -199,7 +236,7 @@ public class IssueCustomFieldsActions : JiraInvocable
         }
         catch
         {
-            throw new Exception("Couldn't set field value. Please make sure that field exists for specific issue " +
+            throw new PluginApplicationException("Couldn't set field value. Please make sure that field exists for specific issue " +
                                 "type in the project.");
         }
     }
