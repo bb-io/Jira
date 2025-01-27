@@ -158,7 +158,7 @@ public class IssueCustomFieldsActions : JiraInvocable
         await SetCustomFieldValue(requestBody, issue.IssueKey);
     }
 
-    [Action("Set custom text field value",
+    [Action("Set custom number field value",
         Description = "Set the value of a custom string field for a specific issue.")]
     public async Task SetCustomNumericFieldValue([ActionParameter] IssueIdentifier issue,
         [ActionParameter] CustomNumericFieldIdentifier customStringField,
