@@ -1,4 +1,5 @@
 ﻿using Apps.Jira.Actions;
+using Apps.Jira.DataSourceHandlers;
 using Apps.Jira.DataSourceHandlers.CustomFields;
 using Apps.Jira.Models.Identifiers;
 using Apps.Jira.Models.Requests;
@@ -101,6 +102,35 @@ namespace Tests.Jira
                 Console.WriteLine($"{response.Success} {response.Message}");
                 Assert.IsTrue(response.Success);
             }
+        }
+
+
+        [TestMethod]
+        public async Task GetIssuesHandlerReturnsValues()
+        {
+            var handler = new IssueDataSourceHandler(InvocationContext);
+
+            var response = await handler.GetDataAsync(new DataSourceContext { SearchString = "" }, CancellationToken.None);
+
+            foreach (var item in response)
+            {
+                Console.WriteLine($"{item.Value}: {item.Key}");
+            }
+
+            Assert.IsNotNull(response);
+
+        }
+
+        [TestMethod]
+        public async Task GetIssuesWrongReturnsValues()
+        {
+            var handler = new IssueActions(InvocationContext,FileManager);
+
+            var input = new IssueIdentifier { IssueKey="TES-7"};
+            var response = await handler.GetIssueByKey(input);
+                Console.WriteLine($"{response.Status}: {response.IssueKey}");
+            Assert.IsNotNull(response);
+
         }
 
     }
