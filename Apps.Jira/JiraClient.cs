@@ -2,6 +2,7 @@
 using Apps.Jira.Dtos;
 using Apps.Jira.Extensions;
 using Blackbird.Applications.Sdk.Common.Authentication;
+using Blackbird.Applications.Sdk.Common.Exceptions;
 using Newtonsoft.Json.Linq;
 using Polly.Retry;
 using RestSharp;
@@ -71,18 +72,25 @@ namespace Apps.Jira
 
         private Exception ConfigureErrorException(RestResponse response)
         {
-            var error = response.Content.Deserialize<ErrorDto>();
-            var errorMessages = string.Join(" ", error.ErrorMessages);
-            if (string.IsNullOrEmpty(errorMessages))
+            try
             {
-                var errorData = error.Errors.Values().Select(x => x.ToString());
-                if (errorData.Any())
+                var error = response.Content.Deserialize<ErrorDto>();
+                var errorMessages = string.Join(" ", error.ErrorMessages);
+                if (string.IsNullOrEmpty(errorMessages))
                 {
-                    return new(errorData.First());
+                    var errorData = error.Errors.Values().Select(x => x.ToString());
+                    if (errorData.Any())
+                    {
+                        throw new PluginApplicationException(errorData.First());
+                    }
+                    throw new PluginApplicationException("Internal system error");
                 }
-                return new("Internal system error");
+                throw new PluginApplicationException(errorMessages);
             }
-            return new(errorMessages);
+            catch (Exception ex)
+            {
+                throw new PluginApplicationException(ex.Message);
+            }
         }
     }
 }
