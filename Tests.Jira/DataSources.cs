@@ -4,6 +4,7 @@ using Apps.Jira.DataSourceHandlers.CustomFields;
 using Apps.Jira.Models.Identifiers;
 using Apps.Jira.Models.Requests;
 using Blackbird.Applications.Sdk.Common.Dynamic;
+using Blackbird.Applications.Sdk.Common.Exceptions;
 using Tests.Jira.Base;
 
 namespace Tests.Jira
@@ -127,10 +128,10 @@ namespace Tests.Jira
             var handler = new IssueActions(InvocationContext,FileManager);
 
             var input = new IssueIdentifier { IssueKey="TES-7"};
-            var response = await handler.GetIssueByKey(input);
-                Console.WriteLine($"{response.Status}: {response.IssueKey}");
-            Assert.IsNotNull(response);
-
+            await Assert.ThrowsExceptionAsync<PluginApplicationException>(async () =>
+            {
+                await handler.GetIssueByKey(input);
+            });
         }
 
     }
