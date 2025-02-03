@@ -159,7 +159,7 @@ public class IssueCustomFieldsActions : JiraInvocable
     }
 
     [Action("Set custom multiselect field value",
-        Description = "Set the value of a custom string field for a specific issue.")]
+        Description = "Set the values of a custom multiselect field for a specific issue.")]
     public async Task SetCustomMultiselectFieldValue([ActionParameter] IssueIdentifier issue,
         [ActionParameter] CustomMultiselectFieldIdentifier customStringField,
         [ActionParameter][Display("Values")] List<string> values)
