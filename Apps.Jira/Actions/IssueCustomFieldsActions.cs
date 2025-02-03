@@ -1,6 +1,7 @@
 ﻿using Apps.Jira.DataSourceHandlers.CustomFields;
 using Apps.Jira.Dtos;
 using Apps.Jira.Models.Identifiers;
+using Apps.Jira.Models.Requests;
 using Apps.Jira.Models.Responses;
 using Blackbird.Applications.Sdk.Common;
 using Blackbird.Applications.Sdk.Common.Actions;
@@ -162,9 +163,9 @@ public class IssueCustomFieldsActions : JiraInvocable
         Description = "Set the values of a custom multiselect field for a specific issue.")]
     public async Task SetCustomMultiselectFieldValue([ActionParameter] IssueIdentifier issue,
         [ActionParameter] CustomMultiselectFieldIdentifier customStringField,
-        [ActionParameter][Display("Values")] List<string> values)
+        [ActionParameter] CustomMultiselectFieldInput values)
     {
-        var multiSelectValues = values.Select(v => new { value = v }).ToList();
+        var multiSelectValues = values.Values.Select(v => new { value = v }).ToList();
 
         var requestBody = new
         {
