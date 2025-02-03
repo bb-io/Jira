@@ -29,6 +29,74 @@ namespace Tests.Jira
         }
 
         [TestMethod]
+        public async Task Get_MultiselectFieldHandlerReturnsValues()
+        {
+            var handler = new IssueCustomFieldsActions(InvocationContext);
+
+            var input1 = new IssueIdentifier
+            {
+                IssueKey = "TES-4"
+            };
+
+            var input2 = new CustomNumericFieldIdentifier
+            {
+                CustomNumberFieldId = "customfield_10055"
+            };
+            var response = await handler.GetCustomNumericFieldValue(input1, input2);
+
+            Console.WriteLine($"{response.Value}");
+
+            Assert.IsNotNull(response);
+
+        }
+
+        [TestMethod]
+        public async Task Set_MultiselectFieldHandlerReturnsValues()
+        {
+            var handler = new IssueCustomFieldsActions(InvocationContext);
+
+            var input1 = new IssueIdentifier
+            {
+                IssueKey = "TES-4"
+            };
+
+            var input2 = new CustomMultiselectFieldIdentifier
+            {
+                CustomMultiselectFieldId = "customfield_10055"
+            };
+            var input3 = new List<string> { "3" };
+            await handler.SetCustomMultiselectFieldValue(input1, input2, input3);
+
+            var response = await handler.GetCustomMultiselectFieldValue(input1, input2);
+
+            foreach (var item in response)
+            {
+                Console.WriteLine($"{item.ToString()}");
+                Assert.IsNotNull(response);
+            }
+           
+
+        }
+
+
+        [TestMethod]
+        public async Task MultiselectFieldHandlerReturnsValues()
+        {
+            var handler = new CustomMultiselectFieldDataSourceHandler(InvocationContext);
+
+            var response = await handler.GetDataAsync(new DataSourceContext { SearchString = "" }, CancellationToken.None);
+
+            foreach (var item in response)
+            {
+                Console.WriteLine($"{item.Value}: {item.Key}");
+            }
+
+            Assert.IsNotNull(response);
+
+        }
+
+
+        [TestMethod]
         public async Task CustomNumericFieldHandlerReturnsValues()
         {
             var handler = new CustomNumericFieldDataSourceHandler(InvocationContext);
