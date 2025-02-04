@@ -83,6 +83,8 @@ Note: this app currently supports only short text (plain text only) custom field
 - **Get custom multiselect field values** gets the selected values of a multiple choice select list custom field for a specific issue.
 - **Get custom number field value** gets the value of a custom number field
 - **Set custom number field value** sets the value of a custom number field
+- **Get custom multiselect field value** gets the value of a custom multiselect field
+- **Set custom multiselect field value** sets the value of a custom multiselect field
 
 ### User Actions
 
