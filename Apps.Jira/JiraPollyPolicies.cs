@@ -7,7 +7,7 @@ namespace Apps.Jira
 {
     public static class JiraPollyPolicies
     {
-        public static AsyncRetryPolicy<RestResponse> GetTooManyRequestsRetryPolicy(int retryCount = 5)
+        public static AsyncRetryPolicy<RestResponse> GetTooManyRequestsRetryPolicy(int retryCount = 10)
         {
             return Policy
         .HandleResult<RestResponse>(r => (int)r.StatusCode == 429)
