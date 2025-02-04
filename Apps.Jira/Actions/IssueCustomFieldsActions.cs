@@ -165,7 +165,7 @@ public class IssueCustomFieldsActions : JiraInvocable
         [ActionParameter] CustomMultiselectFieldIdentifier customStringField,
         [ActionParameter] CustomMultiselectFieldInput values)
     {
-        var multiSelectValues = values.Values.Select(v => new { value = v }).ToList();
+        var multiSelectValues = values.ValueProperty.Select(v => new { value = v }).ToList();
 
         var requestBody = new
         {

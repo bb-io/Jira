@@ -64,7 +64,7 @@ namespace Tests.Jira
             {
                 CustomMultiselectFieldId = "customfield_10055"
             };
-            var input3 = new CustomMultiselectFieldInput { Values=["Hello"] };
+            var input3 = new CustomMultiselectFieldInput { ValueProperty = ["Hello"] };
             await handler.SetCustomMultiselectFieldValue(input1, input2, input3);
 
             var response = await handler.GetCustomMultiselectFieldValue(input1, input2);
