@@ -64,7 +64,7 @@ namespace Tests.Jira
             {
                 CustomMultiselectFieldId = "customfield_10055"
             };
-            var input3 = new CustomMultiselectFieldInput { Values=["Friend"] };
+            var input3 = new CustomMultiselectFieldInput { Values=["Hello"] };
             await handler.SetCustomMultiselectFieldValue(input1, input2, input3);
 
             var response = await handler.GetCustomMultiselectFieldValue(input1, input2);
@@ -74,10 +74,7 @@ namespace Tests.Jira
                 Console.WriteLine($"{item.ToString()}");
                 Assert.IsNotNull(response);
             }
-
-
         }
-
 
         [TestMethod]
         public async Task MultiselectFieldHandlerReturnsValues()
