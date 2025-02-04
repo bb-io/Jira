@@ -14,7 +14,6 @@ using RestSharp;
 using Method = RestSharp.Method;
 using Apps.Jira.Webhooks.Payload;
 using Newtonsoft.Json.Serialization;
-
 namespace Apps.Jira.Actions;
 
 [ActionList]
@@ -299,10 +298,22 @@ public class IssueActions(InvocationContext invocationContext, IFileManagementCl
                 new Mark { Type = input.Formatting }
             ];
         }
-        
-        issue.Fields.Description?.Content.Add(new ContentElement
+
+        if (issue.Fields.Description is null) 
+        {
+            issue.Fields.Description = new Description { Type = "doc", Version = 1 ,Content = new List<ContentElement> { new ContentElement 
+            {
+                Type = "paragraph", 
+                Content = new List<ContentElement> { contentElement }
+
+            } } };
+        }
+        else 
+        {
+            issue.Fields.Description?.Content.Add(new ContentElement
             { Type = "paragraph", Content = new List<ContentElement> { contentElement } });
-        
+        }
+
         var body = new { fields = new { description = issue.Fields.Description } };
         var updateIssueRequest = new JiraRequest($"/issue/{issueIdentifier.IssueKey}", Method.Put)
             .WithJsonBody(body, new JsonSerializerSettings
