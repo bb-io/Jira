@@ -10,7 +10,7 @@ namespace Apps.Jira
         public static AsyncRetryPolicy<RestResponse> GetTooManyRequestsRetryPolicy(int retryCount = 10)
         {
             return Policy
-        .HandleResult<RestResponse>(r => (int)r.StatusCode == 429)
+         .HandleResult<RestResponse>(response => response.StatusCode == HttpStatusCode.TooManyRequests)
         .WaitAndRetryAsync<RestResponse>(
             retryCount,
             sleepDurationProvider: (attempt, outcome, ctx) =>
@@ -21,7 +21,7 @@ namespace Apps.Jira
 
                 return double.TryParse(retryAfterHeader, out var seconds)
                     ? TimeSpan.FromSeconds(seconds)
-                    : TimeSpan.FromSeconds(5);
+                    : TimeSpan.FromSeconds(7);
             },
             onRetryAsync: async (outcome, timeSpan, attempt, ctx) =>
             {
