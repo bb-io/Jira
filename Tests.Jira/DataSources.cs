@@ -154,7 +154,6 @@ namespace Tests.Jira
 
         }
 
-
         [TestMethod]
         public async Task MoveIssue_IsNotNull()
         {
@@ -162,7 +161,20 @@ namespace Tests.Jira
 
             var input = new MoveIssuesToSprintRequest { BoardId = "1", SprintId = "1", Issues = ["TES-6", "TES-4", "TES-2"] };
 
-            for (int i = 0; i < 50; i++)
+            var response = await handler.MoveIssuesToSprint(input);
+            Console.WriteLine($"{response.Success} {response.Message}");
+            Assert.IsTrue(response.Success);
+        }
+
+
+        [TestMethod]
+        public async Task RetryAfter_IsNotFail()
+        {
+            var handler = new IssueActions(InvocationContext, FileManager);
+
+            var input = new MoveIssuesToSprintRequest { BoardId = "1", SprintId = "1", Issues = ["TES-6", "TES-4", "TES-2"] };
+
+            for (int i = 0; i < 150; i++)
             {
                 var response = await handler.MoveIssuesToSprint(input);
                 Console.WriteLine($"{response.Success} {response.Message}");
