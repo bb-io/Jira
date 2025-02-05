@@ -6,7 +6,7 @@
     <LangVersion>12</LangVersion>
     <Product>Jira</Product>
     <Description>Issue tracking</Description>
-    <Version>2.2.37</Version>
+    <Version>2.2.38</Version>
     <AssemblyName>Apps.Jira</AssemblyName>
   </PropertyGroup>
   <ItemGroup>
@@ -15,7 +15,7 @@
     <PackageReference Include="Blackbird.Applications.Sdk.Utils" Version="1.0.13" />
     <PackageReference Include="Markdig" Version="0.37.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-    <PackageReference Include="Polly" Version="8.5.1" />
+    <PackageReference Include="Polly" Version="8.5.2" />
     <PackageReference Include="RestSharp" Version="110.2.0" />
   </ItemGroup>
   <ItemGroup>
