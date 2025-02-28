@@ -25,5 +25,6 @@ public class CreateIssueRequest
     public string? OriginalEstimate { get; set; }
 
     [Display("Reporter  ID")]
+    [DataSource(typeof(AssigneeDataSourceHandler))]
     public string? Reporter { get; set; }
 }
