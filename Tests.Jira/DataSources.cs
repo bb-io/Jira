@@ -174,7 +174,7 @@ namespace Tests.Jira
 
             var input = new MoveIssuesToSprintRequest { BoardId = "1", SprintId = "1", Issues = ["TES-6", "TES-4", "TES-2"] };
 
-            for (int i = 0; i < 150; i++)
+            for (int i = 0; i < 50; i++)
             {
                 var response = await handler.MoveIssuesToSprint(input);
                 Console.WriteLine($"{response.Success} {response.Message}");

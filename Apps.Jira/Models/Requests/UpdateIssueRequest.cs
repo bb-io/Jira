@@ -23,9 +23,17 @@ public class UpdateIssueRequest
     [Display("Description", Description = "The description of the issue. Expected to be in markdown format but can be plain text.")]
     public string? Description { get; set; }
 
+    [Display("Original Estimate")]
+    public string? OriginalEstimate { get; set; }
+
+    [Display("Reporter account ID")]
+    [DataSource(typeof(AssigneeDataSourceHandler))]
+    public string? Reporter { get; set; }
+
     [Display("Notify users", Description = "Whether a notification email about the issue update is sent to all watchers. To disable the notification, administer Jira or administer project permissions are required. If the user doesn't have the necessary permission the request is ignored.")]
     public bool? NotifyUsers { get; set; }
 
     [Display("Override screen security", Description = "Whether screen security is overridden to enable hidden fields to be edited.")]
     public bool? OverrideScreenSecurity { get; set; }
+
 }
