@@ -17,4 +17,13 @@ public class CreateIssueRequest
     [Display("Assignee account ID")]
     [DataSource(typeof(AssigneeDataSourceHandler))]
     public string? AccountId { get; set; }
+
+    [Display("Due date")]
+    public DateTime? DueDate { get; set; }
+
+    [Display("Original Estimate (seconds)")]
+    public string? OriginalEstimate { get; set; }
+
+    [Display("Reporter  ID")]
+    public string? Reporter { get; set; }
 }

@@ -133,6 +133,22 @@ public class IssueActions(InvocationContext invocationContext, IFileManagementCl
             fields.Add("assignee", new { id = accountId });
         }
 
+        if (!string.IsNullOrEmpty(input.OriginalEstimate))
+        {
+            fields.Add("timetracking", new { originalEstimate = input.OriginalEstimate});
+        }
+
+        if (input.DueDate.HasValue)
+        {
+            fields.Add("duedate", input.DueDate.Value.ToString("yyyy-MM-dd"));
+        }
+
+        if (!string.IsNullOrEmpty(input.Reporter))
+        {
+            fields.Add("reporter", new { id = input.Reporter });
+        }
+
+
         var request = new JiraRequest("/issue", Method.Post).AddJsonBody(new
         {
             fields = fields
@@ -216,49 +232,66 @@ public class IssueActions(InvocationContext invocationContext, IFileManagementCl
         if (input.AssigneeAccountId != null)
         {
             var accountId = input.AssigneeAccountId;
-
             if (int.TryParse(accountId, out var accountIntId) && accountIntId == int.MinValue)
                 accountId = null;
 
-            var request = new JiraRequest($"/issue/{issue.IssueKey}/assignee", Method.Put)
+            var assigneeRequest = new JiraRequest($"/issue/{issue.IssueKey}/assignee", Method.Put)
                 .WithJsonBody(new { accountId });
-
-            await Client.ExecuteWithHandling(request);
+            await Client.ExecuteWithHandling(assigneeRequest);
         }
 
-        if (input.Summary != null || input.Description != null || input.IssueTypeId != null)
-        {
-            var descriptionJson = input.Description != null
-                ? MarkdownToJiraConverter.ConvertMarkdownToJiraDoc(input.Description)
-                : null;
 
-            var jsonBody = new
+        if (input.Summary != null || input.Description != null || input.IssueTypeId != null ||
+            !string.IsNullOrEmpty(input.OriginalEstimate) || input.DueDate.HasValue || !string.IsNullOrEmpty(input.Reporter))
+        {
+            var fieldsUpdate = new Dictionary<string, object>();
+
+            if (input.Summary != null)
+                fieldsUpdate.Add("summary", input.Summary);
+
+            if (input.Description != null)
             {
-                fields = new
-                {
-                    summary = input.Summary,
-                    description = descriptionJson,
-                    issuetype = input.IssueTypeId != null ? new { id = input.IssueTypeId } : null
-                }
-            };
+                var descriptionJson = MarkdownToJiraConverter.ConvertMarkdownToJiraDoc(input.Description);
+                fieldsUpdate.Add("description", descriptionJson);
+            }
+
+            if (input.IssueTypeId != null)
+                fieldsUpdate.Add("issuetype", new { id = input.IssueTypeId });
+
+
+            if (!string.IsNullOrEmpty(input.OriginalEstimate))
+            {
+                fieldsUpdate.Add("timetracking", new { originalEstimate = input.OriginalEstimate});
+            }
+
+            if (input.DueDate.HasValue)
+            {
+                fieldsUpdate.Add("duedate", input.DueDate.Value.ToString("yyyy-MM-dd"));
+            }
+
+            if (!string.IsNullOrEmpty(input.Reporter))
+            {
+                fieldsUpdate.Add("reporter", new { id = input.Reporter });
+            }
 
             var endpoint = $"/issue/{issue.IssueKey}";
             if (input.OverrideScreenSecurity.HasValue)
             {
                 endpoint += $"?overrideScreenSecurity={input.OverrideScreenSecurity.Value}";
             }
-
             if (input.NotifyUsers.HasValue)
             {
                 endpoint = endpoint + (input.OverrideScreenSecurity.HasValue ? "&" : "?") +
                            $"notifyUsers={input.NotifyUsers}";
             }
 
-            var request = new JiraRequest(endpoint, Method.Put)
-                .WithJsonBody(jsonBody,
+            var updateRequest = new JiraRequest(endpoint, Method.Put)
+                .WithJsonBody(new { fields = fieldsUpdate },
                     new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore });
-            await Client.ExecuteWithHandling(request);
+
+            await Client.ExecuteWithHandling(updateRequest);
         }
+
 
         if (input.StatusId != null)
         {
