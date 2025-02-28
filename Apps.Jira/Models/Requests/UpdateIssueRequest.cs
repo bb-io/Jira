@@ -26,6 +26,9 @@ public class UpdateIssueRequest
     [Display("Original Estimate")]
     public string? OriginalEstimate { get; set; }
 
+    [Display("Due Date")]
+    public DateTime? DueDate { get; set; }
+
     [Display("Reporter account ID")]
     [DataSource(typeof(AssigneeDataSourceHandler))]
     public string? Reporter { get; set; }

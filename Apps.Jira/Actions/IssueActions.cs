@@ -242,7 +242,7 @@ public class IssueActions(InvocationContext invocationContext, IFileManagementCl
 
 
         if (input.Summary != null || input.Description != null || input.IssueTypeId != null ||
-            !string.IsNullOrEmpty(input.OriginalEstimate) ||  !string.IsNullOrEmpty(input.Reporter))
+            !string.IsNullOrEmpty(input.OriginalEstimate) || input.DueDate.HasValue || !string.IsNullOrEmpty(input.Reporter))
         {
             var fieldsUpdate = new Dictionary<string, object>();
 
@@ -262,6 +262,11 @@ public class IssueActions(InvocationContext invocationContext, IFileManagementCl
             if (!string.IsNullOrEmpty(input.OriginalEstimate))
             {
                 fieldsUpdate.Add("timetracking", new { originalEstimate = input.OriginalEstimate});
+            }
+
+            if (input.DueDate.HasValue)
+            {
+                fieldsUpdate.Add("duedate", input.DueDate.Value.ToString("yyyy-MM-dd"));
             }
 
             if (!string.IsNullOrEmpty(input.Reporter))
@@ -286,6 +291,7 @@ public class IssueActions(InvocationContext invocationContext, IFileManagementCl
 
             await Client.ExecuteWithHandling(updateRequest);
         }
+
 
         if (input.StatusId != null)
         {

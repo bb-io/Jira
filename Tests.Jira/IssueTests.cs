@@ -58,6 +58,7 @@ namespace Tests.Jira
                 Summary = "Test issue",
                 IssueTypeId = "10002",
                 Description = "Test description",
+                DueDate = DateTime.Now.AddDays(10),
                 OriginalEstimate = "3600",
                 Reporter = "712020:75495005-bcf9-4f19-8ea8-d038a4dba86b"
             };
