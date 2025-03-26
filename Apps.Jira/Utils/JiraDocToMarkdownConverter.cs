@@ -35,13 +35,16 @@ public static class JiraDocToMarkdownConverter
                 break;
 
             case "paragraph":
-                foreach (var content in element.Content)
-                    ProcessContentElement(content, markdown, indentLevel);
+                if (element.Content != null)
+                {
+                    foreach (var content in element.Content)
+                        ProcessContentElement(content, markdown, indentLevel);
+                }
                 markdown.AppendLine("\n");
                 break;
 
             case "text":
-                string text = element.Text;
+                string text = element.Text ?? string.Empty;
                 if (element.Marks != null && element.Marks.Any())
                 {
                     var linkMark = element.Marks.FirstOrDefault(m => m.Type == "link");
@@ -74,27 +77,32 @@ public static class JiraDocToMarkdownConverter
                 break;
 
             case "bulletList":
-                foreach (var listItem in element.Content)
-                    ProcessContentElement(listItem, markdown, indentLevel);
-                markdown.AppendLine();
+                if (element.Content != null)
+                {
+                    foreach (var listItem in element.Content)
+                        ProcessContentElement(listItem, markdown, indentLevel);
+                }
                 break;
 
             case "listItem":
-                foreach (var content in element.Content)
+                if (element.Content != null)
                 {
-                    if (content.Type == "paragraph")
+                    foreach (var content in element.Content)
                     {
-                        markdown.Append(new string(' ', indentLevel * 2) + "- ");
-                        ProcessContentElement(content, markdown, indentLevel);
-                        markdown.AppendLine();
-                    }
-                    else if (content.Type == "bulletList")
-                    {
-                        ProcessContentElement(content, markdown, indentLevel + 1);
-                    }
-                    else
-                    {
-                        ProcessContentElement(content, markdown, indentLevel);
+                        if (content.Type == "paragraph")
+                        {
+                            markdown.Append(new string(' ', indentLevel * 2) + "- ");
+                            ProcessContentElement(content, markdown, indentLevel);
+                            markdown.AppendLine();
+                        }
+                        else if (content.Type == "bulletList")
+                        {
+                            ProcessContentElement(content, markdown, indentLevel + 1);
+                        }
+                        else
+                        {
+                            ProcessContentElement(content, markdown, indentLevel);
+                        }
                     }
                 }
                 break;
