@@ -66,7 +66,7 @@ namespace Apps.Jira
             request.AddHeader("Authorization", authorizationHeader);
             var atlassianCloudResources = restClient.Get<List<AtlassianCloudResourceDto>>(request);
             var cloudId = atlassianCloudResources.First(jiraResource => jiraUrl.Contains(jiraResource.Url)).Id
-                          ?? throw new ArgumentException("The Jira URL is incorrect.");
+                          ?? throw new PluginMisconfigurationException("The Jira URL is incorrect. No matching Atlassian Cloud resource found.");
             return cloudId;
         }
 
