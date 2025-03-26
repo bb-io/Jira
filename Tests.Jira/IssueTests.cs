@@ -73,7 +73,7 @@ namespace Tests.Jira
 
             var project = new IssueIdentifier
             {
-                IssueKey = "ELTF-1"
+                IssueKey = "TRAN-9818"
             };
           
             var response = await action.GetIssueByKey(project);
