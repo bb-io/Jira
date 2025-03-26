@@ -10,12 +10,12 @@ public class IssueDto
     public IssueDto(IssueWrapper issueWrapper)
     {
         IssueKey = issueWrapper.Key;
-        Summary = issueWrapper.Fields.Summary;
+        Summary = issueWrapper.Fields.Summary ?? string.Empty;
         Status = issueWrapper.Fields.Status;
-        Priority = issueWrapper.Fields.Priority;
+        Priority = issueWrapper.Fields.Priority ?? new PriorityDto();
         Assignee = issueWrapper.Fields.Assignee;
         Reporter = issueWrapper.Fields.Reporter;
-        Project = issueWrapper.Fields.Project;
+        Project = issueWrapper.Fields.Project ?? new ProjectDto();
         Description = issueWrapper.Fields.Description == null ? string.Empty : JiraDocToMarkdownConverter.ConvertToMarkdown(issueWrapper.Fields.Description);
         Labels = issueWrapper.Fields.Labels;
         SubTasks = issueWrapper.Fields.SubTasks?
@@ -52,7 +52,7 @@ public class IssueDto
 
     public UserDto? Reporter { get; set; }
 
-    public List<string> Labels { get; set; } = new();
+    public List<string>? Labels { get; set; } = new();
     
     [Display("Subtasks info")]
     public List<SubTaskDto> SubTasks { get; set; } = new();
