@@ -211,5 +211,52 @@ namespace Tests.Jira
             });
         }
 
+
+        [TestMethod]
+        public async Task Set_TextFieldHandlerReturnsValues()
+        {
+            var handler = new IssueCustomFieldsActions(InvocationContext);
+
+            var input1 = new IssueIdentifier
+            {
+                IssueKey = "LOC-34522"
+            };
+
+            var input2 = new CustomStringFieldIdentifier
+            {
+                CustomStringFieldId = "customfield_11258"
+            };
+            var input3 = "XTM project name: ZendeskFAQ_16546575023261_4";
+            await handler.SetCustomStringFieldValue(input1, input2, input3);
+
+            var response = await handler.GetCustomStringFieldValue(input1, input2);
+            Console.WriteLine($"{response.Value}");
+            Assert.IsNotNull(response);
+
+        }
+
+        [TestMethod]
+        public async Task Get_StringFieldHandlerReturnsValues()
+        {
+            var handler = new IssueCustomFieldsActions(InvocationContext);
+
+            var input1 = new IssueIdentifier
+            {
+                IssueKey = "LOC-34522"
+            };
+
+            var input2 = new CustomStringFieldIdentifier
+            {
+                CustomStringFieldId = "customfield_11258"
+            };
+            var response = await handler.GetCustomStringFieldValue(input1, input2);
+
+            Console.WriteLine($"{response.Value}");
+
+            Assert.IsNotNull(response);
+
+        }
+
+
     }
 }

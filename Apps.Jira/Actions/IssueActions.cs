@@ -14,6 +14,7 @@ using RestSharp;
 using Method = RestSharp.Method;
 using Apps.Jira.Webhooks.Payload;
 using Newtonsoft.Json.Serialization;
+using Blackbird.Applications.Sdk.Common.Exceptions;
 namespace Apps.Jira.Actions;
 
 [ActionList]
@@ -25,6 +26,11 @@ public class IssueActions(InvocationContext invocationContext, IFileManagementCl
     [Action("Get issue", Description = "Get the specified issue.")]
     public async Task<IssueDto> GetIssueByKey([ActionParameter] IssueIdentifier input)
     {
+        if (input == null || string.IsNullOrEmpty(input.IssueKey))
+        {
+            throw new PluginMisconfigurationException("IssueKey can not be null or empty.");
+        }
+
         var request = new JiraRequest($"/issue/{input.IssueKey}", Method.Get);
         var issue = await Client.ExecuteWithHandling<IssueWrapper>(request);
         return new IssueDto(issue);
