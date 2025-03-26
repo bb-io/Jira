@@ -21,7 +21,7 @@ public class CreateIssueRequest
     [Display("Due date")]
     public DateTime? DueDate { get; set; }
 
-    [Display("Original Estimate (seconds)")]
+    [Display("Original estimate", Description ="Original estimate time in minutes")]
     public string? OriginalEstimate { get; set; }
 
     [Display("Reporter  ID")]
