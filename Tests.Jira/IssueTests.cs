@@ -73,7 +73,7 @@ namespace Tests.Jira
 
             var project = new IssueIdentifier
             {
-                IssueKey = "TRAN-9818"
+                IssueKey = "AC-1"
             };
           
             var response = await action.GetIssueByKey(project);
@@ -81,6 +81,29 @@ namespace Tests.Jira
             Console.WriteLine(response.DueDate);
             Console.WriteLine(response.Reporter.DisplayName);
             Assert.IsNotNull(response);
+        }
+
+
+        [TestMethod]
+        public async Task AddIssueComment_ReturnsSucces()
+        {
+            var action = new IssueCommentActions(InvocationContext);
+
+            var project = new ProjectIdentifier
+            {
+                ProjectKey = "AC"
+            };
+
+            var issue = new IssueIdentifier
+            {
+                IssueKey = "AC-1"
+            };
+            var request = new AddIssueCommentRequest
+            {
+                Text= "Test comment",
+            };
+            await action.AddIssueComment(issue, request);
+            Assert.IsTrue(true);
         }
     }
 }

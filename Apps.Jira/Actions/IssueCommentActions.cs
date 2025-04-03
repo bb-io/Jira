@@ -62,30 +62,30 @@ public class IssueCommentActions : JiraInvocable
         {
             body = new
             {
+                type = comment.BodyType ?? "doc",
+                version = comment.Version == null ? 1 : int.Parse(comment.Version),
                 content = new[]
+            {
+                new
                 {
-                    new
+                    type = comment.Type ?? "paragraph",
+                    content = new[]
                     {
-                        type = comment.Type ?? "doc",
-                        content = new[]
+                        new
                         {
-                            new
-                            {
-                                type = comment.ContentType ?? "text",
-                                text = comment.Text
-                            }
+                            type = comment.ContentType ?? "text",
+                            text = comment.Text
                         }
                     }
-                },
-                type = comment.BodyType ?? "doc",
-                version = comment.Version == null ? 1 : int.Parse(comment.Version)
+                }
+            }
             },
         }, Formatting.None,
-           new JsonSerializerSettings
-           {
-                NullValueHandling = NullValueHandling.Ignore
-           }), DataFormat.Json);
-        
+       new JsonSerializerSettings
+       {
+           NullValueHandling = NullValueHandling.Ignore
+       }), DataFormat.Json);
+
         return await Client.ExecuteWithHandling<IssueCommentDto>(request);
     }
     
