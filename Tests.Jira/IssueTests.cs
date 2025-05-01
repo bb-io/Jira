@@ -100,7 +100,7 @@ namespace Tests.Jira
             };
             var request = new AddIssueCommentRequest
             {
-                Text= "Test comment",
+                Text= "Test comment Test",
             };
             await action.AddIssueComment(issue, request);
             Assert.IsTrue(true);
