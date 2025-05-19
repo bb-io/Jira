@@ -5,36 +5,31 @@ namespace Apps.Jira.Connections
 {
     public class ConnectionDefinition : IConnectionDefinition
     {
-        public IEnumerable<ConnectionPropertyGroup> ConnectionPropertyGroups => new List<ConnectionPropertyGroup>
-        {
-            new ConnectionPropertyGroup
+        public IEnumerable<ConnectionPropertyGroup> ConnectionPropertyGroups =>
+        [
+            new()
             {
                 Name = "OAuth2",
                 AuthenticationType = ConnectionAuthenticationType.OAuth2,
-                ConnectionUsage = ConnectionUsage.Actions,
-                ConnectionProperties = new List<ConnectionProperty>
-                {
+                ConnectionProperties =
+                [
                     new("Jira URL")
-                }
+                    {
+                        DisplayName = "Jira URL",
+                        Sensitive = false
+                    }
+                ]
             },
-        };
+        ];
 
         public IEnumerable<AuthenticationCredentialsProvider> CreateAuthorizationCredentialsProviders(
             Dictionary<string, string> values)
         {
             var token = values.First(v => v.Key == "access_token");
-            yield return new AuthenticationCredentialsProvider(
-                AuthenticationCredentialsRequestLocation.Header,
-                "Authorization",
-                $"Bearer {token.Value}"
-            );
+            yield return new AuthenticationCredentialsProvider("Authorization", $"Bearer {token.Value}");
             
             var jiraUrl = new Uri(values.First(v => v.Key == "Jira URL").Value).GetLeftPart(UriPartial.Authority);
-            yield return new AuthenticationCredentialsProvider(
-                AuthenticationCredentialsRequestLocation.None,
-                "JiraUrl",
-                jiraUrl
-            );
+            yield return new AuthenticationCredentialsProvider("JiraUrl", jiraUrl);
         }
     }
 }
