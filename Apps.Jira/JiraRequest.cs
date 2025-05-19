@@ -1,11 +1,6 @@
 ﻿using RestSharp;
 
-namespace Apps.Jira
-{
-    public class JiraRequest : RestRequest
-    {
-        public JiraRequest(string endpoint, Method method) : base(endpoint, method)
-        {
-        }
-    }
-}
+namespace Apps.Jira;
+
+public class JiraRequest(string endpoint, Method method) : RestRequest(endpoint, method)
+{ }
