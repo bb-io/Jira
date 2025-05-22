@@ -101,6 +101,7 @@ public class JiraClient : RestClient
         var endpoint = originalRequest.Resource;
         var method = originalRequest.Method;
         int startAt = 0;
+
         bool isLast = false;
 
         do
