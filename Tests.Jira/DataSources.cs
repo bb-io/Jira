@@ -258,5 +258,22 @@ namespace Tests.Jira
         }
 
 
+        [TestMethod]
+        public async Task Get_Relevant_Sprint_ReturnsValues()
+        {
+            var handler = new SprintActions(InvocationContext, FileManager);
+
+            var response = await handler.GetRelevantSprintForDate(
+                new GetSprintByDateRequest { BoardId= "456", Date = new DateTime(2025, 5, 20)});
+
+            foreach (var item in response.Sprints)
+            {
+                Console.WriteLine($"{item.Name}: {item.Id}");
+
+                Assert.IsNotNull(response);
+            }
+        }
+
+
     }
 }

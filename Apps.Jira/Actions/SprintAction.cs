@@ -18,32 +18,28 @@ namespace Apps.Jira.Actions
         public async Task<SprintsResponse> GetRelevantSprintForDate(
             [ActionParameter] GetSprintByDateRequest requestModel)
         {
-            var authenticationProviders = InvocationContext.AuthenticationCredentialsProviders;
-            var client = new JiraClient(authenticationProviders, "agile");
+            var client = new JiraClient(InvocationContext.AuthenticationCredentialsProviders, "agile");
 
-            var endpoint = $"/board/{requestModel.BoardId}/sprint";
-            var jiraRequest = new JiraRequest(endpoint, Method.Get);
+            var jiraRequest = new JiraRequest($"/board/{requestModel.BoardId}/sprint", Method.Get);
 
-            var response = await client.ExecuteWithHandling<SprintsWrapper>(jiraRequest);
-            var relevantSprints = response.Values
-                ?.Where(sprint =>sprint.StartDate <= requestModel.Date && sprint.EndDate >= requestModel.Date).ToList();
+            var allSprints = await client.Paginate<Sprint>(jiraRequest);
 
-            if (relevantSprints == null || !relevantSprints.Any())
-            {
+            var relevant = allSprints
+                .Where(s => s.StartDate <= requestModel.Date && s.EndDate >= requestModel.Date)
+                .ToList();
+
+            if (!relevant.Any())
                 return new SprintsResponse
                 {
-                    Message = $"No sprints found for the date {requestModel.Date.ToShortDateString()}.",
+                    Message = $"No sprints found for {requestModel.Date:yyyy-MM-dd}.",
                     Sprints = new List<SprintDto>()
                 };
-            }
 
             return new SprintsResponse
             {
-                Message = $"Found {relevantSprints.Count} relevant sprint(s) for the date {requestModel.Date.ToShortDateString()}.",
-                Sprints = relevantSprints.Select(s => new SprintDto(s)).ToList()
+                Message = $"Found {relevant.Count} sprint(s) for {requestModel.Date:yyyy-MM-dd}.",
+                Sprints = relevant.Select(s => new SprintDto(s)).ToList()
             };
         }
-
-
     }
 }

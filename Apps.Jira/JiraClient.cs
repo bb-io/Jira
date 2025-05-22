@@ -1,6 +1,8 @@
-﻿using System.Text;
+﻿using System.Collections.Generic;
+using System.Text;
 using Apps.Jira.Dtos;
 using Apps.Jira.Extensions;
+using Apps.Jira.Models.Responses;
 using Blackbird.Applications.Sdk.Common.Authentication;
 using Blackbird.Applications.Sdk.Common.Exceptions;
 using Newtonsoft.Json.Linq;
@@ -91,5 +93,40 @@ public class JiraClient : RestClient
         {
             throw new PluginApplicationException(ex.Message);
         }
+    }
+
+    public async Task<List<TItem>> Paginate<TItem>(JiraRequest originalRequest)
+    {
+        var allItems = new List<TItem>();
+        var endpoint = originalRequest.Resource;
+        var method = originalRequest.Method;
+        int startAt = 0;
+
+        bool isLast = false;
+
+        do
+        {
+            var pageRequest = new JiraRequest(endpoint, method);
+
+            foreach (var p in originalRequest.Parameters
+                                         .Where(x => x.Type == ParameterType.QueryString))
+            {
+                pageRequest.AddQueryParameter(p.Name, p.Value?.ToString());
+            }
+
+            pageRequest.AddQueryParameter("startAt", startAt.ToString());
+            pageRequest.AddQueryParameter("maxResults", "50");
+
+            var page = await ExecuteWithHandling<PaginationResponse<TItem>>(pageRequest);
+
+            if (page?.Values != null)
+                allItems.AddRange(page.Values);
+
+            isLast = page?.IsLast ?? true;
+            startAt = (page?.StartAt ?? 0) + (page?.Values?.Count ?? 0);
+
+        } while (!isLast);
+
+        return allItems;
     }
 }
