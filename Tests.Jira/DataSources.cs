@@ -259,7 +259,7 @@ namespace Tests.Jira
 
 
         [TestMethod]
-        public async Task Get_Relevant_Issue_ReturnsValues()
+        public async Task Get_Relevant_Sprint_ReturnsValues()
         {
             var handler = new SprintActions(InvocationContext, FileManager);
 
