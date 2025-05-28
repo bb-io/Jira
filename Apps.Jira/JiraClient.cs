@@ -5,6 +5,7 @@ using Apps.Jira.Extensions;
 using Apps.Jira.Models.Responses;
 using Blackbird.Applications.Sdk.Common.Authentication;
 using Blackbird.Applications.Sdk.Common.Exceptions;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Polly.Retry;
 using RestSharp;
@@ -77,21 +78,41 @@ public class JiraClient : RestClient
         try
         {
             var error = response.Content.Deserialize<ErrorDto>();
-            var errorMessages = string.Join(" ", error.ErrorMessages);
-            if (string.IsNullOrEmpty(errorMessages))
+
+            if (!string.IsNullOrEmpty(error.Message))
             {
-                var errorData = error.Errors.Values().Select(x => x.ToString());
-                if (errorData.Any())
-                {
-                    throw new PluginApplicationException(errorData.First());
-                }
-                throw new PluginApplicationException("Internal system error");
+                return new PluginApplicationException(error.Message);
             }
-            throw new PluginApplicationException(errorMessages);
+
+            if (error.ErrorMessages?.Any() == true)
+            {
+                var combined = string.Join(" ", error.ErrorMessages);
+                return new PluginApplicationException(combined);
+            }
+
+            if (error.Errors != null)
+            {
+                var firstError = error.Errors
+                    .Properties()
+                    .Select(p => p.Value.ToString())
+                    .FirstOrDefault();
+                if (!string.IsNullOrEmpty(firstError))
+                {
+                    return new PluginApplicationException(firstError);
+                }
+            }
+
+            return new PluginApplicationException("Internal system error");
+        }
+        catch (JsonException)
+        {
+            return new PluginApplicationException(
+                $"Unable to parse error response: {response.Content}"
+            );
         }
         catch (Exception ex)
         {
-            throw new PluginApplicationException(ex.Message);
+            return new PluginApplicationException(ex.Message);
         }
     }
 
