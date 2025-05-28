@@ -274,6 +274,17 @@ namespace Tests.Jira
             }
         }
 
+        //GetUserEmail
 
+        [TestMethod]
+        public async Task Get_User_email_ReturnsValues()
+        {
+            var handler = new UserActions(InvocationContext);
+
+            var response = await handler.GetUserEmail(new UserIdentifier { AccountId= "712020:6965b2d5-4fb8-4142-b657-41ce3db735e9" });
+
+            Console.WriteLine($"{response.Email}");
+            Assert.IsNotNull(response);
+        }
     }
 }
