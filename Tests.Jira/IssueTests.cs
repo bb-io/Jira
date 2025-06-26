@@ -20,16 +20,14 @@ namespace Tests.Jira
 
             var project = new ProjectIdentifier
             {
-                ProjectKey = "ELTF"
+                ProjectKey = "AC"
             };
             var request = new CreateIssueRequest
             {
-                Summary = "Test issue local",
-                IssueTypeId = "10002",
+                Summary = "Test issue local2",
+                IssueTypeId = "10006",
                 Description = "Test description",
-                DueDate = new DateTime(2025,3,6),
-                OriginalEstimate = "3600",
-                Reporter = "712020:75495005-bcf9-4f19-8ea8-d038a4dba86b"
+                ParentIssueKey = "AC-1"
             };
             var response = await action.CreateIssue(project,request);
 

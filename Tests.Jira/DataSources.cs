@@ -200,6 +200,22 @@ namespace Tests.Jira
         }
 
         [TestMethod]
+        public async Task GetIssuesTypeHandlerReturnsValues()
+        {
+            var handler = new IssueTypeDataSourceHandler(InvocationContext, new ProjectIdentifier { ProjectKey="AC"});
+
+            var response = await handler.GetDataAsync(new DataSourceContext { SearchString = "" }, CancellationToken.None);
+
+            foreach (var item in response)
+            {
+                Console.WriteLine($"{item.Value}: {item.Key}");
+            }
+
+            Assert.IsNotNull(response);
+
+        }
+
+        [TestMethod]
         public async Task GetIssuesWrongReturnsValues()
         {
             var handler = new IssueActions(InvocationContext, FileManager);

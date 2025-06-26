@@ -154,6 +154,8 @@ public class IssueActions(InvocationContext invocationContext, IFileManagementCl
             fields.Add("reporter", new { id = input.Reporter });
         }
 
+        if (!string.IsNullOrEmpty(input.ParentIssueKey))
+            fields.Add("parent", new { key = input.ParentIssueKey });
 
         var request = new JiraRequest("/issue", Method.Post).AddJsonBody(new
         {
