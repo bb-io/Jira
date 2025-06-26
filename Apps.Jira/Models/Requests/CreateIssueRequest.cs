@@ -27,4 +27,8 @@ public class CreateIssueRequest
     [Display("Reporter  ID")]
     [DataSource(typeof(AssigneeDataSourceHandler))]
     public string? Reporter { get; set; }
+
+    [Display("Parent issue key")]
+    [DataSource(typeof(IssueDataSourceHandler))]
+    public string? ParentIssueKey { get; set; }
 }
