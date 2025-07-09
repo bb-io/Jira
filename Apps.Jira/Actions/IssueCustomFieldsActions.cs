@@ -8,6 +8,7 @@ using Blackbird.Applications.Sdk.Common.Actions;
 using Blackbird.Applications.Sdk.Common.Dynamic;
 using Blackbird.Applications.Sdk.Common.Exceptions;
 using Blackbird.Applications.Sdk.Common.Invocation;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using RestSharp;
 
@@ -226,6 +227,57 @@ public class IssueCustomFieldsActions : JiraInvocable
                     }}
                 }}";
 
+        await SetCustomFieldValue(requestBody, issue.IssueKey);
+    }
+
+    [Action("Set custom rich text field value", Description = "Set the value of a custom rich text field for a specific issue.")]
+    public async Task SetCustomRichTextFieldValue(
+    [ActionParameter] IssueIdentifier issue,
+    [ActionParameter] CustomStringFieldIdentifier customTextField,
+    [ActionParameter][Display("Text")] string text,
+    [ActionParameter] RichTextMarksRequest marks = null)
+    {
+        var targetField = await GetCustomFieldData(customTextField.CustomStringFieldId);
+
+        var markNodes = marks != null && marks.Marks.Any() ? marks?.Marks.Select(mark => new Dictionary<string, object>
+    {
+        { "type", mark }
+    }).ToList() : null;
+
+        var document = new Dictionary<string, object>
+    {
+        { "version", 1 },
+        { "type", "doc" },
+        { "content", new List<Dictionary<string, object>>
+            {
+                new Dictionary<string, object>
+                {
+                    { "type", "paragraph" },
+                    { "content", new List<Dictionary<string, object>>
+                        {
+                            new Dictionary<string, object>
+                            {
+                                { "type", "text" },
+                                { "text", text },
+                                { "marks", markNodes ?? new List<Dictionary<string, object>>() }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    };
+
+        var jsonBody = new Dictionary<string, object>
+    {
+        { "fields", new Dictionary<string, object>
+            {
+                { customTextField.CustomStringFieldId, document }
+            }
+        }
+    };
+
+        var requestBody = JsonConvert.SerializeObject(jsonBody);
         await SetCustomFieldValue(requestBody, issue.IssueKey);
     }
 
