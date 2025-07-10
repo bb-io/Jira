@@ -235,14 +235,16 @@ public class IssueCustomFieldsActions : JiraInvocable
     [ActionParameter] IssueIdentifier issue,
     [ActionParameter] CustomStringFieldIdentifier customTextField,
     [ActionParameter][Display("Text")] string text,
-    [ActionParameter] RichTextMarksRequest marks = null)
+    //[ActionParameter] 
+    RichTextMarksRequest marks = null)
     {
         var targetField = await GetCustomFieldData(customTextField.CustomStringFieldId);
 
-        var markNodes = marks != null && marks.Marks.Any() ? marks?.Marks.Select(mark => new Dictionary<string, object>
-    {
-        { "type", mark }
-    }).ToList() : null;
+        var markNodes = marks != null && marks?.Marks?.Any() == true ? marks.Marks.Select(mark => new Dictionary<string, object>
+        {
+            { "type", mark }
+        }).ToList()
+    : null;
 
         var document = new Dictionary<string, object>
     {
