@@ -235,7 +235,8 @@ public class IssueCustomFieldsActions : JiraInvocable
     [ActionParameter] IssueIdentifier issue,
     [ActionParameter] CustomStringFieldIdentifier customTextField,
     [ActionParameter][Display("Text")] string text,
-    [ActionParameter] RichTextMarksRequest marks = null)
+    //[ActionParameter] 
+    RichTextMarksRequest marks = null)
     {
         var targetField = await GetCustomFieldData(customTextField.CustomStringFieldId);
 
