@@ -26,7 +26,7 @@ public class UserActions : JiraInvocable
         return new UsersResponse { Users = users };
     }
 
-    [Action("Find user by e-mail", Description = "Finds user by e-mail")]
+    [Action("Find user by email", Description = "Finds user by email")]
     public async Task<UsersResponse> FindUserByEmail([ActionParameter] UserEmailRequest input)
     {
         var request = new JiraRequest($"/users/search?query={input.Email}", Method.Get);
