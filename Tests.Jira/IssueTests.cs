@@ -71,13 +71,13 @@ namespace Tests.Jira
 
             var project = new IssueIdentifier
             {
-                IssueKey = "AC-1"
+                IssueKey = "TES-6"
             };
           
             var response = await action.GetIssueByKey(project);
 
-            Console.WriteLine(response.DueDate);
-            Console.WriteLine(response.Reporter.DisplayName);
+            var json = Newtonsoft.Json.JsonConvert.SerializeObject(response, Newtonsoft.Json.Formatting.Indented);
+            Console.WriteLine(json);
             Assert.IsNotNull(response);
         }
 
