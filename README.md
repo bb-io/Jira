@@ -98,6 +98,7 @@ Note: this app currently supports only short text (plain text only) custom field
 - **Reset user default columns**: Resets the column configuration to default for a specified user.
 - **Set user columns**: Sets the column configuration for a specified user.
 - **Bulk get users**: Retrieves information for a bulk list of users based on their account IDs.
+- **Find user by email** Finds a user in Jira by their email address.
 
 ### Issue Comment Actions
 
