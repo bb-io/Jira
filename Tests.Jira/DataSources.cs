@@ -290,7 +290,19 @@ namespace Tests.Jira
             }
         }
 
-        //GetUserEmail
+        [TestMethod]
+        public async Task Get_User_by_Email_ReturnsValues()
+        {
+            var handler = new UserActions(InvocationContext);
+
+            var response = await handler.FindUserByEmail(new UserEmailRequest { Email= "ariabushenko@blackbird.io" });
+
+            var json = Newtonsoft.Json.JsonConvert.SerializeObject(response, Newtonsoft.Json.Formatting.Indented);
+            Console.WriteLine(json);
+            Assert.IsNotNull(response);
+
+        }
+
 
         [TestMethod]
         public async Task Get_User_email_ReturnsValues()
@@ -301,6 +313,29 @@ namespace Tests.Jira
 
             Console.WriteLine($"{response.Email}");
             Assert.IsNotNull(response);
+        }
+
+        [TestMethod]
+        public async Task Set_RichtextFieldHandlerReturnsValues()
+        {
+            var handler = new IssueCustomFieldsActions(InvocationContext);
+
+            var input1 = new IssueIdentifier
+            {
+                IssueKey = "TES-4"
+            };
+
+            var input2 = new CustomStringFieldIdentifier
+            {
+                 
+            };
+
+            var text = "https://cloud.memsource.com/web/project2/show/WdwZFaKaeUHD2JKyymEri2";
+            await handler.SetCustomRichTextFieldValue(input1, input2, text);
+
+
+            Assert.IsTrue(true);
+
         }
     }
 }

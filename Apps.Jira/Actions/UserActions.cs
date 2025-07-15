@@ -25,7 +25,21 @@ public class UserActions : JiraInvocable
         var users = await Client.ExecuteWithHandling<List<UserDto>>(request);
         return new UsersResponse { Users = users };
     }
-    
+
+    [Action("Find user by e-mail", Description = "Finds user by e-mail")]
+    public async Task<UsersResponse> FindUserByEmail([ActionParameter] UserEmailRequest input)
+    {
+        var request = new JiraRequest($"/users/search?query={input.Email}", Method.Get);
+        var users = await Client.ExecuteWithHandling<List<UserDto>>(request) ?? new List<UserDto>();
+
+        var filtered = users
+        .Where(u => u.AccountType.Equals("atlassian", StringComparison.OrdinalIgnoreCase))
+        .Where(u => string.Equals(u.EmailAddress, input.Email, StringComparison.OrdinalIgnoreCase))
+        .ToList();
+
+        return new UsersResponse { Users = filtered };
+    }
+
     [Action("Get user", Description = "Get the specified user.")]
     public async Task<ExpandedUserDto> GetUser([ActionParameter] UserIdentifier input)
     {

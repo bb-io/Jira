@@ -20,6 +20,10 @@ public class UserDto
     public string DisplayName { get; set; }
     
     public string Self { get; set; }
+
+    [Display("E-mail address")]
+    [JsonProperty("emailAddress")]
+    public string EmailAddress { get; set; }
 }
 
 public class AvatarUrls
