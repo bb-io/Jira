@@ -10,4 +10,7 @@ public class RichTextMarksRequest
 {
     [StaticDataSource(typeof(RichTextMarksHandler))]
     public IEnumerable<string>? Marks { get; set; }
+
+    [Display("Link URL")]
+    public string? LinkURL { get; set; }
 }

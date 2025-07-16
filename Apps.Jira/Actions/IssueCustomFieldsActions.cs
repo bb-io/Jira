@@ -235,16 +235,49 @@ public class IssueCustomFieldsActions : JiraInvocable
     [ActionParameter] IssueIdentifier issue,
     [ActionParameter] CustomStringFieldIdentifier customTextField,
     [ActionParameter][Display("Text")] string text,
-    //[ActionParameter] 
-    RichTextMarksRequest marks = null)
+    [ActionParameter] RichTextMarksRequest marks = null)
     {
         var targetField = await GetCustomFieldData(customTextField.CustomStringFieldId);
 
-        var markNodes = marks != null && marks?.Marks?.Any() == true ? marks.Marks.Select(mark => new Dictionary<string, object>
+        List<Dictionary<string, object>> markNodes = null;
+
+        if (marks?.Marks?.Any() == true)
         {
-            { "type", mark }
-        }).ToList()
-    : null;
+            markNodes = marks.Marks.Select(mark =>
+            {
+                var markDict = new Dictionary<string, object>
+            {
+                { "type", mark }
+            };
+
+                if (mark == "link")
+                {
+                    if (string.IsNullOrEmpty(marks.LinkURL))
+                    {
+                        throw new PluginMisconfigurationException("Link URL must be provided when using the 'link' mark.");
+                    }
+
+                    markDict["attrs"] = new Dictionary<string, object>
+                {
+                    { "href", marks.LinkURL },
+                    { "title", marks.LinkURL }
+                };
+                }
+
+                return markDict;
+            }).ToList();
+        }
+
+        var textNode = new Dictionary<string, object>
+    {
+        { "type", "text" },
+        { "text", text }
+    };
+
+        if (markNodes != null && markNodes.Any())
+        {
+            textNode["marks"] = markNodes;
+        }
 
         var document = new Dictionary<string, object>
     {
@@ -255,16 +288,7 @@ public class IssueCustomFieldsActions : JiraInvocable
                 new Dictionary<string, object>
                 {
                     { "type", "paragraph" },
-                    { "content", new List<Dictionary<string, object>>
-                        {
-                            new Dictionary<string, object>
-                            {
-                                { "type", "text" },
-                                { "text", text },
-                                { "marks", markNodes ?? new List<Dictionary<string, object>>() }
-                            }
-                        }
-                    }
+                    { "content", new List<Dictionary<string, object>> { textNode } }
                 }
             }
         }
