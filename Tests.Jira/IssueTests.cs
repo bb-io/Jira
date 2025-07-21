@@ -73,11 +73,28 @@ namespace Tests.Jira
             {
                 IssueKey = "TES-6"
             };
-          
+
             var response = await action.GetIssueByKey(project);
 
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(response, Newtonsoft.Json.Formatting.Indented);
             Console.WriteLine(json);
+            Assert.IsNotNull(response);
+        }
+
+        [TestMethod]
+        public async Task ListRecentlyCreatedIssues_ReturnsSucces()
+        {
+            var action = new IssueActions(InvocationContext, FileManager);
+
+            var project = new ProjectIdentifier { ProjectKey = "SKP" };
+            var listRequest = new ListRecentlyCreatedIssuesRequest
+            {
+                Hours = 500,
+                Labels = ["form", "non-existent-label"],
+                Versions = ["v1.0", "v1.1"]
+            };
+
+            var response = await action.ListRecentlyCreatedIssues(project, listRequest);
             Assert.IsNotNull(response);
         }
 
