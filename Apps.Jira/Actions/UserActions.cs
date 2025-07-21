@@ -7,6 +7,7 @@ using Blackbird.Applications.Sdk.Common;
 using Blackbird.Applications.Sdk.Common.Actions;
 using Blackbird.Applications.Sdk.Common.Invocation;
 using RestSharp;
+using System.ComponentModel.DataAnnotations;
 using UserDto = Apps.Jira.Models.Responses.UserDto;
 
 namespace Apps.Jira.Actions;
@@ -27,17 +28,29 @@ public class UserActions : JiraInvocable
     }
 
     [Action("Find user by email", Description = "Finds user by email")]
-    public async Task<UsersResponse> FindUserByEmail([ActionParameter] UserEmailRequest input)
+    public async Task<UserDto?> FindUserByEmail([ActionParameter] UserEmailRequest input)
     {
-        var request = new JiraRequest($"/users/search?query={input.Email}", Method.Get);
-        var users = await Client.ExecuteWithHandling<List<UserDto>>(request) ?? new List<UserDto>();
+        var startAt = 0;
+        const int maxResults = 100;
 
-        var filtered = users
-        .Where(u => u.AccountType.Equals("atlassian", StringComparison.OrdinalIgnoreCase))
-        .Where(u => string.Equals(u.EmailAddress, input.Email, StringComparison.OrdinalIgnoreCase))
-        .ToList();
+        while (true)
+        {
+            var request = new JiraRequest($"/users/search?query={input.Email}&maxResults={maxResults}&startAt={startAt}", Method.Get);
+            var users = await Client.ExecuteWithHandling<List<UserDto>>(request) ?? new List<UserDto>();
 
-        return new UsersResponse { Users = filtered };
+            if (!users.Any())
+                return null;
+
+            var matchedUser = users
+                .FirstOrDefault(u =>
+                    u.AccountType.Equals("atlassian", StringComparison.OrdinalIgnoreCase) &&
+                    string.Equals(u.EmailAddress, input.Email, StringComparison.OrdinalIgnoreCase));
+
+            if (matchedUser != null)
+                return matchedUser;
+
+            startAt += maxResults;
+        }
     }
 
     [Action("Get user", Description = "Get the specified user.")]
