@@ -3,7 +3,6 @@ using Apps.Jira.DataSourceHandlers;
 using Apps.Jira.DataSourceHandlers.CustomFields;
 using Apps.Jira.Models.Identifiers;
 using Apps.Jira.Models.Requests;
-using Apps.Jira.Webhooks.Payload;
 using Blackbird.Applications.Sdk.Common.Dynamic;
 using Blackbird.Applications.Sdk.Common.Exceptions;
 using Tests.Jira.Base;
@@ -68,7 +67,7 @@ namespace Tests.Jira
             var input3 = new CustomMultiselectFieldInput { ValueProperty = ["Hello"] };
             await handler.SetCustomMultiselectFieldValue(input1, input2, input3);
 
-            for (int i = 0; i<50;i++)
+            for (int i = 0; i < 50; i++)
             {
                 var response = await handler.GetCustomMultiselectFieldValue(input1, input2);
                 Console.WriteLine($"{response.Count}");
@@ -202,7 +201,7 @@ namespace Tests.Jira
         [TestMethod]
         public async Task GetIssuesTypeHandlerReturnsValues()
         {
-            var handler = new IssueTypeDataSourceHandler(InvocationContext, new ProjectIdentifier { ProjectKey="AC"});
+            var handler = new IssueTypeDataSourceHandler(InvocationContext, new ProjectIdentifier { ProjectKey = "AC" });
 
             var response = await handler.GetDataAsync(new DataSourceContext { SearchString = "" }, CancellationToken.None);
 
@@ -280,7 +279,7 @@ namespace Tests.Jira
             var handler = new SprintActions(InvocationContext, FileManager);
 
             var response = await handler.GetRelevantSprintForDate(
-                new GetSprintByDateRequest { BoardId= "456", Date = new DateTime(2025, 5, 20)});
+                new GetSprintByDateRequest { BoardId = "456", Date = new DateTime(2025, 5, 20) });
 
             foreach (var item in response.Sprints)
             {
@@ -295,7 +294,7 @@ namespace Tests.Jira
         {
             var handler = new UserActions(InvocationContext);
 
-            var response = await handler.FindUserByEmail(new UserEmailRequest { Email= "ariabushenko@blackbird.io" });
+            var response = await handler.FindUserByEmail(new UserEmailRequest { Email = "ariabushenko@blackbird.io" });
 
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(response, Newtonsoft.Json.Formatting.Indented);
             Console.WriteLine(json);
@@ -309,7 +308,7 @@ namespace Tests.Jira
         {
             var handler = new UserActions(InvocationContext);
 
-            var response = await handler.GetUserEmail(new UserIdentifier { AccountId= "712020:6965b2d5-4fb8-4142-b657-41ce3db735e9" });
+            var response = await handler.GetUserEmail(new UserIdentifier { AccountId = "712020:6965b2d5-4fb8-4142-b657-41ce3db735e9" });
 
             Console.WriteLine($"{response.Email}");
             Assert.IsNotNull(response);
@@ -327,7 +326,7 @@ namespace Tests.Jira
 
             var input2 = new CustomStringFieldIdentifier
             {
-                 
+
             };
 
             var text = "https://cloud.memsource.com/web/project2/show/WdwZFaKaeUHD2JKyymEri2";
@@ -336,6 +335,18 @@ namespace Tests.Jira
 
             Assert.IsTrue(true);
 
+        }
+
+        [TestMethod]
+        public async Task FixVersionDatahandler_ReturnsValues()
+        {
+            var handler = new FixVersionDataHandler(InvocationContext, new ProjectIdentifier { ProjectKey = "SKP" });
+            var response = await handler.GetDataAsync(new DataSourceContext { SearchString = "" }, CancellationToken.None);
+            foreach (var item in response)
+            {
+                Console.WriteLine($"{item.Value}: {item.DisplayName}");
+            }
+            Assert.IsNotNull(response);
         }
     }
 }

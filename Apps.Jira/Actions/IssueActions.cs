@@ -40,12 +40,32 @@ public class IssueActions(InvocationContext invocationContext, IFileManagementCl
         "List issues created during past hours in a specific project." +
         "If number of hours is not specified, issues created during " +
         "past 24 hours are listed.")]
-    public async Task<IssuesResponse> ListRecentlyCreatedIssues([ActionParameter] ProjectIdentifier project,
-        [ActionParameter] [Display("Hours")] int? hours)
+    public async Task<IssuesResponse> ListRecentlyCreatedIssues(
+        [ActionParameter] ProjectIdentifier project,
+        [ActionParameter] ListRecentlyCreatedIssuesRequest listRequest)
     {
-        var request = new JiraRequest($"/search?jql=project={project.ProjectKey} and Created >-{hours ?? 24}h",
-            Method.Get);
+        List<string> jqlConditions = [
+            $"project={project.ProjectKey}",
+            $"Created >= -{listRequest.Hours ?? 24}h",
+        ];
+
+        if (listRequest.Labels != null && listRequest.Labels.Any())
+        {
+            var labelsQuotedCommaSeparatedList = '"' + string.Join("\", \"", listRequest.Labels.Where(l => !string.IsNullOrWhiteSpace(l))) + '"';
+            jqlConditions.Add($"labels in ({labelsQuotedCommaSeparatedList})");
+        }
+
+        if (listRequest.Versions != null && listRequest.Versions.Any())
+        {
+            var versionsQuotedCommaSeparatedList = '"' + string.Join("\", \"", listRequest.Versions.Where(v => !string.IsNullOrWhiteSpace(v))) + '"';
+            jqlConditions.Add($"fixVersion in ({versionsQuotedCommaSeparatedList})");
+        }
+
+        var request = new JiraRequest("/search", Method.Get);
+        request.AddQueryParameter("jql", string.Join(" and ", jqlConditions));
+
         var issues = await Client.ExecuteWithHandling<IssuesWrapper>(request);
+
         return new IssuesResponse
         {
             Issues = issues.Issues.Select(i => new IssueDto(i))
