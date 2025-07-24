@@ -68,7 +68,8 @@ public class IssueActions(InvocationContext invocationContext, IFileManagementCl
 
         return new IssuesResponse
         {
-            Issues = issues.Issues.Select(i => new IssueDto(i))
+            Issues = issues.Issues.Select(i => new IssueDto(i)),
+            Count = issues.Issues.Count()
         };
     }
 
