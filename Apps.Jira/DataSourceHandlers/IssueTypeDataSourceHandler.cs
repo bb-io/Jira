@@ -1,5 +1,6 @@
 ﻿using Apps.Jira.Dtos;
 using Apps.Jira.Models.Identifiers;
+using Apps.Jira.Models.Responses;
 using Blackbird.Applications.Sdk.Common;
 using Blackbird.Applications.Sdk.Common.Dynamic;
 using Blackbird.Applications.Sdk.Common.Invocation;
@@ -21,17 +22,14 @@ public class IssueTypeDataSourceHandler : JiraInvocable, IAsyncDataSourceHandler
         CancellationToken cancellationToken)
     {
         if (_projectIdentifier.ProjectKey == null)
-            throw new Exception("Please specify project key first.");
-        
-        var getProjectRequest = new JiraRequest($"/project/{_projectIdentifier.ProjectKey}", Method.Get);
-        var project = await Client.ExecuteWithHandling<ProjectDto>(getProjectRequest);
-        
-        var getIssueTypesRequest = new JiraRequest("/issuetype", Method.Get);
-        var issueTypes = await Client.ExecuteWithHandling<IEnumerable<IssueTypeDto>>(getIssueTypesRequest);
-        return issueTypes
-            .Where(type => type.Scope is null || type.Scope?.Type == "PROJECT" && type.Scope.Project!.Id == project.Id)
-            .Where(type => context.SearchString == null 
-                           || type.Name.Contains(context.SearchString, StringComparison.OrdinalIgnoreCase))
-            .ToDictionary(type => type.Id, type => type.Name);
+        throw new Exception("Please specify project key first.");
+
+    var request = new JiraRequest($"/issue/createmeta?projectKeys={_projectIdentifier.ProjectKey}&expand=projects.issuetypes", Method.Get);
+    var response = await Client.ExecuteWithHandling<CreateMetaDto>(request);
+
+    return response.Projects
+        .SelectMany(p => p.IssueTypes)
+        .Where(type => context.SearchString == null || type.Name.Contains(context.SearchString, StringComparison.OrdinalIgnoreCase))
+        .ToDictionary(type => type.Id, type => type.Name);
     }
 }

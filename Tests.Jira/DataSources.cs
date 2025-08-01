@@ -348,5 +348,20 @@ namespace Tests.Jira
             }
             Assert.IsNotNull(response);
         }
+
+        //IssueTypeDataSourceHandler
+
+
+        [TestMethod]
+        public async Task IssueTypeDataSourceHandler_ReturnsValues()
+        {
+            var handler = new IssueTypeDataSourceHandler(InvocationContext, new ProjectIdentifier { ProjectKey = "TSK" });
+            var response = await handler.GetDataAsync(new DataSourceContext { SearchString = "" }, CancellationToken.None);
+            foreach (var item in response)
+            {
+                Console.WriteLine($"{item.Value}: {item.Key}");
+            }
+            Assert.IsNotNull(response);
+        }
     }
 }
