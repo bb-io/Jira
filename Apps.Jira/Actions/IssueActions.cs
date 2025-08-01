@@ -125,6 +125,14 @@ public class IssueActions(InvocationContext invocationContext, IFileManagementCl
     public async Task<CreatedIssueDto> CreateIssue([ActionParameter] ProjectIdentifier project,
         [ActionParameter] CreateIssueRequest input)
     {
+        var projectRequest = new JiraRequest($"/project/{project.ProjectKey}", Method.Get);
+        var projectResponse = await Client.ExecuteWithHandling<DetailedProjectDto>(projectRequest);
+        var validIssueTypes = projectResponse.IssueTypes.Select(t => t.Id).ToList();
+        if (!validIssueTypes.Contains(input.IssueTypeId))
+        {
+            throw new PluginMisconfigurationException($"Invalid issue type ID: {input.IssueTypeId}. Valid issue type IDs for project {project.ProjectKey} are: {string.Join(", ", validIssueTypes)}");
+        }
+
         var fields = new Dictionary<string, object>
         {
             { "project", new { key = project.ProjectKey } },
