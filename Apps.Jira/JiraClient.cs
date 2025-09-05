@@ -1,14 +1,12 @@
-﻿using System.Collections.Generic;
-using System.Text;
-using Apps.Jira.Dtos;
+﻿using Apps.Jira.Dtos;
 using Apps.Jira.Extensions;
 using Apps.Jira.Models.Responses;
 using Blackbird.Applications.Sdk.Common.Authentication;
 using Blackbird.Applications.Sdk.Common.Exceptions;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using Polly.Retry;
 using RestSharp;
+using System.Net;
 
 namespace Apps.Jira;
 
@@ -77,6 +75,14 @@ public class JiraClient : RestClient
     {
         try
         {
+            if (response.StatusCode == HttpStatusCode.TooManyRequests) 
+            {
+                return new PluginApplicationException
+                (
+                    "Jira is limiting requests due to high activity. Please try again later"
+                );
+            }
+
             var error = response.Content.Deserialize<ErrorDto>();
 
             if (!string.IsNullOrEmpty(error.Message))
