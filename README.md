@@ -58,6 +58,8 @@ Note: this app currently supports only short text (plain text only) custom field
 
 ## Actions
 
+Please note: sending too many parallel requests to Jira may result in request rejections. While we have added a retry policy to handle this, ultimate control lies with Jira’s servers.
+
 ### Issues
 
 - **Get issue** returns the details for an issue (summary, description, status, priority, assignee, project).
