@@ -71,7 +71,7 @@ namespace Tests.Jira
 
             var project = new IssueIdentifier
             {
-                IssueKey = "TES-6"
+                IssueKey = "AC-8"
             };
 
             var response = await action.GetIssueByKey(project);
@@ -86,15 +86,19 @@ namespace Tests.Jira
         {
             var action = new IssueActions(InvocationContext, FileManager);
 
-            var project = new ProjectIdentifier { ProjectKey = "SKP" };
+            var project = new ProjectIdentifier { ProjectKey = "AC" };
             var listRequest = new ListRecentlyCreatedIssuesRequest
             {
                 Hours = 500,
-                Labels = ["form", "non-existent-label"],
-                Versions = ["v1.0", "v1.1"]
+                //Labels = ["form", "non-existent-label"],
+                //Versions = ["v1.0", "v1.1"]
+                ParentIssue = "AC-8"
             };
 
             var response = await action.ListRecentlyCreatedIssues(project, listRequest);
+            var json = Newtonsoft.Json.JsonConvert.SerializeObject(response, Newtonsoft.Json.Formatting.Indented);
+            Console.WriteLine(json);
+
             Assert.IsNotNull(response);
         }
 

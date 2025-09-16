@@ -61,8 +61,14 @@ public class IssueActions(InvocationContext invocationContext, IFileManagementCl
             jqlConditions.Add($"fixVersion in ({versionsQuotedCommaSeparatedList})");
         }
 
-        var request = new JiraRequest("/search", Method.Get);
+        if (!string.IsNullOrWhiteSpace(listRequest.ParentIssue))
+        {
+            jqlConditions.Add($"parent = {listRequest.ParentIssue.Trim()}");
+        }
+
+        var request = new JiraRequest("/search/jql", Method.Get);
         request.AddQueryParameter("jql", string.Join(" and ", jqlConditions));
+        request.AddQueryParameter("fields","id,key,summary,status,priority,assignee,reporter,project,description,labels,subtasks,duedate,parent");
 
         var issues = await Client.ExecuteWithHandling<IssuesWrapper>(request);
 

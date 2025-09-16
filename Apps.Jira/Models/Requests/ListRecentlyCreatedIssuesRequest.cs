@@ -16,4 +16,7 @@ public class ListRecentlyCreatedIssuesRequest
     [Display("Fix versions")]
     [DataSource(typeof(FixVersionDataHandler))]
     public IEnumerable<string>? Versions { get; set; }
+
+    [Display("Parent issue")]
+    public string? ParentIssue { get; set; }
 }
