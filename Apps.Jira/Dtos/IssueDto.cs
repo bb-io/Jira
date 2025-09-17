@@ -10,8 +10,8 @@ public class IssueDto
     public IssueDto(IssueWrapper issueWrapper)
     {
         IssueKey = issueWrapper.Key;
-        Summary = issueWrapper.Fields.Summary ?? string.Empty;
-        Status = issueWrapper.Fields.Status;
+        Summary = issueWrapper?.Fields?.Summary ?? string.Empty;
+        Status = issueWrapper.Fields.Status ?? null;
         Priority = issueWrapper.Fields.Priority ?? new PriorityDto();
         Assignee = issueWrapper.Fields.Assignee;
         Reporter = issueWrapper.Fields.Reporter;
@@ -42,11 +42,11 @@ public class IssueDto
         
     public string? Description { get; set; }
 
-    public StatusDto Status { get; set; }
+    public StatusDto? Status { get; set; }
         
-    public PriorityDto Priority { get; set; }
+    public PriorityDto? Priority { get; set; }
         
-    public ProjectDto Project { get; set; }
+    public ProjectDto? Project { get; set; }
 
     public UserDto? Assignee { get; set; }
 
@@ -55,10 +55,10 @@ public class IssueDto
     public List<string>? Labels { get; set; } = new();
     
     [Display("Subtasks info")]
-    public List<SubTaskDto> SubTasks { get; set; } = new();
+    public List<SubTaskDto>? SubTasks { get; set; } = new();
 
     [Display("Due date")]
-    public DateTime DueDate { get; set; }
+    public DateTime? DueDate { get; set; }
 }
 
 public class SubTaskDto
