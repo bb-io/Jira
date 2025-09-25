@@ -228,7 +228,8 @@ namespace Apps.Jira.Webhooks
             [WebhookParameter] OptionalStatusInput status,
             [WebhookParameter] IssueInput issue,
             [WebhookParameter] LabelsOptionalInput labels,
-            [WebhookParameter] SummaryContainsOptionalRequest summary)
+            [WebhookParameter] IssueTypeOptionalInput IssueType,
+            [WebhookParameter] string? summary)
         {
             var payload = DeserializePayload(request);
             var statusItem = payload.Changelog.Items.FirstOrDefault(item => item.FieldId == "status");
@@ -237,7 +238,8 @@ namespace Apps.Jira.Webhooks
                 || (project.ProjectKey is not null && !project.ProjectKey.Equals(payload.Issue.Fields.Project.Key))
                 || (status.StatusId is not null && payload.Issue.Fields.Status.Id != status.StatusId)
                 || (issue.IssueKey is not null && !issue.IssueKey.Equals(payload.Issue.Key))
-                || (summary.Summary is not null && !payload.Issue.Fields.Summary.Contains(summary.Summary)))
+                || (!String.IsNullOrEmpty(summary) && !payload.Issue.Fields.Summary.Contains(summary))
+                || (IssueType?.IssueTypeId is not null && payload.Issue.Fields.IssueType.Id != IssueType.IssueTypeId))
                 return new WebhookResponse<IssueResponse>
                 {
                     HttpResponseMessage = new HttpResponseMessage(HttpStatusCode.OK),
