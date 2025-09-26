@@ -38,18 +38,22 @@ public class IssueActions(InvocationContext invocationContext, IFileManagementCl
         return new IssueDto(issue);
     }
 
-    [Action("List recently created issues", Description =
-        "List issues created during past hours in a specific project." +
-        "If number of hours is not specified, issues created during " +
-        "past 24 hours are listed.")]
+    [Action("Search issues", Description =
+        "Returns issues that meet the provided criteria.")]
     public async Task<IssuesResponse> ListRecentlyCreatedIssues(
         [ActionParameter] ProjectIdentifier project,
-        [ActionParameter] ListRecentlyCreatedIssuesRequest listRequest)
+        [ActionParameter] ListRecentlyCreatedIssuesRequest listRequest,
+        [ActionParameter][Display("Custom JQL conditions")] string? customJql)
     {
         List<string> jqlConditions = [
             $"project={project.ProjectKey}",
             $"Created >= -{listRequest.Hours ?? 24}h",
         ];
+
+        if (listRequest.Hours.HasValue)
+        {
+            jqlConditions.Add($"Created >= -{listRequest.Hours}h");
+        }
 
         if (listRequest.Labels != null && listRequest.Labels.Any())
         {
@@ -66,6 +70,11 @@ public class IssueActions(InvocationContext invocationContext, IFileManagementCl
         if (!string.IsNullOrWhiteSpace(listRequest.ParentIssue))
         {
             jqlConditions.Add($"parent = {listRequest.ParentIssue.Trim()}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(customJql))
+        {
+            jqlConditions.Add($"({customJql})");
         }
 
         var request = new JiraRequest("/search/jql", Method.Get);
