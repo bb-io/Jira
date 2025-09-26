@@ -1,20 +1,22 @@
-﻿using Apps.Jira.Dtos;
+﻿using Apps.Jira.DataSourceHandlers;
+using Apps.Jira.Dtos;
 using Apps.Jira.Models.Identifiers;
 using Apps.Jira.Models.Requests;
 using Apps.Jira.Models.Responses;
 using Apps.Jira.Utils;
+using Apps.Jira.Webhooks.Payload;
 using Blackbird.Applications.Sdk.Common;
 using Blackbird.Applications.Sdk.Common.Actions;
+using Blackbird.Applications.Sdk.Common.Dynamic;
+using Blackbird.Applications.Sdk.Common.Exceptions;
 using Blackbird.Applications.Sdk.Common.Invocation;
-using Blackbird.Applications.SDK.Extensions.FileManagement.Interfaces;
 using Blackbird.Applications.Sdk.Utils.Extensions.Files;
 using Blackbird.Applications.Sdk.Utils.Extensions.Http;
+using Blackbird.Applications.SDK.Extensions.FileManagement.Interfaces;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 using RestSharp;
 using Method = RestSharp.Method;
-using Apps.Jira.Webhooks.Payload;
-using Newtonsoft.Json.Serialization;
-using Blackbird.Applications.Sdk.Common.Exceptions;
 namespace Apps.Jira.Actions;
 
 [ActionList]
@@ -77,6 +79,46 @@ public class IssueActions(InvocationContext invocationContext, IFileManagementCl
             Issues = issues.Issues.Select(i => new IssueDto(i)),
             Count = issues.Issues.Count()
         };
+    }
+
+    [Action("Find issue", Description = "Find the first issue that matches given conditions. Allows appending custom JQL conditions.")]
+    public async Task<IssueDto> FindIssue(
+    [ActionParameter] [Display("Parent issue")][DataSource(typeof(IssueDataSourceHandler))]string? parentIssue,
+    [ActionParameter] [Display("Summary")] string? issueName,
+    [ActionParameter] ProjectIdentifier project,
+    [ActionParameter][Display("Custom JQL conditions")] string? customJql = null)
+    {
+        var jqlConditions = new List<string>();
+
+        if (project != null)
+        {
+            jqlConditions.Add($"project={project.ProjectKey}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(parentIssue))
+        {
+            jqlConditions.Add($"(parent = {parentIssue.Trim()} OR \"Epic Link\" = {parentIssue.Trim()})");
+        }
+
+        if (!string.IsNullOrWhiteSpace(issueName))
+        {
+            jqlConditions.Add($"summary ~ \"{issueName.Trim()}\"");
+        }
+
+        if (!string.IsNullOrWhiteSpace(customJql))
+        {
+            jqlConditions.Add($"({customJql})");
+        }
+
+        var request = new JiraRequest("/search/jql", Method.Get);
+        request.AddQueryParameter("jql", string.Join(" AND ", jqlConditions));
+        request.AddQueryParameter("fields", "id,key,summary,status,priority,assignee,reporter,project,description,labels,subtasks,duedate,parent");
+        request.AddQueryParameter("maxResults", "1");
+
+        var issues = await Client.ExecuteWithHandling<IssuesWrapper>(request);
+
+        var firstIssue = issues.Issues.FirstOrDefault();
+        return firstIssue != null ? new IssueDto(firstIssue) : null;
     }
 
     [Action("List attachments", Description = "List files attached to an issue.")]
