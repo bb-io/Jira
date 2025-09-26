@@ -63,7 +63,7 @@ Please note: sending too many parallel requests to Jira may result in request re
 ### Issues
 
 - **Get issue** returns the details for an issue (summary, description, status, priority, assignee, project).
-- **List recently created issues** returns issues created during past hours in a specific project.
+- **Search issues** returns issues that meet the provided criteria. Allows appending custom JQL conditions.
 - **List attachments** returns a list of files attached to an issue.
 - **Download attachment** returns the contents of an attachment.
 - **Create issue**.
@@ -73,7 +73,7 @@ Please note: sending too many parallel requests to Jira may result in request re
 - **Delete issue**.
 - **Add labels to issue** adds labels to an issue. Returns the updated issue.
 - **Move issues to sprint** Moves issues to a specific sprint
-- **Find issue** Find the first issue that matches given conditions. Allows appending custom JQL conditions.
+- **Find issue** returns the first issue that matches given conditions. Allows appending custom JQL conditions.
 
 ### Issue custom fields
 

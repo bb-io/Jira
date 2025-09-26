@@ -95,7 +95,7 @@ namespace Tests.Jira
                 ParentIssue = "AC-8"
             };
 
-            var response = await action.ListRecentlyCreatedIssues(project, listRequest);
+            var response = await action.ListRecentlyCreatedIssues(project, listRequest, null);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(response, Newtonsoft.Json.Formatting.Indented);
             Console.WriteLine(json);
 
