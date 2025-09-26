@@ -82,7 +82,7 @@ public class IssueActions(InvocationContext invocationContext, IFileManagementCl
     }
 
     [Action("Find issue", Description = "Find the first issue that matches given conditions. Allows appending custom JQL conditions.")]
-    public async Task<IssueDto?> FindIssue(
+    public async Task<IssueDto> FindIssue(
     [ActionParameter] [Display("Parent issue")][DataSource(typeof(IssueDataSourceHandler))]string? parentIssue,
     [ActionParameter] [Display("Summary")] string? issueName,
     [ActionParameter] ProjectIdentifier project,
