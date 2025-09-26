@@ -6,7 +6,7 @@
     <LangVersion>12</LangVersion>
     <Product>Jira</Product>
     <Description>Issue tracking</Description>
-    <Version>2.2.61</Version>
+    <Version>2.2.62</Version>
     <AssemblyName>Apps.Jira</AssemblyName>
   </PropertyGroup>
   <ItemGroup>
@@ -28,3 +28,4 @@
   </ItemGroup>
 </Project>
 
+https://cloud.memsource.com/web/project2/show/tYRYpd0dO0xoi4bEFS4zub
