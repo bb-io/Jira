@@ -11,9 +11,6 @@ public class IssueDataSourceHandler : JiraInvocable, IAsyncDataSourceHandler
 {
     public IssueDataSourceHandler(InvocationContext invocationContext): base(invocationContext) { }
 
-    private const int DefaultWindowDays = 180;
-
-
     public async Task<Dictionary<string, string>> GetDataAsync(DataSourceContext context,
         CancellationToken cancellationToken)
     {
@@ -22,18 +19,11 @@ public class IssueDataSourceHandler : JiraInvocable, IAsyncDataSourceHandler
 
         var boundedScope = projectKeys.Any()
             ? $"project in ({string.Join(", ", projectKeys)})"
-            : "updated >= -30d";
+            : "updated >= -180d";
 
-        string jql;
-        if (!string.IsNullOrWhiteSpace(context.SearchString))
-        {
-            var term = EscapeForJql(context.SearchString);
-            jql = $"({boundedScope}) AND (summary ~ \"{term}\" OR description ~ \"{term}\") ORDER BY updated DESC";
-        }
-        else
-        {
-            jql = $"{boundedScope} ORDER BY updated DESC";
-        }
+        string jql = !string.IsNullOrWhiteSpace(context.SearchString)
+           ? $"({boundedScope}) AND (summary ~ \"{EscapeForJql(context.SearchString)}\" OR description ~ \"{EscapeForJql(context.SearchString)}\") ORDER BY updated DESC"
+           : $"{boundedScope} ORDER BY updated DESC";
 
         var request = new JiraRequest("/search/jql", Method.Get);
         request.AddQueryParameter("maxResults", "20");
