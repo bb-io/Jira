@@ -6,13 +6,13 @@
     <LangVersion>12</LangVersion>
     <Product>Jira</Product>
     <Description>Issue tracking</Description>
-    <Version>2.2.64</Version>
+    <Version>2.2.65</Version>
     <AssemblyName>Apps.Jira</AssemblyName>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Blackbird.Applications.Sdk.Common" Version="2.11.1" />
+    <PackageReference Include="Blackbird.Applications.SDK.Blueprints" Version="1.0.0-rc.10308" />
     <PackageReference Include="Blackbird.Applications.SDK.Extensions.FileManagement" Version="1.0.1" />
-    <PackageReference Include="Blackbird.Applications.Sdk.Utils" Version="1.0.13" />
+    <PackageReference Include="Blackbird.Applications.Sdk.Utils" Version="1.0.26" />
     <PackageReference Include="Markdig" Version="0.37.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="Polly" Version="8.5.2" />
