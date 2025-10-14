@@ -258,6 +258,7 @@ namespace Apps.Jira.Webhooks
         {
             InvocationContext.Logger?.LogInformation("[Jira][OnIssuesReachStatus] Invoke of webhook",null);
             var payload = DeserializePayload(request);
+            InvocationContext.Logger?.LogInformation($"[Jira][OnIssuesReachStatus] Payload of webhook - {Newtonsoft.Json.JsonConvert.SerializeObject(payload, Newtonsoft.Json.Formatting.Indented)}", null);
 
             var statusItem = payload.Changelog?.Items?.FirstOrDefault(i =>
                 string.Equals(i.Field, "status", StringComparison.OrdinalIgnoreCase) ||
@@ -311,9 +312,9 @@ namespace Apps.Jira.Webhooks
                 jql,
                 fields = new[]
                 {
-            "summary","status","issuetype","priority","assignee","project",
-            "labels","duedate","description","attachment","reporter","subtasks"
-        },
+                    "summary","status","issuetype","priority","assignee","project",
+                    "labels","duedate","description","attachment","reporter","subtasks"
+                },
                 maxResults = normalizedKeys.Count
             });
 
