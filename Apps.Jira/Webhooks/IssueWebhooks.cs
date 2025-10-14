@@ -255,9 +255,12 @@ namespace Apps.Jira.Webhooks
         public async Task<WebhookResponse<IssuesReachedStatusResponse>> OnIssuesReachStatus(
           WebhookRequest request, [WebhookParameter] ProjectIdentifier projectId,[WebhookParameter] IssuesReachStatusInput input)
         {
+            InvocationContext.Logger?.LogInformation($"[Jira][OnIssuesReachStatus] Invoke of webhook", null);
             var payload = DeserializePayload(request);
 
-            var statusItem = payload.Changelog?.Items?.FirstOrDefault(i => i.FieldId == "status");
+            var statusItem = payload.Changelog?.Items?.FirstOrDefault(i =>
+                string.Equals(i.Field, "status", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(i.FieldId, "status", StringComparison.OrdinalIgnoreCase));
             if (statusItem is null) return Preflight<IssuesReachedStatusResponse>();
 
             var normalizedKeys = new HashSet<string>(
@@ -281,6 +284,7 @@ namespace Apps.Jira.Webhooks
 
             var keysJql = string.Join(",", normalizedKeys.Select(k => $"\"{k}\""));
             var jql = $"issuekey in ({keysJql}) AND status = \"{EscapeForJql(desiredStatus)}\"";
+            InvocationContext.Logger?.LogInformation($"[Jira][OnIssuesReachStatus] JQL: {jql}", null);
 
             var searchReq = new JiraRequest("/search", Method.Post);
             searchReq.AddJsonBody(new
@@ -296,6 +300,8 @@ namespace Apps.Jira.Webhooks
 
             var search = await Client.ExecuteWithHandling<IssuesWrapper>(searchReq);
             var matched = (search?.Issues ?? Enumerable.Empty<IssueWrapper>()).ToList();
+
+            InvocationContext.Logger?.LogInformation($"[Jira][OnIssuesReachStatus] Matched {matched.Count}/{ normalizedKeys.Count} issues in desired status.",null);
 
             if (matched.Count != normalizedKeys.Count)
                 return Preflight<IssuesReachedStatusResponse>();
