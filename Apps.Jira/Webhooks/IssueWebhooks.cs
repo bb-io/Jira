@@ -263,7 +263,10 @@ namespace Apps.Jira.Webhooks
             var statusItem = payload.Changelog?.Items?.FirstOrDefault(i =>
                 string.Equals(i.Field, "status", StringComparison.OrdinalIgnoreCase) ||
                 string.Equals(i.FieldId, "status", StringComparison.OrdinalIgnoreCase));
-            if (statusItem is null) return Preflight<IssuesReachedStatusResponse>();
+
+            if (statusItem is null)
+                InvocationContext.Logger?.LogInformation(
+                    "[Jira][OnIssuesReachStatus] No 'status' item in changelog; will verify current status via JQL.", null);
 
             if (!string.IsNullOrWhiteSpace(projectId?.ProjectKey) &&
                 !string.Equals(projectId.ProjectKey, payload.Issue.Fields.Project.Key, StringComparison.OrdinalIgnoreCase))
