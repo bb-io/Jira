@@ -313,7 +313,7 @@ namespace Apps.Jira.Webhooks
                 fields = new[]
                 {
                     "summary","status","issuetype","priority","assignee","project",
-                    "labels","duedate","description","attachment","reporter","subtasks"
+                    "labels","duedate","reporter","subtasks"
                 },
                 maxResults = normalizedKeys.Count
             });
