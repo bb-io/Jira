@@ -33,24 +33,12 @@ public class JiraClient : RestClient
 
     public async Task<RestResponse> ExecuteWithHandling(RestRequest request)
     {
-        RestResponse response = null;
+        var response = await _retryPolicy.ExecuteAsync(() => base.ExecuteAsync(request));
 
-        try
-        {
-            response = await _retryPolicy.ExecuteAsync(() => base.ExecuteAsync(request));
+        if (response.IsSuccessful)
+            return response;
 
-            if (response.IsSuccessful)
-                return response;
-
-            throw ConfigureErrorException(response);
-        }
-        catch (Exception ex) when (ex is not PluginApplicationException)
-        {
-            if (response != null)
-                throw ConfigureErrorException(response);
-
-            throw new PluginApplicationException(ex.Message);
-        }
+        throw ConfigureErrorException(response);
     }
 
     private static Uri GetUri(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders, string routeType)
