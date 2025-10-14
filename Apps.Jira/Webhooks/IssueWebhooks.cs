@@ -11,6 +11,7 @@ using Blackbird.Applications.Sdk.Common.Invocation;
 using RestSharp;
 using Apps.Jira.Models.Identifiers;
 using Apps.Jira.Models.Requests;
+using System.Net.Mail;
 
 namespace Apps.Jira.Webhooks
 {
@@ -221,8 +222,7 @@ namespace Apps.Jira.Webhooks
             };
         }
 
-        [Webhook("On issue status changed", typeof(IssueUpdatedHandler),
-            Description = "This webhook is triggered when issue status is changed.")]
+        [Webhook("On issue status changed", typeof(IssueUpdatedHandler),Description = "This webhook is triggered when issue status is changed.")]
         public async Task<WebhookResponse<IssueResponse>> OnIssueStatusChanged(WebhookRequest request,
             [WebhookParameter] ProjectIdentifier project,
             [WebhookParameter] OptionalStatusInput status,
@@ -249,6 +249,116 @@ namespace Apps.Jira.Webhooks
             var issueResponse = CreateIssueResponse(payload, labels);
             return issueResponse;
         }
+
+        [Webhook("On issues reach status", typeof(IssueUpdatedHandler),
+          Description = "Triggered when ALL specified issues reach the given status. Emits preflight until all are in that status.")]
+        public async Task<WebhookResponse<IssuesReachedStatusResponse>> OnIssuesReachStatus(
+          WebhookRequest request,[WebhookParameter] IssuesReachStatusInput input)
+        {
+            var payload = DeserializePayload(request);
+
+            var statusItem = payload.Changelog?.Items?.FirstOrDefault(i => i.FieldId == "status");
+            if (statusItem is null) return Preflight<IssuesReachedStatusResponse>();
+
+            var normalizedKeys = new HashSet<string>(
+                (input.IssueKeys ?? Enumerable.Empty<string>())
+                    .Where(k => !string.IsNullOrWhiteSpace(k))
+                    .Select(k => k.Trim().ToUpperInvariant())
+            );
+            if (normalizedKeys.Count == 0) return Preflight<IssuesReachedStatusResponse>();
+
+            var changedKey = payload.Issue.Key?.Trim()?.ToUpperInvariant();
+            if (changedKey is null || !normalizedKeys.Contains(changedKey))
+                return Preflight<IssuesReachedStatusResponse>();
+
+            var desiredStatus = (input.Status ?? string.Empty).Trim();
+            if (string.IsNullOrEmpty(desiredStatus))
+                return Preflight<IssuesReachedStatusResponse>();
+
+            var currentStatusName = payload.Issue.Fields?.Status?.Name ?? string.Empty;
+            if (!currentStatusName.Equals(desiredStatus, StringComparison.OrdinalIgnoreCase))
+                return Preflight<IssuesReachedStatusResponse>();
+
+            var keysJql = string.Join(",", normalizedKeys.Select(k => $"\"{k}\""));
+            var jql = $"issuekey in ({keysJql}) AND status = \"{EscapeForJql(desiredStatus)}\"";
+
+            var searchReq = new JiraRequest("/search", Method.Post);
+            searchReq.AddJsonBody(new
+            {
+                jql,
+                fields = new[]
+                {
+                "summary","status","issuetype","priority","assignee","project",
+                "labels","duedate","description","attachment","reporter","subtasks"
+            },
+                maxResults = normalizedKeys.Count
+            });
+
+            var search = await Client.ExecuteWithHandling<IssuesWrapper>(searchReq);
+            var matched = (search?.Issues ?? Enumerable.Empty<IssueWrapper>()).ToList();
+
+            if (matched.Count != normalizedKeys.Count)
+                return Preflight<IssuesReachedStatusResponse>();
+
+            var results = matched.Select(MapToIssueResponse).ToList();
+
+            return new WebhookResponse<IssuesReachedStatusResponse>
+            {
+                HttpResponseMessage = new HttpResponseMessage(HttpStatusCode.OK),
+                ReceivedWebhookRequestType = WebhookRequestType.Default,
+                Result = new IssuesReachedStatusResponse { Issues = results }
+            };
+        }
+
+        private static WebhookResponse<T> Preflight<T>() where T : class =>
+            new()
+            {
+                HttpResponseMessage = new HttpResponseMessage(HttpStatusCode.OK),
+                ReceivedWebhookRequestType = WebhookRequestType.Preflight
+            };
+
+        private IssueResponse MapToIssueResponse(IssueWrapper i)
+        {
+            DateTime due = DateTime.MinValue;
+            if (!string.IsNullOrEmpty(i.Fields?.DueDate) && DateTime.TryParse(i.Fields.DueDate, out var d))
+                due = d;
+
+            return new IssueResponse
+            {
+                IssueKey = i.Key,
+                ProjectKey = i.Fields?.Project?.Key,
+                Summary = i.Fields?.Summary,
+                Description = ExtractPlainText(i.Fields?.Description),
+                IssueType = i.Fields?.IssueType?.Name,
+                Priority = i.Fields?.Priority?.Name,
+                AssigneeName = i.Fields?.Assignee?.DisplayName,
+                AssigneeAccountId = i.Fields?.Assignee?.AccountId,
+                Status = i.Fields?.Status?.Name,
+                Attachments = i.Fields?.Attachment?.ToList() ?? new List<AttachmentDto>(),
+                DueDate = due,
+                Labels = i.Fields?.Labels ?? new List<string>()
+            };
+        }
+
+        private static string? ExtractPlainText(Description? desc)
+        {
+            if (desc == null || desc.Content == null) return null;
+
+            var parts = new List<string>();
+            void Walk(IEnumerable<ContentElement> nodes)
+            {
+                foreach (var n in nodes)
+                {
+                    if (!string.IsNullOrEmpty(n.Text)) parts.Add(n.Text);
+                    if (n.Content != null && n.Content.Count > 0) Walk(n.Content);
+                }
+            }
+            Walk(desc.Content);
+            var text = string.Join("", parts).Trim();
+            return string.IsNullOrEmpty(text) ? null : text;
+        }
+
+        private static string EscapeForJql(string value) => value.Replace("\\", "\\\\").Replace("\"", "\\\"");
 
         private WebhookPayload DeserializePayload(WebhookRequest request)
         {

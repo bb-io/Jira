@@ -71,7 +71,7 @@ namespace Tests.Jira
 
             var project = new IssueIdentifier
             {
-                IssueKey = "AC-8"
+                IssueKey = "LOCP-47309"
             };
 
             var response = await action.GetIssueByKey(project);
