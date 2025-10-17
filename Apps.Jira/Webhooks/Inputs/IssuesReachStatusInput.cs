@@ -10,8 +10,8 @@ namespace Apps.Jira.Webhooks.Inputs
         [DataSource(typeof(IssueDataSourceHandler))]
         public IEnumerable<string> IssueKeys { get; set; }
 
-        [Display("Status", Description = "Target status name ")]
+        [Display("Statuses", Description = "Target statuses")]
         [DataSource(typeof(IssueStatusDataSourceHandler))]
-        public string Status { get; set; }
+        public IEnumerable<string> Statuses { get; set; }
     }
 }
