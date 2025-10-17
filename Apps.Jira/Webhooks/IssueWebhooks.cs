@@ -256,9 +256,11 @@ namespace Apps.Jira.Webhooks
         public async Task<WebhookResponse<IssuesReachedStatusResponse>> OnIssuesReachStatus(
           WebhookRequest request, [WebhookParameter] ProjectIdentifier projectId,[WebhookParameter] IssuesReachStatusInput input)
         {
-            InvocationContext.Logger?.LogInformation("[Jira][OnIssuesReachStatus] Invoke of webhook",null);
+            InvocationContext.Logger?.LogInformation("[Jira][OnIssuesReachStatus] Invoke of webhook", null);
             var payload = DeserializePayload(request);
-            InvocationContext.Logger?.LogInformation($"[Jira][OnIssuesReachStatus] Payload of webhook - {Newtonsoft.Json.JsonConvert.SerializeObject(payload, Newtonsoft.Json.Formatting.Indented)}", null);
+            InvocationContext.Logger?.LogInformation(
+                $"[Jira][OnIssuesReachStatus] Payload of webhook - {Newtonsoft.Json.JsonConvert.SerializeObject(payload, Newtonsoft.Json.Formatting.Indented)}",
+                null);
 
             var statusItem = payload.Changelog?.Items?.FirstOrDefault(i =>
                 string.Equals(i.Field, "status", StringComparison.OrdinalIgnoreCase) ||
@@ -266,11 +268,14 @@ namespace Apps.Jira.Webhooks
 
             if (statusItem is null)
                 InvocationContext.Logger?.LogInformation(
-                    "[Jira][OnIssuesReachStatus] No 'status' item in changelog; will verify current status via JQL.", null);
+                    "[Jira][OnIssuesReachStatus] No 'status' item in changelog; will verify current status by fetching issues.", null);
 
             if (!string.IsNullOrWhiteSpace(projectId?.ProjectKey) &&
                 !string.Equals(projectId.ProjectKey, payload.Issue.Fields.Project.Key, StringComparison.OrdinalIgnoreCase))
-                return Preflight<IssuesReachedStatusResponse>();
+            {
+                InvocationContext.Logger?.LogInformation(
+                    $"[Jira][OnIssuesReachStatus] Payload project '{payload.Issue.Fields.Project.Key}' != filter '{projectId.ProjectKey}'. Continuing (multi-project allowed).", null);
+            }
 
             var normalizedKeys = new HashSet<string>(
                 (input.IssueKeys ?? Enumerable.Empty<string>())
@@ -280,6 +285,10 @@ namespace Apps.Jira.Webhooks
             if (normalizedKeys.Count == 0) return Preflight<IssuesReachedStatusResponse>();
 
             var changedKey = payload.Issue.Key?.Trim()?.ToUpperInvariant();
+            InvocationContext.Logger?.LogInformation(
+                $"[Jira][OnIssuesReachStatus] changedKey={changedKey}; inputKeys=[{string.Join(", ", normalizedKeys)}]",
+                null);
+
             if (changedKey is null || !normalizedKeys.Contains(changedKey))
                 return Preflight<IssuesReachedStatusResponse>();
 
@@ -305,31 +314,55 @@ namespace Apps.Jira.Webhooks
                 (targetStatusId == null && !string.Equals(current?.Name, targetStatusName, StringComparison.OrdinalIgnoreCase)))
                 return Preflight<IssuesReachedStatusResponse>();
 
-            var keysJql = string.Join(",", normalizedKeys.Select(k => $"\"{k}\""));
-            var jql = $"issuekey in ({keysJql}) AND status = \"{EscapeForJql(targetStatusName)}\"";
-            InvocationContext.Logger?.LogInformation($"[Jira][OnIssuesReachStatus] JQL: {jql}",null);
-
-            var searchReq = new JiraRequest("/search", Method.Post);
-            searchReq.AddJsonBody(new
+            var issues = new List<IssueWrapper>();
+            var missing = new List<string>();
+            foreach (var key in normalizedKeys)
             {
-                jql,
-                fields = new[]
+                try
                 {
-                    "summary","status","issuetype","priority","assignee","project",
-                    "labels","duedate","reporter","subtasks"
-                },
-                maxResults = normalizedKeys.Count
-            });
+                    var issue = await GetIssue(key);
+                    issues.Add(issue);
+                }
+                catch (Exception ex)
+                {
+                    InvocationContext.Logger?.LogInformation(
+                        $"[Jira][OnIssuesReachStatus] Can't load issue '{key}': {ex.Message}", null);
+                    missing.Add(key);
+                }
+            }
 
-            var search = await Client.ExecuteWithHandling<IssuesWrapper>(searchReq);
-            var matched = (search?.Issues ?? Enumerable.Empty<IssueWrapper>()).ToList();
-
-            InvocationContext.Logger?.LogInformation($"[Jira][OnIssuesReachStatus] Matched {matched.Count}/{normalizedKeys.Count} issues in desired status.",null);
-
-            if (matched.Count != normalizedKeys.Count)
+            if (missing.Count > 0)
+            {
+                InvocationContext.Logger?.LogInformation(
+                    $"[Jira][OnIssuesReachStatus] Missing/unavailable issues: {string.Join(", ", missing)}",
+                    null);
                 return Preflight<IssuesReachedStatusResponse>();
+            }
 
-            var results = matched.Select(MapToIssueResponse).ToList();
+            var notInTarget = new List<string>();
+            foreach (var i in issues)
+            {
+                var cur = i.Fields?.Status;
+                var ok =
+                    (!string.IsNullOrEmpty(targetStatusId) &&
+                     string.Equals(cur?.Id, targetStatusId, StringComparison.OrdinalIgnoreCase))
+                    ||
+                    (string.IsNullOrEmpty(targetStatusId) &&
+                     string.Equals(cur?.Name, targetStatusName, StringComparison.OrdinalIgnoreCase));
+
+                if (!ok)
+                    notInTarget.Add($"{i.Key} [{cur?.Id}:{cur?.Name}]");
+            }
+
+            if (notInTarget.Count > 0)
+            {
+                InvocationContext.Logger?.LogInformation(
+                    $"[Jira][OnIssuesReachStatus] Still not in target '{targetStatusName}' (id: {targetStatusId ?? "n/a"}): {string.Join(", ", notInTarget)}",
+                    null);
+                return Preflight<IssuesReachedStatusResponse>();
+            }
+
+            var results = issues.Select(MapToIssueResponse).ToList();
 
             return new WebhookResponse<IssuesReachedStatusResponse>
             {
@@ -337,6 +370,14 @@ namespace Apps.Jira.Webhooks
                 ReceivedWebhookRequestType = WebhookRequestType.Default,
                 Result = new IssuesReachedStatusResponse { Issues = results }
             };
+        }
+
+        private async Task<IssueWrapper> GetIssue(string key)
+        {
+            var getReq = new JiraRequest($"/issue/{key}", Method.Get);
+            getReq.AddQueryParameter("fields",
+                "summary,status,issuetype,priority,assignee,project,labels,duedate,reporter,subtasks");
+            return await Client.ExecuteWithHandling<IssueWrapper>(getReq);
         }
 
         private static WebhookResponse<T> Preflight<T>() where T : class =>
@@ -397,8 +438,6 @@ namespace Apps.Jira.Webhooks
             var text = string.Join("", parts).Trim();
             return string.IsNullOrEmpty(text) ? null : text;
         }
-
-        private static string EscapeForJql(string value) => value.Replace("\\", "\\\\").Replace("\"", "\\\"");
 
         private WebhookPayload DeserializePayload(WebhookRequest request)
         {
