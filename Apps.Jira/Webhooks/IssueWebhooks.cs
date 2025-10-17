@@ -292,26 +292,17 @@ namespace Apps.Jira.Webhooks
             if (changedKey is null || !normalizedKeys.Contains(changedKey))
                 return Preflight<IssuesReachedStatusResponse>();
 
-            var rawStatus = (input.Status ?? string.Empty).Trim();
-            if (string.IsNullOrEmpty(rawStatus))
+            var rawStatuses = (input.Statuses ?? Enumerable.Empty<string>())
+                .Where(s => !string.IsNullOrWhiteSpace(s))
+                .Select(s => s.Trim())
+                .ToList();
+            if (rawStatuses.Count == 0)
                 return Preflight<IssuesReachedStatusResponse>();
 
-            string? targetStatusId = null;
-            string targetStatusName;
+            var (allowedIds, allowedNames) = await ResolveStatusesAsync(rawStatuses);
 
-            if (LooksLikeId(rawStatus))
-            {
-                targetStatusId = rawStatus;
-                targetStatusName = await GetStatusNameById(rawStatus);
-            }
-            else
-            {
-                targetStatusName = rawStatus;
-            }
-
-            var current = payload.Issue.Fields?.Status;
-            if ((targetStatusId != null && !string.Equals(current?.Id, targetStatusId, StringComparison.OrdinalIgnoreCase)) ||
-                (targetStatusId == null && !string.Equals(current?.Name, targetStatusName, StringComparison.OrdinalIgnoreCase)))
+            var cur = payload.Issue.Fields?.Status;
+            if (!IsAllowedStatus(cur?.Id, cur?.Name, allowedIds, allowedNames))
                 return Preflight<IssuesReachedStatusResponse>();
 
             var issues = new List<IssueWrapper>();
@@ -339,25 +330,18 @@ namespace Apps.Jira.Webhooks
                 return Preflight<IssuesReachedStatusResponse>();
             }
 
-            var notInTarget = new List<string>();
+            var notInAllowed = new List<string>();
             foreach (var i in issues)
             {
-                var cur = i.Fields?.Status;
-                var ok =
-                    (!string.IsNullOrEmpty(targetStatusId) &&
-                     string.Equals(cur?.Id, targetStatusId, StringComparison.OrdinalIgnoreCase))
-                    ||
-                    (string.IsNullOrEmpty(targetStatusId) &&
-                     string.Equals(cur?.Name, targetStatusName, StringComparison.OrdinalIgnoreCase));
-
-                if (!ok)
-                    notInTarget.Add($"{i.Key} [{cur?.Id}:{cur?.Name}]");
+                var s = i.Fields?.Status;
+                if (!IsAllowedStatus(s?.Id, s?.Name, allowedIds, allowedNames))
+                    notInAllowed.Add($"{i.Key} [{s?.Id}:{s?.Name}]");
             }
 
-            if (notInTarget.Count > 0)
+            if (notInAllowed.Count > 0)
             {
                 InvocationContext.Logger?.LogInformation(
-                    $"[Jira][OnIssuesReachStatus] Still not in target '{targetStatusName}' (id: {targetStatusId ?? "n/a"}): {string.Join(", ", notInTarget)}",
+                    $"[Jira][OnIssuesReachStatus] Still not in allowed statuses (ids: [{string.Join(", ", allowedIds)}]; names: [{string.Join(", ", allowedNames)}]): {string.Join(", ", notInAllowed)}",
                     null);
                 return Preflight<IssuesReachedStatusResponse>();
             }
@@ -420,7 +404,6 @@ namespace Apps.Jira.Webhooks
                 throw new PluginApplicationException($"Status with id '{id}' not found.");
             return dto.Name;
         }
-
         private static string? ExtractPlainText(Description? desc)
         {
             if (desc == null || desc.Content == null) return null;
@@ -437,6 +420,39 @@ namespace Apps.Jira.Webhooks
             Walk(desc.Content);
             var text = string.Join("", parts).Trim();
             return string.IsNullOrEmpty(text) ? null : text;
+        }
+
+        private async Task<(HashSet<string> ids, HashSet<string> names)> ResolveStatusesAsync(IEnumerable<string> raw)
+        {
+            var ids = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var names = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var token in raw)
+            {
+                if (LooksLikeId(token))
+                {
+                    ids.Add(token);
+                    try
+                    {
+                        var name = await GetStatusNameById(token);
+                        if (!string.IsNullOrWhiteSpace(name)) names.Add(name);
+                    }
+                    catch {  }
+                }
+                else
+                {
+                    names.Add(token);
+                }
+            }
+
+            return (ids, names);
+        }
+
+        private static bool IsAllowedStatus(string? id, string? name, HashSet<string> allowedIds, HashSet<string> allowedNames)
+        {
+            var idOk = !string.IsNullOrEmpty(id) && allowedIds.Contains(id);
+            var nameOk = !string.IsNullOrEmpty(name) && allowedNames.Contains(name);
+            return idOk || nameOk;
         }
 
         private WebhookPayload DeserializePayload(WebhookRequest request)

@@ -1,4 +1,4 @@
-# Blackbird.io Jira
+﻿# Blackbird.io Jira
 
 Blackbird is the new automation backbone for the language technology industry. Blackbird provides enterprise-scale automation and orchestration with a simple no-code/low-code platform. Blackbird enables ambitious organizations to identify, vet and automate as many processes as possible. Not just localization workflows, but any business and IT process. This repository represents an application that is deployable on Blackbird and usable inside the workflow editor.
 
@@ -58,7 +58,7 @@ Note: this app currently supports only short text (plain text only) custom field
 
 ## Actions
 
-Please note: sending too many parallel requests to Jira may result in request rejections. While we have added a retry policy to handle this, ultimate control lies with Jira�s servers.
+Please note: sending too many parallel requests to Jira may result in request rejections. While we have added a retry policy to handle this, ultimate control lies with Jira’s servers.
 
 ### Issues
 
@@ -137,6 +137,7 @@ Please note: sending too many parallel requests to Jira may result in request re
 - **On issue deleted** is triggered when an issue is deleted. If you want a bird to be triggered when an issue is deleted in specific project, fill the project parameter.
 - **On file attached to issue** is triggered when a file is attached to an issue. If you want a bird to be triggered when a file is attached to specific issue, specify the issue parameter. Otherwise, you can specify project parameter if you are interested in specific project's issues.
 - **On issue status changed** is triggered when issue status is changed. If you want a bird to be triggered when specific issue's status is changed, specify the issue parameter. Otherwise, you can specify project parameter if you are interested in specific project's issues. You can also limit the event to trigger only on certain statusses.
+- **On issues reach status** is triggered when issueі reaches one of specific statuses.
 
 ## Optional inputs
 
