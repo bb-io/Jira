@@ -137,14 +137,14 @@ namespace Tests.Jira
 
             var input1 = new IssueIdentifier
             {
-                IssueKey = "TES-4"
+                IssueKey = "LOCP-47309"
             };
 
             var input2 = new CustomNumericFieldIdentifier
             {
-                CustomNumberFieldId = "customfield_10054"
+                CustomNumberFieldId = "customfield_10022"
             };
-            var input3 = 10230.0;
+            var input3 = 0.5;
             await handler.SetCustomNumericFieldValue(input1, input2, input3);
 
             var response = await handler.GetCustomNumericFieldValue(input1, input2);
@@ -257,12 +257,12 @@ namespace Tests.Jira
 
             var input1 = new IssueIdentifier
             {
-                IssueKey = "LOC-34522"
+                IssueKey = "LOCP-47309"
             };
 
             var input2 = new CustomStringFieldIdentifier
             {
-                CustomStringFieldId = "customfield_11258"
+                CustomStringFieldId = "customfield_10022"
             };
             var response = await handler.GetCustomStringFieldValue(input1, input2);
 

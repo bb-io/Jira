@@ -11,6 +11,8 @@ using Blackbird.Applications.Sdk.Common.Invocation;
 using RestSharp;
 using Apps.Jira.Models.Identifiers;
 using Apps.Jira.Models.Requests;
+using System.Net.Mail;
+using Blackbird.Applications.Sdk.Common.Exceptions;
 
 namespace Apps.Jira.Webhooks
 {
@@ -221,8 +223,7 @@ namespace Apps.Jira.Webhooks
             };
         }
 
-        [Webhook("On issue status changed", typeof(IssueUpdatedHandler),
-            Description = "This webhook is triggered when issue status is changed.")]
+        [Webhook("On issue status changed", typeof(IssueUpdatedHandler),Description = "This webhook is triggered when issue status is changed.")]
         public async Task<WebhookResponse<IssueResponse>> OnIssueStatusChanged(WebhookRequest request,
             [WebhookParameter] ProjectIdentifier project,
             [WebhookParameter] OptionalStatusInput status,
@@ -248,6 +249,194 @@ namespace Apps.Jira.Webhooks
 
             var issueResponse = CreateIssueResponse(payload, labels);
             return issueResponse;
+        }
+
+        [Webhook("On issues reach status", typeof(IssueUpdatedHandler),
+          Description = "Triggered when ALL specified issues reach the given status. Emits preflight until all are in that status.")]
+        public async Task<WebhookResponse<IssuesReachedStatusResponse>> OnIssuesReachStatus(
+          WebhookRequest request, [WebhookParameter] ProjectIdentifier projectId,[WebhookParameter] IssuesReachStatusInput input)
+        {
+            InvocationContext.Logger?.LogInformation("[Jira][OnIssuesReachStatus] Invoke of webhook", null);
+            var payload = DeserializePayload(request);
+            InvocationContext.Logger?.LogInformation(
+                $"[Jira][OnIssuesReachStatus] Payload of webhook - {Newtonsoft.Json.JsonConvert.SerializeObject(payload, Newtonsoft.Json.Formatting.Indented)}",
+                null);
+
+            var statusItem = payload.Changelog?.Items?.FirstOrDefault(i =>
+                string.Equals(i.Field, "status", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(i.FieldId, "status", StringComparison.OrdinalIgnoreCase));
+
+            if (statusItem is null)
+                InvocationContext.Logger?.LogInformation(
+                    "[Jira][OnIssuesReachStatus] No 'status' item in changelog; will verify current status by fetching issues.", null);
+
+            if (!string.IsNullOrWhiteSpace(projectId?.ProjectKey) &&
+                !string.Equals(projectId.ProjectKey, payload.Issue.Fields.Project.Key, StringComparison.OrdinalIgnoreCase))
+            {
+                InvocationContext.Logger?.LogInformation(
+                    $"[Jira][OnIssuesReachStatus] Payload project '{payload.Issue.Fields.Project.Key}' != filter '{projectId.ProjectKey}'. Continuing (multi-project allowed).", null);
+            }
+
+            var normalizedKeys = new HashSet<string>(
+                (input.IssueKeys ?? Enumerable.Empty<string>())
+                    .Where(k => !string.IsNullOrWhiteSpace(k))
+                    .Select(k => k.Trim().ToUpperInvariant())
+            );
+            if (normalizedKeys.Count == 0) return Preflight<IssuesReachedStatusResponse>();
+
+            var changedKey = payload.Issue.Key?.Trim()?.ToUpperInvariant();
+            InvocationContext.Logger?.LogInformation(
+                $"[Jira][OnIssuesReachStatus] changedKey={changedKey}; inputKeys=[{string.Join(", ", normalizedKeys)}]",
+                null);
+
+            if (changedKey is null || !normalizedKeys.Contains(changedKey))
+                return Preflight<IssuesReachedStatusResponse>();
+
+            var rawStatus = (input.Status ?? string.Empty).Trim();
+            if (string.IsNullOrEmpty(rawStatus))
+                return Preflight<IssuesReachedStatusResponse>();
+
+            string? targetStatusId = null;
+            string targetStatusName;
+
+            if (LooksLikeId(rawStatus))
+            {
+                targetStatusId = rawStatus;
+                targetStatusName = await GetStatusNameById(rawStatus);
+            }
+            else
+            {
+                targetStatusName = rawStatus;
+            }
+
+            var current = payload.Issue.Fields?.Status;
+            if ((targetStatusId != null && !string.Equals(current?.Id, targetStatusId, StringComparison.OrdinalIgnoreCase)) ||
+                (targetStatusId == null && !string.Equals(current?.Name, targetStatusName, StringComparison.OrdinalIgnoreCase)))
+                return Preflight<IssuesReachedStatusResponse>();
+
+            var issues = new List<IssueWrapper>();
+            var missing = new List<string>();
+            foreach (var key in normalizedKeys)
+            {
+                try
+                {
+                    var issue = await GetIssue(key);
+                    issues.Add(issue);
+                }
+                catch (Exception ex)
+                {
+                    InvocationContext.Logger?.LogInformation(
+                        $"[Jira][OnIssuesReachStatus] Can't load issue '{key}': {ex.Message}", null);
+                    missing.Add(key);
+                }
+            }
+
+            if (missing.Count > 0)
+            {
+                InvocationContext.Logger?.LogInformation(
+                    $"[Jira][OnIssuesReachStatus] Missing/unavailable issues: {string.Join(", ", missing)}",
+                    null);
+                return Preflight<IssuesReachedStatusResponse>();
+            }
+
+            var notInTarget = new List<string>();
+            foreach (var i in issues)
+            {
+                var cur = i.Fields?.Status;
+                var ok =
+                    (!string.IsNullOrEmpty(targetStatusId) &&
+                     string.Equals(cur?.Id, targetStatusId, StringComparison.OrdinalIgnoreCase))
+                    ||
+                    (string.IsNullOrEmpty(targetStatusId) &&
+                     string.Equals(cur?.Name, targetStatusName, StringComparison.OrdinalIgnoreCase));
+
+                if (!ok)
+                    notInTarget.Add($"{i.Key} [{cur?.Id}:{cur?.Name}]");
+            }
+
+            if (notInTarget.Count > 0)
+            {
+                InvocationContext.Logger?.LogInformation(
+                    $"[Jira][OnIssuesReachStatus] Still not in target '{targetStatusName}' (id: {targetStatusId ?? "n/a"}): {string.Join(", ", notInTarget)}",
+                    null);
+                return Preflight<IssuesReachedStatusResponse>();
+            }
+
+            var results = issues.Select(MapToIssueResponse).ToList();
+
+            return new WebhookResponse<IssuesReachedStatusResponse>
+            {
+                HttpResponseMessage = new HttpResponseMessage(HttpStatusCode.OK),
+                ReceivedWebhookRequestType = WebhookRequestType.Default,
+                Result = new IssuesReachedStatusResponse { Issues = results }
+            };
+        }
+
+        private async Task<IssueWrapper> GetIssue(string key)
+        {
+            var getReq = new JiraRequest($"/issue/{key}", Method.Get);
+            getReq.AddQueryParameter("fields",
+                "summary,status,issuetype,priority,assignee,project,labels,duedate,reporter,subtasks");
+            return await Client.ExecuteWithHandling<IssueWrapper>(getReq);
+        }
+
+        private static WebhookResponse<T> Preflight<T>() where T : class =>
+            new()
+            {
+                HttpResponseMessage = new HttpResponseMessage(HttpStatusCode.OK),
+                ReceivedWebhookRequestType = WebhookRequestType.Preflight
+            };
+
+        private IssueResponse MapToIssueResponse(IssueWrapper i)
+        {
+            DateTime due = DateTime.MinValue;
+            if (!string.IsNullOrEmpty(i.Fields?.DueDate) && DateTime.TryParse(i.Fields.DueDate, out var d))
+                due = d;
+
+            return new IssueResponse
+            {
+                IssueKey = i.Key,
+                ProjectKey = i.Fields?.Project?.Key,
+                Summary = i.Fields?.Summary,
+                Description = ExtractPlainText(i.Fields?.Description),
+                IssueType = i.Fields?.IssueType?.Name,
+                Priority = i.Fields?.Priority?.Name,
+                AssigneeName = i.Fields?.Assignee?.DisplayName,
+                AssigneeAccountId = i.Fields?.Assignee?.AccountId,
+                Status = i.Fields?.Status?.Name,
+                Attachments = i.Fields?.Attachment?.ToList() ?? new List<AttachmentDto>(),
+                DueDate = due,
+                Labels = i.Fields?.Labels ?? new List<string>()
+            };
+        }
+
+        private static bool LooksLikeId(string s) => s.All(char.IsDigit);
+
+        private async Task<string> GetStatusNameById(string id)
+        {
+            var req = new JiraRequest($"/status/{id}", Method.Get);
+            var dto = await Client.ExecuteWithHandling<SimpleStatusDto>(req);
+            if (dto == null || string.IsNullOrWhiteSpace(dto.Name))
+                throw new PluginApplicationException($"Status with id '{id}' not found.");
+            return dto.Name;
+        }
+
+        private static string? ExtractPlainText(Description? desc)
+        {
+            if (desc == null || desc.Content == null) return null;
+
+            var parts = new List<string>();
+            void Walk(IEnumerable<ContentElement> nodes)
+            {
+                foreach (var n in nodes)
+                {
+                    if (!string.IsNullOrEmpty(n.Text)) parts.Add(n.Text);
+                    if (n.Content != null && n.Content.Count > 0) Walk(n.Content);
+                }
+            }
+            Walk(desc.Content);
+            var text = string.Join("", parts).Trim();
+            return string.IsNullOrEmpty(text) ? null : text;
         }
 
         private WebhookPayload DeserializePayload(WebhookRequest request)
