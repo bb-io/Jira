@@ -330,18 +330,33 @@ namespace Apps.Jira.Webhooks
                 return Preflight<IssuesReachedStatusResponse>();
             }
 
-            var notInAllowed = new List<string>();
+            var bucketKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var notAllowed = new List<string>();
+
             foreach (var i in issues)
             {
                 var s = i.Fields?.Status;
-                if (!IsAllowedStatus(s?.Id, s?.Name, allowedIds, allowedNames))
-                    notInAllowed.Add($"{i.Key} [{s?.Id}:{s?.Name}]");
+                var bucket = GetAllowedBucketKey(s?.Id, s?.Name, allowedIds, allowedNames);
+                if (bucket == null)
+                {
+                    notAllowed.Add($"{i.Key} [{s?.Id}:{s?.Name}]");
+                    continue;
+                }
+                bucketKeys.Add(bucket);
             }
 
-            if (notInAllowed.Count > 0)
+            if (notAllowed.Count > 0)
             {
                 InvocationContext.Logger?.LogInformation(
-                    $"[Jira][OnIssuesReachStatus] Still not in allowed statuses (ids: [{string.Join(", ", allowedIds)}]; names: [{string.Join(", ", allowedNames)}]): {string.Join(", ", notInAllowed)}",
+                    $"[Jira][OnIssuesReachStatus] Issues not in allowed statuses (ids: [{string.Join(", ", allowedIds)}]; names: [{string.Join(", ", allowedNames)}]): {string.Join(", ", notAllowed)}",
+                    null);
+                return Preflight<IssuesReachedStatusResponse>();
+            }
+
+            if (bucketKeys.Count != 1)
+            {
+                InvocationContext.Logger?.LogInformation(
+                    $"[Jira][OnIssuesReachStatus] Mixed statuses among allowed set. Buckets found: [{string.Join(", ", bucketKeys)}]. Expecting a single bucket.",
                     null);
                 return Preflight<IssuesReachedStatusResponse>();
             }
@@ -403,6 +418,15 @@ namespace Apps.Jira.Webhooks
             if (dto == null || string.IsNullOrWhiteSpace(dto.Name))
                 throw new PluginApplicationException($"Status with id '{id}' not found.");
             return dto.Name;
+        }
+
+        private static string? GetAllowedBucketKey(string? id, string? name,HashSet<string> allowedIds, HashSet<string> allowedNames)
+        {
+            if (!string.IsNullOrEmpty(id) && allowedIds.Contains(id))
+                return $"id:{id}";
+            if (!string.IsNullOrEmpty(name) && allowedNames.Contains(name))
+                return $"name:{name}";
+            return null;
         }
 
         private static string? ExtractPlainText(Description? desc)
