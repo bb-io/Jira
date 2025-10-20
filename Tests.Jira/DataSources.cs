@@ -7,361 +7,360 @@ using Blackbird.Applications.Sdk.Common.Dynamic;
 using Blackbird.Applications.Sdk.Common.Exceptions;
 using Tests.Jira.Base;
 
-namespace Tests.Jira
+namespace Tests.Jira;
+
+[TestClass]
+public class DataSources : TestBase
 {
-    [TestClass]
-    public class DataSources : TestBase
+    [TestMethod]
+    public async Task CustomStringFieldHandlerReturnsValues()
     {
-        [TestMethod]
-        public async Task CustomStringFieldHandlerReturnsValues()
+        var handler = new CustomStringFieldDataSourceHandler(InvocationContext);
+
+        var response = await handler.GetDataAsync(new DataSourceContext { SearchString = "" }, CancellationToken.None);
+
+        foreach (var item in response)
         {
-            var handler = new CustomStringFieldDataSourceHandler(InvocationContext);
+            Console.WriteLine($"{item.Value}: {item.Key}");
+        }
 
-            var response = await handler.GetDataAsync(new DataSourceContext { SearchString = "" }, CancellationToken.None);
+        Assert.IsNotNull(response);
 
-            foreach (var item in response)
-            {
-                Console.WriteLine($"{item.Value}: {item.Key}");
-            }
+    }
 
+    [TestMethod]
+    public async Task Get_MultiselectFieldHandlerReturnsValues()
+    {
+        var handler = new IssueCustomFieldsActions(InvocationContext);
+
+        var input1 = new IssueIdentifier
+        {
+            IssueKey = "TES-4"
+        };
+
+        var input2 = new CustomNumericFieldIdentifier
+        {
+            CustomNumberFieldId = "customfield_10055"
+        };
+        var response = await handler.GetCustomNumericFieldValue(input1, input2);
+
+        Console.WriteLine($"{response.Value}");
+
+        Assert.IsNotNull(response);
+
+    }
+
+    [TestMethod]
+    public async Task Set_MultiselectFieldHandlerReturnsValues()
+    {
+        var handler = new IssueCustomFieldsActions(InvocationContext);
+
+        var input1 = new IssueIdentifier
+        {
+            IssueKey = "TES-4"
+        };
+
+        var input2 = new CustomMultiselectFieldIdentifier
+        {
+            CustomMultiselectFieldId = "customfield_10055"
+        };
+        var input3 = new CustomMultiselectFieldInput { ValueProperty = ["Hello"] };
+        await handler.SetCustomMultiselectFieldValue(input1, input2, input3);
+
+        for (int i = 0; i < 50; i++)
+        {
+            var response = await handler.GetCustomMultiselectFieldValue(input1, input2);
+            Console.WriteLine($"{response.Count}");
             Assert.IsNotNull(response);
+        }
+    }
 
+    [TestMethod]
+    public async Task MultiselectFieldHandlerReturnsValues()
+    {
+        var handler = new CustomMultiselectFieldDataSourceHandler(InvocationContext);
+
+        var response = await handler.GetDataAsync(new DataSourceContext { SearchString = "" }, CancellationToken.None);
+
+        foreach (var item in response)
+        {
+            Console.WriteLine($"{item.Value}: {item.Key}");
         }
 
-        [TestMethod]
-        public async Task Get_MultiselectFieldHandlerReturnsValues()
+        Assert.IsNotNull(response);
+
+    }
+
+
+    [TestMethod]
+    public async Task CustomNumericFieldHandlerReturnsValues()
+    {
+        var handler = new CustomNumericFieldDataSourceHandler(InvocationContext);
+
+        var response = await handler.GetDataAsync(new DataSourceContext { SearchString = "" }, CancellationToken.None);
+
+        foreach (var item in response)
         {
-            var handler = new IssueCustomFieldsActions(InvocationContext);
-
-            var input1 = new IssueIdentifier
-            {
-                IssueKey = "TES-4"
-            };
-
-            var input2 = new CustomNumericFieldIdentifier
-            {
-                CustomNumberFieldId = "customfield_10055"
-            };
-            var response = await handler.GetCustomNumericFieldValue(input1, input2);
-
-            Console.WriteLine($"{response.Value}");
-
-            Assert.IsNotNull(response);
-
+            Console.WriteLine($"{item.Value}: {item.Key}");
         }
 
-        [TestMethod]
-        public async Task Set_MultiselectFieldHandlerReturnsValues()
+        Assert.IsNotNull(response);
+
+    }
+
+    [TestMethod]
+    public async Task Get_NumericFieldHandlerReturnsValues()
+    {
+        var handler = new IssueCustomFieldsActions(InvocationContext);
+
+        var input1 = new IssueIdentifier
         {
-            var handler = new IssueCustomFieldsActions(InvocationContext);
+            IssueKey = "TES-4"
+        };
 
-            var input1 = new IssueIdentifier
-            {
-                IssueKey = "TES-4"
-            };
-
-            var input2 = new CustomMultiselectFieldIdentifier
-            {
-                CustomMultiselectFieldId = "customfield_10055"
-            };
-            var input3 = new CustomMultiselectFieldInput { ValueProperty = ["Hello"] };
-            await handler.SetCustomMultiselectFieldValue(input1, input2, input3);
-
-            for (int i = 0; i < 50; i++)
-            {
-                var response = await handler.GetCustomMultiselectFieldValue(input1, input2);
-                Console.WriteLine($"{response.Count}");
-                Assert.IsNotNull(response);
-            }
-        }
-
-        [TestMethod]
-        public async Task MultiselectFieldHandlerReturnsValues()
+        var input2 = new CustomNumericFieldIdentifier
         {
-            var handler = new CustomMultiselectFieldDataSourceHandler(InvocationContext);
+            CustomNumberFieldId = "customfield_10054"
+        };
+        var response = await handler.GetCustomNumericFieldValue(input1, input2);
 
-            var response = await handler.GetDataAsync(new DataSourceContext { SearchString = "" }, CancellationToken.None);
+        Console.WriteLine($"{response.Value}");
 
-            foreach (var item in response)
-            {
-                Console.WriteLine($"{item.Value}: {item.Key}");
-            }
+        Assert.IsNotNull(response);
 
-            Assert.IsNotNull(response);
+    }
 
-        }
+    [TestMethod]
+    public async Task Set_NumericFieldHandlerReturnsValues()
+    {
+        var handler = new IssueCustomFieldsActions(InvocationContext);
 
-
-        [TestMethod]
-        public async Task CustomNumericFieldHandlerReturnsValues()
+        var input1 = new IssueIdentifier
         {
-            var handler = new CustomNumericFieldDataSourceHandler(InvocationContext);
+            IssueKey = "LOCP-47309"
+        };
 
-            var response = await handler.GetDataAsync(new DataSourceContext { SearchString = "" }, CancellationToken.None);
-
-            foreach (var item in response)
-            {
-                Console.WriteLine($"{item.Value}: {item.Key}");
-            }
-
-            Assert.IsNotNull(response);
-
-        }
-
-        [TestMethod]
-        public async Task Get_NumericFieldHandlerReturnsValues()
+        var input2 = new CustomNumericFieldIdentifier
         {
-            var handler = new IssueCustomFieldsActions(InvocationContext);
+            CustomNumberFieldId = "customfield_10022"
+        };
+        var input3 = 0.5;
+        await handler.SetCustomNumericFieldValue(input1, input2, input3);
 
-            var input1 = new IssueIdentifier
-            {
-                IssueKey = "TES-4"
-            };
+        var response = await handler.GetCustomNumericFieldValue(input1, input2);
+        Console.WriteLine($"{response.Value}");
+        Assert.IsNotNull(response);
 
-            var input2 = new CustomNumericFieldIdentifier
-            {
-                CustomNumberFieldId = "customfield_10054"
-            };
-            var response = await handler.GetCustomNumericFieldValue(input1, input2);
+    }
 
-            Console.WriteLine($"{response.Value}");
+    [TestMethod]
+    public async Task MoveIssue_IsNotNull()
+    {
+        var handler = new IssueActions(InvocationContext, FileManager);
 
-            Assert.IsNotNull(response);
+        var input = new MoveIssuesToSprintRequest { BoardId = "1", SprintId = "1", Issues = ["TES-6", "TES-4", "TES-2"] };
 
-        }
+        var response = await handler.MoveIssuesToSprint(input);
+        Console.WriteLine($"{response.Success} {response.Message}");
+        Assert.IsTrue(response.Success);
+    }
 
-        [TestMethod]
-        public async Task Set_NumericFieldHandlerReturnsValues()
+
+    [TestMethod]
+    public async Task RetryAfter_IsNotFail()
+    {
+        var handler = new IssueActions(InvocationContext, FileManager);
+
+        var input = new MoveIssuesToSprintRequest { BoardId = "1", SprintId = "1", Issues = ["TES-6", "TES-4", "TES-2"] };
+
+        for (int i = 0; i < 50; i++)
         {
-            var handler = new IssueCustomFieldsActions(InvocationContext);
-
-            var input1 = new IssueIdentifier
-            {
-                IssueKey = "LOCP-47309"
-            };
-
-            var input2 = new CustomNumericFieldIdentifier
-            {
-                CustomNumberFieldId = "customfield_10022"
-            };
-            var input3 = 0.5;
-            await handler.SetCustomNumericFieldValue(input1, input2, input3);
-
-            var response = await handler.GetCustomNumericFieldValue(input1, input2);
-            Console.WriteLine($"{response.Value}");
-            Assert.IsNotNull(response);
-
-        }
-
-        [TestMethod]
-        public async Task MoveIssue_IsNotNull()
-        {
-            var handler = new IssueActions(InvocationContext, FileManager);
-
-            var input = new MoveIssuesToSprintRequest { BoardId = "1", SprintId = "1", Issues = ["TES-6", "TES-4", "TES-2"] };
-
             var response = await handler.MoveIssuesToSprint(input);
             Console.WriteLine($"{response.Success} {response.Message}");
             Assert.IsTrue(response.Success);
         }
+    }
 
 
-        [TestMethod]
-        public async Task RetryAfter_IsNotFail()
+    [TestMethod]
+    public async Task GetIssuesHandlerReturnsValues()
+    {
+        var handler = new IssueDataSourceHandler(InvocationContext);
+
+        var response = await handler.GetDataAsync(new DataSourceContext { SearchString = "" }, CancellationToken.None);
+
+        foreach (var item in response)
         {
-            var handler = new IssueActions(InvocationContext, FileManager);
-
-            var input = new MoveIssuesToSprintRequest { BoardId = "1", SprintId = "1", Issues = ["TES-6", "TES-4", "TES-2"] };
-
-            for (int i = 0; i < 50; i++)
-            {
-                var response = await handler.MoveIssuesToSprint(input);
-                Console.WriteLine($"{response.Success} {response.Message}");
-                Assert.IsTrue(response.Success);
-            }
+            Console.WriteLine($"{item.Value}: {item.Key}");
         }
 
+        Assert.IsNotNull(response);
 
-        [TestMethod]
-        public async Task GetIssuesHandlerReturnsValues()
+    }
+
+    [TestMethod]
+    public async Task GetIssuesTypeHandlerReturnsValues()
+    {
+        var handler = new IssueTypeDataSourceHandler(InvocationContext, new ProjectIdentifier { ProjectKey = "AC" });
+
+        var response = await handler.GetDataAsync(new DataSourceContext { SearchString = "" }, CancellationToken.None);
+
+        foreach (var item in response)
         {
-            var handler = new IssueDataSourceHandler(InvocationContext);
+            Console.WriteLine($"{item.Value}: {item.Key}");
+        }
 
-            var response = await handler.GetDataAsync(new DataSourceContext { SearchString = "" }, CancellationToken.None);
+        Assert.IsNotNull(response);
 
-            foreach (var item in response)
-            {
-                Console.WriteLine($"{item.Value}: {item.Key}");
-            }
+    }
+
+    [TestMethod]
+    public async Task GetIssuesWrongReturnsValues()
+    {
+        var handler = new IssueActions(InvocationContext, FileManager);
+
+        var input = new IssueIdentifier { IssueKey = "TES-7" };
+        await Assert.ThrowsExceptionAsync<PluginApplicationException>(async () =>
+        {
+            await handler.GetIssueByKey(input);
+        });
+    }
+
+
+    [TestMethod]
+    public async Task Set_TextFieldHandlerReturnsValues()
+    {
+        var handler = new IssueCustomFieldsActions(InvocationContext);
+
+        var input1 = new IssueIdentifier
+        {
+            IssueKey = "LOC-34522"
+        };
+
+        var input2 = new CustomStringFieldIdentifier
+        {
+            CustomStringFieldId = "customfield_11258"
+        };
+        var input3 = "XTM project name: ZendeskFAQ_16546575023261_4";
+        await handler.SetCustomStringFieldValue(input1, input2, input3);
+
+        var response = await handler.GetCustomStringFieldValue(input1, input2);
+        Console.WriteLine($"{response.Value}");
+        Assert.IsNotNull(response);
+
+    }
+
+    [TestMethod]
+    public async Task Get_StringFieldHandlerReturnsValues()
+    {
+        var handler = new IssueCustomFieldsActions(InvocationContext);
+
+        var input1 = new IssueIdentifier
+        {
+            IssueKey = "LOCP-47309"
+        };
+
+        var input2 = new CustomStringFieldIdentifier
+        {
+            CustomStringFieldId = "customfield_10022"
+        };
+        var response = await handler.GetCustomStringFieldValue(input1, input2);
+
+        Console.WriteLine($"{response.Value}");
+
+        Assert.IsNotNull(response);
+
+    }
+
+
+    [TestMethod]
+    public async Task Get_Relevant_Sprint_ReturnsValues()
+    {
+        var handler = new SprintActions(InvocationContext);
+
+        var response = await handler.GetRelevantSprintForDate(
+            new GetSprintByDateRequest { BoardId = "456", Date = new DateTime(2025, 5, 20) });
+
+        foreach (var item in response.Sprints)
+        {
+            Console.WriteLine($"{item.Name}: {item.Id}");
 
             Assert.IsNotNull(response);
-
         }
+    }
 
-        [TestMethod]
-        public async Task GetIssuesTypeHandlerReturnsValues()
+    [TestMethod]
+    public async Task Get_User_by_Email_ReturnsValues()
+    {
+        var handler = new UserActions(InvocationContext);
+
+        var response = await handler.FindUserByEmail(new UserEmailRequest { Email = "ariabushenko@blackbird.io" });
+
+        var json = Newtonsoft.Json.JsonConvert.SerializeObject(response, Newtonsoft.Json.Formatting.Indented);
+        Console.WriteLine(json);
+        Assert.IsNotNull(response);
+
+    }
+
+
+    [TestMethod]
+    public async Task Get_User_email_ReturnsValues()
+    {
+        var handler = new UserActions(InvocationContext);
+
+        var response = await handler.GetUserEmail(new UserIdentifier { AccountId = "712020:6965b2d5-4fb8-4142-b657-41ce3db735e9" });
+
+        Console.WriteLine($"{response.Email}");
+        Assert.IsNotNull(response);
+    }
+
+    [TestMethod]
+    public async Task Set_RichtextFieldHandlerReturnsValues()
+    {
+        var handler = new IssueCustomFieldsActions(InvocationContext);
+
+        var input1 = new IssueIdentifier
         {
-            var handler = new IssueTypeDataSourceHandler(InvocationContext, new ProjectIdentifier { ProjectKey = "AC" });
+            IssueKey = "TES-4"
+        };
 
-            var response = await handler.GetDataAsync(new DataSourceContext { SearchString = "" }, CancellationToken.None);
-
-            foreach (var item in response)
-            {
-                Console.WriteLine($"{item.Value}: {item.Key}");
-            }
-
-            Assert.IsNotNull(response);
-
-        }
-
-        [TestMethod]
-        public async Task GetIssuesWrongReturnsValues()
+        var input2 = new CustomStringFieldIdentifier
         {
-            var handler = new IssueActions(InvocationContext, FileManager);
 
-            var input = new IssueIdentifier { IssueKey = "TES-7" };
-            await Assert.ThrowsExceptionAsync<PluginApplicationException>(async () =>
-            {
-                await handler.GetIssueByKey(input);
-            });
-        }
+        };
+
+        var text = "https://cloud.memsource.com/web/project2/show/WdwZFaKaeUHD2JKyymEri2";
+        await handler.SetCustomRichTextFieldValue(input1, input2, text);
 
 
-        [TestMethod]
-        public async Task Set_TextFieldHandlerReturnsValues()
+        Assert.IsTrue(true);
+
+    }
+
+    [TestMethod]
+    public async Task FixVersionDatahandler_ReturnsValues()
+    {
+        var handler = new FixVersionDataHandler(InvocationContext, new ProjectIdentifier { ProjectKey = "SKP" });
+        var response = await handler.GetDataAsync(new DataSourceContext { SearchString = "" }, CancellationToken.None);
+        foreach (var item in response)
         {
-            var handler = new IssueCustomFieldsActions(InvocationContext);
-
-            var input1 = new IssueIdentifier
-            {
-                IssueKey = "LOC-34522"
-            };
-
-            var input2 = new CustomStringFieldIdentifier
-            {
-                CustomStringFieldId = "customfield_11258"
-            };
-            var input3 = "XTM project name: ZendeskFAQ_16546575023261_4";
-            await handler.SetCustomStringFieldValue(input1, input2, input3);
-
-            var response = await handler.GetCustomStringFieldValue(input1, input2);
-            Console.WriteLine($"{response.Value}");
-            Assert.IsNotNull(response);
-
+            Console.WriteLine($"{item.Value}: {item.DisplayName}");
         }
+        Assert.IsNotNull(response);
+    }
 
-        [TestMethod]
-        public async Task Get_StringFieldHandlerReturnsValues()
+    //IssueTypeDataSourceHandler
+
+
+    [TestMethod]
+    public async Task IssueTypeDataSourceHandler_ReturnsValues()
+    {
+        var handler = new IssueTypeDataSourceHandler(InvocationContext, new ProjectIdentifier { ProjectKey = "TSK" });
+        var response = await handler.GetDataAsync(new DataSourceContext { SearchString = "" }, CancellationToken.None);
+        foreach (var item in response)
         {
-            var handler = new IssueCustomFieldsActions(InvocationContext);
-
-            var input1 = new IssueIdentifier
-            {
-                IssueKey = "LOCP-47309"
-            };
-
-            var input2 = new CustomStringFieldIdentifier
-            {
-                CustomStringFieldId = "customfield_10022"
-            };
-            var response = await handler.GetCustomStringFieldValue(input1, input2);
-
-            Console.WriteLine($"{response.Value}");
-
-            Assert.IsNotNull(response);
-
+            Console.WriteLine($"{item.Value}: {item.Key}");
         }
-
-
-        [TestMethod]
-        public async Task Get_Relevant_Sprint_ReturnsValues()
-        {
-            var handler = new SprintActions(InvocationContext, FileManager);
-
-            var response = await handler.GetRelevantSprintForDate(
-                new GetSprintByDateRequest { BoardId = "456", Date = new DateTime(2025, 5, 20) });
-
-            foreach (var item in response.Sprints)
-            {
-                Console.WriteLine($"{item.Name}: {item.Id}");
-
-                Assert.IsNotNull(response);
-            }
-        }
-
-        [TestMethod]
-        public async Task Get_User_by_Email_ReturnsValues()
-        {
-            var handler = new UserActions(InvocationContext);
-
-            var response = await handler.FindUserByEmail(new UserEmailRequest { Email = "ariabushenko@blackbird.io" });
-
-            var json = Newtonsoft.Json.JsonConvert.SerializeObject(response, Newtonsoft.Json.Formatting.Indented);
-            Console.WriteLine(json);
-            Assert.IsNotNull(response);
-
-        }
-
-
-        [TestMethod]
-        public async Task Get_User_email_ReturnsValues()
-        {
-            var handler = new UserActions(InvocationContext);
-
-            var response = await handler.GetUserEmail(new UserIdentifier { AccountId = "712020:6965b2d5-4fb8-4142-b657-41ce3db735e9" });
-
-            Console.WriteLine($"{response.Email}");
-            Assert.IsNotNull(response);
-        }
-
-        [TestMethod]
-        public async Task Set_RichtextFieldHandlerReturnsValues()
-        {
-            var handler = new IssueCustomFieldsActions(InvocationContext);
-
-            var input1 = new IssueIdentifier
-            {
-                IssueKey = "TES-4"
-            };
-
-            var input2 = new CustomStringFieldIdentifier
-            {
-
-            };
-
-            var text = "https://cloud.memsource.com/web/project2/show/WdwZFaKaeUHD2JKyymEri2";
-            await handler.SetCustomRichTextFieldValue(input1, input2, text);
-
-
-            Assert.IsTrue(true);
-
-        }
-
-        [TestMethod]
-        public async Task FixVersionDatahandler_ReturnsValues()
-        {
-            var handler = new FixVersionDataHandler(InvocationContext, new ProjectIdentifier { ProjectKey = "SKP" });
-            var response = await handler.GetDataAsync(new DataSourceContext { SearchString = "" }, CancellationToken.None);
-            foreach (var item in response)
-            {
-                Console.WriteLine($"{item.Value}: {item.DisplayName}");
-            }
-            Assert.IsNotNull(response);
-        }
-
-        //IssueTypeDataSourceHandler
-
-
-        [TestMethod]
-        public async Task IssueTypeDataSourceHandler_ReturnsValues()
-        {
-            var handler = new IssueTypeDataSourceHandler(InvocationContext, new ProjectIdentifier { ProjectKey = "TSK" });
-            var response = await handler.GetDataAsync(new DataSourceContext { SearchString = "" }, CancellationToken.None);
-            foreach (var item in response)
-            {
-                Console.WriteLine($"{item.Value}: {item.Key}");
-            }
-            Assert.IsNotNull(response);
-        }
+        Assert.IsNotNull(response);
     }
 }
