@@ -3,108 +3,107 @@ using Apps.Jira.Models.Identifiers;
 using Apps.Jira.Models.Requests;
 using Tests.Jira.Base;
 
-namespace Tests.Jira
+namespace Tests.Jira;
+
+[TestClass]
+public class IssueTests :TestBase
 {
-    [TestClass]
-    public class IssueTests :TestBase
+    [TestMethod]
+    public async Task CreateIssue_ReturnsSuccess()
     {
-        [TestMethod]
-        public async Task CreateIssue_ReturnsSuccess()
+        var action = new IssueActions(InvocationContext,FileManager);
+
+        var project = new ProjectIdentifier
         {
-            var action = new IssueActions(InvocationContext,FileManager);
-
-            var project = new ProjectIdentifier
-            {
-                ProjectKey = "AC"
-            };
-            var request = new CreateIssueRequest
-            {
-                Summary = "Test issue local2",
-                IssueTypeId = "10006",
-                Description = "Test description",
-                ParentIssueKey = "AC-1"
-            };
-            var response = await action.CreateIssue(project,request);
-
-            Console.WriteLine(response.Key);
-
-            Assert.IsNotNull(response);
-        }
-
-        [TestMethod]
-        public async Task UpdateIssue_ReturnsSuccess()
+            ProjectKey = "AC"
+        };
+        var request = new CreateIssueRequest
         {
-            // Arrange
-            var action = new IssueActions(InvocationContext, FileManager);
-            var project = new ProjectIdentifier { ProjectKey = "TL" };
-            var issue = new IssueIdentifier { IssueKey = "TL-11" };
-            var request = new UpdateIssueRequest
-            {
-                StatusId = "3",
-            };
+            Summary = "Test issue local2",
+            IssueTypeId = "10006",
+            Description = "Test description",
+            ParentIssueKey = "AC-1"
+        };
+        var response = await action.CreateIssue(project,request);
 
-            // Act
-            await action.UpdateIssue(project, issue, request);
-        }
+        Console.WriteLine(response.Key);
 
-        [TestMethod]
-        public async Task GetIssue_ReturnsSuccess()
+        Assert.IsNotNull(response);
+    }
+
+    [TestMethod]
+    public async Task UpdateIssue_ReturnsSuccess()
+    {
+        // Arrange
+        var action = new IssueActions(InvocationContext, FileManager);
+        var project = new ProjectIdentifier { ProjectKey = "TL" };
+        var issue = new IssueIdentifier { IssueKey = "TL-11" };
+        var request = new UpdateIssueRequest
         {
-            var action = new IssueActions(InvocationContext, FileManager);
+            StatusId = "3",
+        };
 
-            var project = new IssueIdentifier
-            {
-                IssueKey = "LOCP-47309"
-            };
+        // Act
+        await action.UpdateIssue(project, issue, request);
+    }
 
-            var response = await action.GetIssueByKey(project);
+    [TestMethod]
+    public async Task GetIssue_ReturnsSuccess()
+    {
+        var action = new IssueActions(InvocationContext, FileManager);
 
-            var json = Newtonsoft.Json.JsonConvert.SerializeObject(response, Newtonsoft.Json.Formatting.Indented);
-            Console.WriteLine(json);
-            Assert.IsNotNull(response);
-        }
-
-        [TestMethod]
-        public async Task ListRecentlyCreatedIssues_ReturnsSuccess()
+        var project = new IssueIdentifier
         {
-            var action = new IssueActions(InvocationContext, FileManager);
+            IssueKey = "LOCP-47309"
+        };
 
-            var project = new ProjectIdentifier { ProjectKey = "AC" };
-            var listRequest = new ListRecentlyCreatedIssuesRequest
-            {
-                Hours = 500,
-                //Labels = ["form", "non-existent-label"],
-                //Versions = ["v1.0", "v1.1"]
-                ParentIssue = "AC-8"
-            };
+        var response = await action.GetIssueByKey(project);
 
-            var response = await action.ListRecentlyCreatedIssues(project, listRequest, null);
-            var json = Newtonsoft.Json.JsonConvert.SerializeObject(response, Newtonsoft.Json.Formatting.Indented);
-            Console.WriteLine(json);
+        var json = Newtonsoft.Json.JsonConvert.SerializeObject(response, Newtonsoft.Json.Formatting.Indented);
+        Console.WriteLine(json);
+        Assert.IsNotNull(response);
+    }
 
-            Assert.IsNotNull(response);
-        }
+    [TestMethod]
+    public async Task ListRecentlyCreatedIssues_ReturnsSuccess()
+    {
+        var action = new IssueActions(InvocationContext, FileManager);
 
-        [TestMethod]
-        public async Task AddIssueComment_ReturnsSuccess()
+        var project = new ProjectIdentifier { ProjectKey = "AC" };
+        var listRequest = new ListRecentlyCreatedIssuesRequest
         {
-            var action = new IssueCommentActions(InvocationContext);
+            Hours = 500,
+            //Labels = ["form", "non-existent-label"],
+            //Versions = ["v1.0", "v1.1"]
+            ParentIssue = "AC-8"
+        };
 
-            var project = new ProjectIdentifier
-            {
-                ProjectKey = "AC"
-            };
+        var response = await action.ListRecentlyCreatedIssues(project, listRequest, null);
+        var json = Newtonsoft.Json.JsonConvert.SerializeObject(response, Newtonsoft.Json.Formatting.Indented);
+        Console.WriteLine(json);
 
-            var issue = new IssueIdentifier
-            {
-                IssueKey = "AC-1"
-            };
-            var request = new AddIssueCommentRequest
-            {
-                Text= "Test comment Test",
-            };
-            await action.AddIssueComment(issue, request);
-            Assert.IsTrue(true);
-        }
+        Assert.IsNotNull(response);
+    }
+
+    [TestMethod]
+    public async Task AddIssueComment_ReturnsSuccess()
+    {
+        var action = new IssueCommentActions(InvocationContext);
+
+        var project = new ProjectIdentifier
+        {
+            ProjectKey = "AC"
+        };
+
+        var issue = new IssueIdentifier
+        {
+            IssueKey = "AC-1"
+        };
+        var request = new AddIssueCommentRequest
+        {
+            Text= "Test comment Test",
+        };
+        await action.AddIssueComment(issue, request);
+        Assert.IsTrue(true);
     }
 }
