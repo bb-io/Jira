@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Apps.Jira.Actions;
+﻿using Apps.Jira.Actions;
 using Apps.Jira.Models.Identifiers;
 using Apps.Jira.Models.Requests;
 using Tests.Jira.Base;
@@ -14,7 +9,7 @@ namespace Tests.Jira
     public class IssueTests :TestBase
     {
         [TestMethod]
-        public async Task CreateIssue_ReturnsSucces()
+        public async Task CreateIssue_ReturnsSuccess()
         {
             var action = new IssueActions(InvocationContext,FileManager);
 
@@ -36,36 +31,24 @@ namespace Tests.Jira
             Assert.IsNotNull(response);
         }
 
-
         [TestMethod]
-        public async Task UpdateIssue_ReturnsSucces()
+        public async Task UpdateIssue_ReturnsSuccess()
         {
+            // Arrange
             var action = new IssueActions(InvocationContext, FileManager);
-
-            var project = new ProjectIdentifier
-            {
-                ProjectKey = "ELTF"
-            };
-
-            var issue = new IssueIdentifier
-            {
-                IssueKey = "ELTF-1"
-            };
+            var project = new ProjectIdentifier { ProjectKey = "TL" };
+            var issue = new IssueIdentifier { IssueKey = "TL-11" };
             var request = new UpdateIssueRequest
             {
-                Summary = "Test issue",
-                IssueTypeId = "10002",
-                Description = "Test description",
-               // DueDate = DateTime.Now.AddDays(10),
-                OriginalEstimate = "3600",
-                Reporter = "712020:75495005-bcf9-4f19-8ea8-d038a4dba86b"
+                StatusId = "3",
             };
+
+            // Act
             await action.UpdateIssue(project, issue, request);
-            Assert.IsTrue(true);
         }
 
         [TestMethod]
-        public async Task GetIssue_ReturnsSucces()
+        public async Task GetIssue_ReturnsSuccess()
         {
             var action = new IssueActions(InvocationContext, FileManager);
 
@@ -82,7 +65,7 @@ namespace Tests.Jira
         }
 
         [TestMethod]
-        public async Task ListRecentlyCreatedIssues_ReturnsSucces()
+        public async Task ListRecentlyCreatedIssues_ReturnsSuccess()
         {
             var action = new IssueActions(InvocationContext, FileManager);
 
@@ -102,9 +85,8 @@ namespace Tests.Jira
             Assert.IsNotNull(response);
         }
 
-
         [TestMethod]
-        public async Task AddIssueComment_ReturnsSucces()
+        public async Task AddIssueComment_ReturnsSuccess()
         {
             var action = new IssueCommentActions(InvocationContext);
 

@@ -14,8 +14,11 @@ public static class JiraPollyPolicies
         var random = new Random();
 
         return Policy
-            .HandleResult<RestResponse>(response => response.StatusCode == HttpStatusCode.TooManyRequests)
-            .WaitAndRetryAsync<RestResponse>(
+            .HandleResult<RestResponse>(response => 
+                response.StatusCode == HttpStatusCode.TooManyRequests ||
+                response.StatusCode == HttpStatusCode.InternalServerError
+            )
+            .WaitAndRetryAsync(
                 retryCount,
                 sleepDurationProvider: (attempt, outcome, ctx) =>
                 {
