@@ -251,7 +251,7 @@ namespace Apps.Jira.Webhooks
             return issueResponse;
         }
 
-        [Webhook("On issues reach status", typeof(IssueUpdatedHandler),
+        [Webhook("On issues reach status", typeof(IssuesStatusReachedHandler),
           Description = "Triggered when ALL specified issues reach the given status. Emits preflight until all are in that status.")]
         public async Task<WebhookResponse<IssuesReachedStatusResponse>> OnIssuesReachStatus(
           WebhookRequest request, [WebhookParameter] ProjectIdentifier projectId,[WebhookParameter] IssuesReachStatusInput input)
