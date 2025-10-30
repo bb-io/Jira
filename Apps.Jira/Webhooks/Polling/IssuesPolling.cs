@@ -11,8 +11,8 @@ using RestSharp;
 
 namespace Apps.Jira.Webhooks.Polling
 {
-    [PollingEventList("Issues pollings")]
-    public class IssuesPolling(InvocationContext invocationContext) : BaseInvocable(invocationContext)
+    [PollingEventList]
+    public class IssuesPolling(InvocationContext invocationContext) : JiraInvocable(invocationContext)
     {
         [PollingEvent("On issues reach status (polling)", Description = "Triggered when ALL specified issues reach the given status. Emits preflight until all are in that status.")]
         public async Task<IssuesReachedStatusResponse> OnIssuesReachStatusPolling(PollingEventRequest<PollingMemory> request,
@@ -89,18 +89,16 @@ namespace Apps.Jira.Webhooks.Polling
 
         private async Task<IssueWrapper> GetIssue(string key)
         {
-            var client = new JiraClient(InvocationContext.AuthenticationCredentialsProviders);
             var req = new JiraRequest($"/issue/{key}", Method.Get);
             req.AddQueryParameter("fields",
                 "summary,status,issuetype,priority,assignee,project,labels,duedate,reporter,subtasks,description,attachment");
-            return await client.ExecuteWithHandling<IssueWrapper>(req);
+            return await Client.ExecuteWithHandling<IssueWrapper>(req);
         }
 
         private async Task<string> GetStatusNameById(string id)
         {
-            var client = new JiraClient(InvocationContext.AuthenticationCredentialsProviders);
             var req = new JiraRequest($"/status/{id}", Method.Get);
-            var dto = await client.ExecuteWithHandling<SimpleStatusDto>(req);
+            var dto = await Client.ExecuteWithHandling<SimpleStatusDto>(req);
             if (dto == null || string.IsNullOrWhiteSpace(dto.Name))
                 throw new PluginApplicationException($"Status with id '{id}' not found.");
             return dto.Name;
