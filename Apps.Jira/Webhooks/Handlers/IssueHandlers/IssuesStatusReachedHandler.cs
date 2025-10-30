@@ -27,7 +27,7 @@ namespace Apps.Jira.Webhooks.Handlers.IssueHandlers
                 keys = input?.IssueKeys,
                 statuses = input?.Statuses
             });
-            InvocationContext.Logger?.LogInformation("[Jira][OnIssuesReachStatus][AfterSub] Start after-subscription check ", null);
+            InvocationContext.Logger?.LogError("[Jira][OnIssuesReachStatus][AfterSub] Start after-subscription check ", null);
 
             var normalizedKeys = new HashSet<string>(
                 (input.IssueKeys ?? Enumerable.Empty<string>())
@@ -37,7 +37,7 @@ namespace Apps.Jira.Webhooks.Handlers.IssueHandlers
 
             if (normalizedKeys.Count == 0)
             {
-                InvocationContext.Logger?.LogInformation("[Jira][OnIssuesReachStatus][AfterSub] No issue keys provided → nothing to emit", null);
+                InvocationContext.Logger?.LogError("[Jira][OnIssuesReachStatus][AfterSub] No issue keys provided → nothing to emit", null);
                 return null!;
             }
 
@@ -48,7 +48,7 @@ namespace Apps.Jira.Webhooks.Handlers.IssueHandlers
 
             if (rawStatuses.Count == 0)
             {
-                InvocationContext.Logger?.LogInformation("[Jira][OnIssuesReachStatus][AfterSub] No statuses provided → nothing to emit", null);
+                InvocationContext.Logger?.LogError("[Jira][OnIssuesReachStatus][AfterSub] No statuses provided → nothing to emit", null);
                 return null!;
             }
 
@@ -64,7 +64,7 @@ namespace Apps.Jira.Webhooks.Handlers.IssueHandlers
                 }
                 catch (Exception ex)
                 {
-                    InvocationContext.Logger?.LogInformation($"[Jira][OnIssuesReachStatus][AfterSub] Can't load issue '{key}': {ex.Message}", null);
+                    InvocationContext.Logger?.LogError($"[Jira][OnIssuesReachStatus][AfterSub] Can't load issue '{key}': {ex.Message}", null);
                     return null!;
                 }
             }
@@ -76,7 +76,7 @@ namespace Apps.Jira.Webhooks.Handlers.IssueHandlers
 
                 if (mismatch != null)
                 {
-                    InvocationContext.Logger?.LogInformation(
+                    InvocationContext.Logger?.LogError(
                         $"[Jira][OnIssuesReachStatus][AfterSub] Found issue from another project '{mismatch.Fields?.Project?.Key}' while filter is '{projectId.ProjectKey}' → skip emit",
                         null);
                     return null!;
@@ -93,7 +93,7 @@ namespace Apps.Jira.Webhooks.Handlers.IssueHandlers
 
             if (notInAllowed.Count > 0)
             {
-                InvocationContext.Logger?.LogInformation(
+                InvocationContext.Logger?.LogError(
                     $"[Jira][OnIssuesReachStatus][AfterSub] Not all issues are in allowed statuses → {string.Join(", ", notInAllowed)}",
                     null);
                 return null!;
