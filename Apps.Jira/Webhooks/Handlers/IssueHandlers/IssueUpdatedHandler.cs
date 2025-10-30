@@ -1,7 +1,6 @@
 ﻿using Apps.Jira.Dtos;
 using Apps.Jira.Models.Identifiers;
 using Apps.Jira.Webhooks.Inputs;
-using Apps.Jira.Webhooks.Payload;
 using Apps.Jira.Webhooks.Responses;
 using Blackbird.Applications.Sdk.Common.Exceptions;
 using Blackbird.Applications.Sdk.Common.Invocation;
@@ -10,26 +9,20 @@ using RestSharp;
 
 namespace Apps.Jira.Webhooks.Handlers.IssueHandlers
 {
-    public class IssueUpdatedHandler : BaseWebhookHandler, IAfterSubscriptionWebhookEventHandler<IssuesReachedStatusResponse>
+    public class IssueUpdatedHandler(
+        InvocationContext invocationContext,
+        [WebhookParameter] ProjectIdentifier projectId,
+        [WebhookParameter] IssuesReachStatusInput input)
+        : BaseWebhookHandler(invocationContext, SubscriptionEvent),IAfterSubscriptionWebhookEventHandler<IssuesReachedStatusResponse>
     {
-        private static readonly string[] _subscriptionEvents = { "jira:issue_updated" };
-
-        private readonly ProjectIdentifier _projectId;
-        private readonly IssuesReachStatusInput _input;
-
-        public IssueUpdatedHandler(InvocationContext invocationContext, [WebhookParameter] ProjectIdentifier projectId,
-            [WebhookParameter] IssuesReachStatusInput input) : base(invocationContext, _subscriptionEvents)
-        {
-            _projectId = projectId;
-            _input = input;
-        }
+        private static readonly string[] SubscriptionEvent = { "jira:issue_updated" };
 
         public async Task<AfterSubscriptionEventResponse<IssuesReachedStatusResponse>> OnWebhookSubscribedAsync()
         {
             InvocationContext.Logger?.LogInformation("[Jira][OnIssuesReachStatus][AfterSub] Start after-subscription check ", null);
 
             var normalizedKeys = new HashSet<string>(
-                (_input.IssueKeys ?? Enumerable.Empty<string>())
+                (input.IssueKeys ?? Enumerable.Empty<string>())
                     .Where(k => !string.IsNullOrWhiteSpace(k))
                     .Select(k => k.Trim().ToUpperInvariant())
             );
@@ -40,7 +33,7 @@ namespace Apps.Jira.Webhooks.Handlers.IssueHandlers
                 return null!;
             }
 
-            var rawStatuses = (_input.Statuses ?? Enumerable.Empty<string>())
+            var rawStatuses = (input.Statuses ?? Enumerable.Empty<string>())
                 .Where(s => !string.IsNullOrWhiteSpace(s))
                 .Select(s => s.Trim())
                 .ToList();
@@ -68,15 +61,15 @@ namespace Apps.Jira.Webhooks.Handlers.IssueHandlers
                 }
             }
 
-            if (!string.IsNullOrWhiteSpace(_projectId?.ProjectKey))
+            if (!string.IsNullOrWhiteSpace(projectId?.ProjectKey))
             {
                 var mismatch = issues.FirstOrDefault(i =>
-                    !string.Equals(i.Fields?.Project?.Key, _projectId.ProjectKey, StringComparison.OrdinalIgnoreCase));
+                    !string.Equals(i.Fields?.Project?.Key, projectId.ProjectKey, StringComparison.OrdinalIgnoreCase));
 
                 if (mismatch != null)
                 {
                     InvocationContext.Logger?.LogInformation(
-                        $"[Jira][OnIssuesReachStatus][AfterSub] Found issue from another project '{mismatch.Fields?.Project?.Key}' while filter is '{_projectId.ProjectKey}' → skip emit",
+                        $"[Jira][OnIssuesReachStatus][AfterSub] Found issue from another project '{mismatch.Fields?.Project?.Key}' while filter is '{projectId.ProjectKey}' → skip emit",
                         null);
                     return null!;
                 }
@@ -138,7 +131,7 @@ namespace Apps.Jira.Webhooks.Handlers.IssueHandlers
                         var name = await GetStatusNameById(token);
                         if (!string.IsNullOrWhiteSpace(name)) names.Add(name);
                     }
-                    catch {}
+                    catch { }
                 }
                 else
                 {
