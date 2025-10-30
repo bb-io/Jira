@@ -21,12 +21,6 @@ namespace Apps.Jira.Webhooks.Handlers.IssueHandlers
 
         public async Task<AfterSubscriptionEventResponse<IssuesReachedStatusResponse>> OnWebhookSubscribedAsync()
         {
-            await WebhookProbe.SendAsync("AfterSub: entered", new
-            {
-                project = projectId?.ProjectKey,
-                keys = input?.IssueKeys,
-                statuses = input?.Statuses
-            });
             InvocationContext.Logger?.LogError("[Jira][OnIssuesReachStatus][AfterSub] Start after-subscription check ", null);
 
             var normalizedKeys = new HashSet<string>(
@@ -197,35 +191,5 @@ namespace Apps.Jira.Webhooks.Handlers.IssueHandlers
             var text = string.Join("", parts).Trim();
             return string.IsNullOrEmpty(text) ? null : text;
         }
-    }
-
-    internal static class WebhookProbe
-    {
-        private static readonly HttpClient _http = new HttpClient();
-
-        private const string Url = "https://webhook.site/34c1745b-e75a-422f-ae76-0c321c61bfe0";
-
-        public static async Task SendAsync(string tag, object? data = null)
-        {
-            try
-            {
-                var payload = new
-                {
-                    tag,
-                    at = DateTime.UtcNow,
-                    machine = Environment.MachineName,
-                    data
-                };
-
-                var json = JsonConvert.SerializeObject(payload);
-                using var content = new StringContent(json, Encoding.UTF8, "application/json");
-                using var _ = await _http.PostAsync(Url, content);
-            }
-            catch
-            {
-            }
-        }
-
-        public static Task SendTextAsync(string message) => SendAsync("text", new { message });
     }
 }
