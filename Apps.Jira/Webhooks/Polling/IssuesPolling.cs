@@ -15,12 +15,12 @@ namespace Apps.Jira.Webhooks.Polling
     public class IssuesPolling(InvocationContext invocationContext) : JiraInvocable(invocationContext)
     {
         [PollingEvent("On issues reach status (polling)")]
-        public async Task<IssuesReachedStatusResponse> OnIssuesReachStatusPolling(PollingEventRequest<PollingMemory> request,
+        public async Task<PollingEventResponse<PollingMemory,IssuesReachedStatusResponse>> OnIssuesReachStatusPolling(PollingEventRequest<PollingMemory> request,
             [PollingEventParameter] ProjectIdentifier projectId, [PollingEventParameter] IssuesReachStatusInput input)
         {
+            var nowUtc = DateTime.UtcNow;
             request.Memory ??= new PollingMemory();
-            request.Memory.LastPollingTime = DateTime.UtcNow;
-
+            request.Memory.LastPollingTime = nowUtc;
 
             var normalizedKeys = new HashSet<string>(
                 (input.IssueKeys ?? Enumerable.Empty<string>())
@@ -29,7 +29,11 @@ namespace Apps.Jira.Webhooks.Polling
             );
             if (normalizedKeys.Count == 0)
             {
-                return null;
+                return new()
+                {
+                    FlyBird = false,
+                    Memory = request.Memory
+                };
             }
 
             var rawStatuses = (input.Statuses ?? Enumerable.Empty<string>())
@@ -38,7 +42,11 @@ namespace Apps.Jira.Webhooks.Polling
                 .ToList();
             if (rawStatuses.Count == 0)
             {
-                return null;
+                return new()
+                {
+                    FlyBird = false,
+                    Memory = request.Memory
+                };
             }
 
             var (allowedIds, allowedNames) = await ResolveStatusesAsync(rawStatuses);
@@ -50,9 +58,13 @@ namespace Apps.Jira.Webhooks.Polling
                 {
                     issues.Add(await GetIssue(key));
                 }
-                catch (Exception ex)
+                catch
                 {
-                    return null;
+                    return new()
+                    {
+                        FlyBird = false,
+                        Memory = request.Memory
+                    };
                 }
             }
 
@@ -63,27 +75,36 @@ namespace Apps.Jira.Webhooks.Polling
 
                 if (mismatch != null)
                 {
-                    return null;
+                    return new()
+                    {
+                        FlyBird = false,
+                        Memory = request.Memory
+                    };
                 }
             }
 
-            var notInAllowed = issues
-                .Where(i =>
-                {
-                    var s = i.Fields?.Status;
-                    return !IsAllowedStatus(s?.Id, s?.Name, allowedIds, allowedNames);
-                })
-                .Select(i => new { i.Key, id = i.Fields?.Status?.Id, name = i.Fields?.Status?.Name })
-                .ToList();
-
-            if (notInAllowed.Count > 0)
+            var allInAllowed = issues.All(i =>
             {
-                return null;
+                var s = i.Fields?.Status;
+                return IsAllowedStatus(s?.Id, s?.Name, allowedIds, allowedNames);
+            });
+
+            if (!allInAllowed)
+            {
+                return new()
+                {
+                    FlyBird = false,
+                    Memory = request.Memory
+                };
             }
 
             var results = issues.Select(MapToIssueResponse).ToList();
-
-            return new IssuesReachedStatusResponse { Issues = results };
+            return new()
+            {
+                FlyBird = true,
+                Result = new IssuesReachedStatusResponse { Issues = results },
+                Memory = request.Memory
+            };
         }
 
 
