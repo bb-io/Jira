@@ -6,7 +6,7 @@
     <LangVersion>12</LangVersion>
     <Product>Jira</Product>
     <Description>Issue tracking</Description>
-    <Version>2.2.68</Version>
+    <Version>2.2.69</Version>
     <AssemblyName>Apps.Jira</AssemblyName>
   </PropertyGroup>
   <ItemGroup>
