@@ -26,7 +26,7 @@ namespace Apps.Jira.Webhooks.Handlers.IssueHandlers
 
         public async Task<AfterSubscriptionEventResponse<IssuesReachedStatusResponse>> OnWebhookSubscribedAsync()
         {
-            InvocationContext.Logger?.LogInformation("[Jira][OnIssuesReachStatus][AfterSub] Start after-subscription check", null);
+            InvocationContext.Logger?.LogInformation("[Jira][OnIssuesReachStatus][AfterSub] Start after-subscription check ", null);
 
             var normalizedKeys = new HashSet<string>(
                 (_input.IssueKeys ?? Enumerable.Empty<string>())
