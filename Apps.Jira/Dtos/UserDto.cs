@@ -15,5 +15,10 @@ namespace Apps.Jira.Dtos
         
         [Display("Account type")]
         public string? AccountType { get; set; }
+
+        [Display("Name")]
+        public string Name { get; set; } = string.Empty;
+
+        public bool Active { get; set; }
     }
 }

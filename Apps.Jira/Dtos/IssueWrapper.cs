@@ -1,4 +1,6 @@
 ﻿
+using Apps.Jira.Models.Responses;
+using Apps.Jira.Utils;
 using Blackbird.Applications.Sdk.Common;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -7,6 +9,17 @@ namespace Apps.Jira.Dtos;
 
 public class IssuesWrapper
 {
+    [JsonProperty("startAt")]
+    [DefinitionIgnore]
+    public int StartAt { get; set; }
+
+    [JsonProperty("maxResults")]
+    [DefinitionIgnore]
+    public int MaxResults { get; set; }
+
+    [JsonProperty("total")]
+    [DefinitionIgnore]
+    public int Total { get; set; }
     public IEnumerable<IssueWrapper> Issues { get; set; }
 }
 
@@ -34,7 +47,19 @@ public class IssueFields
     public UserDto? Reporter { get; set; }
 
     public Description? Description { get; set; }
-        
+
+    [JsonProperty("timespent"), Display("Time spent (in seconds)"), JsonConverter(typeof(NullableDoubleConverter))]
+    public double TimeSpent { get; set; }
+
+    [JsonProperty("aggregatetimespent"), Display("Aggregate time spent (in seconds)"), JsonConverter(typeof(NullableDoubleConverter))]
+    public double AggregateTimeSpent { get; set; }
+
+    [JsonProperty("timeoriginalestimate"), Display("Original estimate (in seconds)"), JsonConverter(typeof(NullableDoubleConverter))]
+    public double OriginalEstimate { get; set; }
+
+    [Display("Worklog")]
+    public WorklogWrapper Worklog { get; set; } = new();
+
     public IEnumerable<AttachmentDto>? Attachment { get; set; }
 
     [JsonProperty("labels")]
@@ -45,7 +70,23 @@ public class IssueFields
 
     [JsonProperty("duedate")]
     public string? DueDate { get; set; }
+
+    [JsonProperty("parent")]
+    public IssueIdWrapper? Parent { get; set; }
+
+    [JsonExtensionData]
+    public Dictionary<string, JToken> CustomFields { get; set; } = new();
 }
+
+public class IssueIdWrapper
+{
+    [JsonProperty("id")]
+    public string Id { get; set; } = default!;
+
+    [JsonProperty("key")]
+    public string Key { get; set; } = default!;
+}
+
 
 public class Description
 {
