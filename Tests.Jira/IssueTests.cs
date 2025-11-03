@@ -54,7 +54,7 @@ public class IssueTests :TestBase
 
         var project = new IssueIdentifier
         {
-            IssueKey = "LOCP-47309"
+            IssueKey = "AC-5"
         };
 
         var response = await action.GetIssueByKey(project);
@@ -72,10 +72,10 @@ public class IssueTests :TestBase
         var project = new ProjectIdentifier { ProjectKey = "AC" };
         var listRequest = new ListRecentlyCreatedIssuesRequest
         {
-            Hours = 500,
+            //Hours = 500,
             //Labels = ["form", "non-existent-label"],
             //Versions = ["v1.0", "v1.1"]
-            ParentIssue = "AC-8"
+            //ParentIssue = "AC-8"
         };
 
         var response = await action.ListRecentlyCreatedIssues(project, listRequest, null);
@@ -105,5 +105,23 @@ public class IssueTests :TestBase
         };
         await action.AddIssueComment(issue, request);
         Assert.IsTrue(true);
+    }
+
+    [TestMethod]
+    public async Task CloneIssue_ReturnsSuccess()
+    {
+        var action = new IssueActions(InvocationContext, FileManager);
+        var issue = new IssueIdentifier { IssueKey = "AC-18" };
+        var cloneIssue = new CloneIssueRequest
+        {
+           ReporterName = "712020:75495005-bcf9-4f19-8ea8-d038a4dba86b",
+        };
+
+        var response = await action.CloneIssue(issue, cloneIssue);
+
+        var json = Newtonsoft.Json.JsonConvert.SerializeObject(response, Newtonsoft.Json.Formatting.Indented);
+        Console.WriteLine(json);
+
+        Assert.IsNotNull(response);
     }
 }

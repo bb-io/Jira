@@ -14,8 +14,11 @@ using Blackbird.Applications.Sdk.Utils.Extensions.Files;
 using Blackbird.Applications.Sdk.Utils.Extensions.Http;
 using Blackbird.Applications.SDK.Extensions.FileManagement.Interfaces;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Serialization;
 using RestSharp;
+using System.Globalization;
+using System.Web;
 using Method = RestSharp.Method;
 namespace Apps.Jira.Actions;
 
@@ -87,6 +90,310 @@ public class IssueActions(InvocationContext invocationContext, IFileManagementCl
             Issues = issues.Issues.Select(i => new IssueDto(i)),
             Count = issues.Issues.Count()
         };
+    }
+
+    [Action("Clone issue", Description = "Clone an existing issue into a new issue")]
+    public async Task<IssueDto> CloneIssue([ActionParameter] IssueIdentifier sourceIssue,
+       [ActionParameter] CloneIssueRequest input)
+    {
+        var getWrapReq = new JiraRequest($"/issue/{sourceIssue.IssueKey}", Method.Get);
+        var original = await Client.ExecuteWithHandling<IssueWrapper>(getWrapReq);
+
+        var getRawReq = new JiraRequest($"/issue/{sourceIssue.IssueKey}", Method.Get);
+        var originalRaw = await Client.ExecuteWithHandling<JObject>(getRawReq);
+        var originalFieldsObj = (JObject?)originalRaw["fields"] ?? new JObject();
+
+        var createSchemas = await GetCreateFieldSchemas(original.Fields.Project.Key, original.Fields.IssueType.Id);
+
+        var fields = new JObject();
+
+        if (!string.IsNullOrWhiteSpace(original.Fields.Project.Id))
+            fields["project"] = new JObject { ["id"] = original.Fields.Project.Id };
+        else
+            fields["project"] = new JObject { ["key"] = original.Fields.Project.Key };
+
+        fields["issuetype"] = new JObject { ["id"] = original.Fields.IssueType.Id };
+
+        fields["summary"] = input.NewSummary ?? original.Fields.Summary;
+
+        if (original.Fields.Priority != null)
+            fields["priority"] = new JObject { ["id"] = original.Fields.Priority.Id };
+
+        if (original.Fields.Labels != null && original.Fields.Labels.Any())
+            fields["labels"] = new JArray(original.Fields.Labels);
+
+        if (!string.IsNullOrWhiteSpace(input.AssigneeName))
+            fields["assignee"] = new JObject { ["accountId"] = input.AssigneeName };
+        else if (original.Fields.Assignee?.Active == true && !string.IsNullOrWhiteSpace(original.Fields.Assignee.AccountId))
+            fields["assignee"] = new JObject { ["accountId"] = original.Fields.Assignee.AccountId };
+
+        var me = await GetCurrentUserAsync();
+        var reporterId =
+            (!string.IsNullOrWhiteSpace(input.ReporterName) ? input.ReporterName : null) ??
+            (original.Fields.Reporter?.Active == true ? original.Fields.Reporter?.AccountId : null) ??
+            me.AccountId;
+
+        if (string.IsNullOrWhiteSpace(reporterId))
+            throw new PluginApplicationException("Reporter is required but no suitable accountId found.");
+
+        fields["reporter"] = new JObject { ["accountId"] = reporterId };
+
+        if (!string.IsNullOrWhiteSpace(original.Fields.DueDate) &&
+            DateTime.TryParse(original.Fields.DueDate, out var dd))
+            fields["duedate"] = dd.ToString("yyyy-MM-dd");
+
+        if (original.Fields.Parent != null)
+            fields["parent"] = new JObject { ["key"] = original.Fields.Parent.Key };
+
+        if (originalFieldsObj["description"] is JToken adf &&
+            adf.Type != JTokenType.Null &&
+            createSchemas.ContainsKey("description"))
+        {
+            fields["description"] = adf.DeepClone();
+        }
+
+        foreach (var prop in originalFieldsObj.Properties())
+        {
+            var key = prop.Name;
+            if (!key.StartsWith("customfield_", StringComparison.OrdinalIgnoreCase))
+                continue;
+
+            var value = prop.Value;
+            if (value is null || value.Type == JTokenType.Null)
+                continue;
+
+            if (!createSchemas.TryGetValue(key, out var schema))
+                continue;
+
+            var customId = (schema.Custom ?? string.Empty).ToLowerInvariant();
+            if (customId.Contains("gh-lexo-rank") || customId.Contains("gh-simplified-rank") || customId.Contains("greenhopper"))
+                continue;
+
+            var normalized = NormalizeCustomFieldValue(value, schema);
+            if (normalized is not null)
+                fields[key] = JToken.FromObject(normalized);
+        }
+
+        var skipNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "rank","rankBeforeIssue","rankAfterIssue",
+            "attachment","votes","watches","worklog","comment",
+            "timeoriginalestimate","timeestimate","timespent",
+            "aggregatetimeoriginalestimate","aggregatetimeestimate","aggregatetimespent",
+            "timetracking","lastViewed","created","updated","resolution","resolutiondate",
+            "statuscategorychangedate","creator","progress","aggregateprogress"
+        };
+
+        var toRemove = new List<string>();
+        foreach (var p in fields.Properties())
+        {
+            var name = p.Name;
+            if (skipNames.Contains(name) || name.IndexOf("rank", StringComparison.OrdinalIgnoreCase) >= 0)
+                toRemove.Add(name);
+        }
+        foreach (var n in toRemove) fields.Remove(n);
+
+        var body = new JObject { ["fields"] = fields };
+        var createReq = new JiraRequest("/issue", Method.Post).AddJsonBody(body.ToString());
+
+        CreatedIssueDto created;
+        try
+        {
+            created = await Client.ExecuteWithHandling<CreatedIssueDto>(createReq);
+        }
+        catch (Exception ex)
+        {
+            throw new PluginApplicationException($"Failed to clone issue {sourceIssue.IssueKey}: {ex.Message}", ex);
+        }
+
+       await LinkIssuesCloners(created.Key, sourceIssue.IssueKey); 
+
+
+        if (input.CopyStatus == true)
+        {await TransitionIssueToStatus(created.Key, original.Fields.Status.Id);
+
+        }
+
+        return await GetIssueByKey(new IssueIdentifier { IssueKey = created.Key });
+    }
+
+    private async Task<Dictionary<string, CreateMetaField>> GetCreateFieldSchemas(string projectKey, string issueTypeId)
+    {
+        var req = new JiraRequest($"/issue/createmeta", Method.Get)
+        .AddQueryParameter("projectKeys", projectKey)
+        .AddQueryParameter("issuetypeIds", issueTypeId)
+        .AddQueryParameter("expand", "projects.issuetypes.fields");
+
+        var resp = await Client.ExecuteWithHandling<JObject>(req);
+
+        var dict = new Dictionary<string, CreateMetaField>(StringComparer.OrdinalIgnoreCase);
+        var fields = resp?["projects"]?[0]?["issuetypes"]?[0]?["fields"] as JObject;
+        if (fields is null) return dict;
+
+        foreach (var prop in fields.Properties())
+        {
+            if (prop.Value is not JObject f) continue;
+
+            dict[prop.Name] = new CreateMetaField
+            {
+                Name = f["name"]?.ToString(),
+                Key = prop.Name,
+                SchemaType = f.SelectToken("schema.type")?.ToString(),
+                SchemaItems = f.SelectToken("schema.items")?.ToString(),
+                Custom = f.SelectToken("schema.custom")?.ToString(),
+                Required = f["required"]?.Value<bool>() ?? false
+            };
+        }
+        return dict;
+    }
+
+    private object? NormalizeCustomFieldValue(JToken srcValue, CreateMetaField schema)
+    {
+        if (srcValue.Type == JTokenType.Null) return null;
+
+        var type = schema.SchemaType;
+        var items = schema.SchemaItems;
+
+        switch (type)
+        {
+            case "user":
+                {
+                    var accountId = srcValue["accountId"]?.ToString();
+                    return string.IsNullOrWhiteSpace(accountId) ? null : new { accountId };
+                }
+
+            case "array":
+                {
+                    if (srcValue is not JArray arr) return null;
+                    switch (items)
+                    {
+                        case "user":
+                            return arr.Select(u =>
+                            {
+                                var aid = u?["accountId"]?.ToString();
+                                return string.IsNullOrWhiteSpace(aid) ? null : new { accountId = aid };
+                            }).Where(x => x is not null).ToArray();
+
+                        case "option":
+                            return arr.Select<JToken, object?>(opt =>
+                            {
+                                var id = opt?["id"]?.ToString();
+                                var value = opt?["value"]?.ToString();
+                                return !string.IsNullOrEmpty(id) ? new { id } :
+                                       !string.IsNullOrEmpty(value) ? new { value } : null;
+                            }).Where(x => x is not null).ToArray();
+
+                        case "version":
+                        case "component":
+                            return arr.Select(v =>
+                            {
+                                var id = v?["id"]?.ToString();
+                                return !string.IsNullOrEmpty(id) ? new { id } : null;
+                            }).Where(x => x is not null).ToArray();
+
+                        default:
+                            return arr.Select(a => (a as JValue)?.Value).ToArray();
+                    }
+                }
+
+            case "option":
+                {
+                    var id = srcValue["id"]?.ToString();
+                    var value = srcValue["value"]?.ToString();
+                    if (!string.IsNullOrEmpty(id)) return new { id };
+                    if (!string.IsNullOrEmpty(value)) return new { value };
+                    return null;
+                }
+
+            case "version":
+            case "component":
+                {
+                    var id = srcValue["id"]?.ToString();
+                    return !string.IsNullOrEmpty(id) ? new { id } : null;
+                }
+
+            case "number":
+                {
+                    if (srcValue is JValue v && (v.Type == JTokenType.Integer || v.Type == JTokenType.Float))
+                        return v.Value;
+                    if (decimal.TryParse(srcValue.ToString(), NumberStyles.Any, CultureInfo.InvariantCulture, out var dec))
+                        return dec;
+                    return null;
+                }
+
+            case "date":
+            case "datetime":
+                {
+                    return srcValue.Type == JTokenType.String ? srcValue.ToString() : null;
+                }
+
+            default:
+                {
+                    if (srcValue is JValue sv) return sv.Value;
+                    return srcValue.ToObject<object>();
+                }
+        }
+    }
+
+    private async Task<(string? AccountId, string? Name)> GetCurrentUserAsync()
+    {
+        var req = new JiraRequest("/myself", Method.Get);
+        var me = await Client.ExecuteWithHandling<JObject>(req);
+        return (me["accountId"]?.ToString(), me["name"]?.ToString() ?? me["key"]?.ToString());
+    }
+
+    private async Task LinkIssuesCloners(string newIssueKey, string sourceKey)
+    {
+        var payload = new
+        {
+            type = new { name = "Cloners" },
+            outwardIssue = new { key = sourceKey },
+            inwardIssue = new { key = newIssueKey }
+        };
+
+        var req = new JiraRequest("/issueLink", Method.Post).AddJsonBody(payload);
+        await Client.ExecuteWithHandling(req);
+    }
+
+    private async Task TransitionIssueToStatus(string issueKey, string statusId)
+    {
+        var get = new JiraRequest($"/issue/{issueKey}/transitions", Method.Get);
+        var transitions = await Client.ExecuteWithHandling<TransitionsResponse>(get);
+
+        var target = transitions.Transitions.FirstOrDefault(t => t.To.Id == statusId);
+        if (target != null)
+        {
+            var post = new JiraRequest($"/issue/{issueKey}/transitions", Method.Post)
+                .AddJsonBody(new { transition = new { id = target.Id } });
+            await Client.ExecuteWithHandling(post);
+        }
+    }
+
+    public async Task LinkIssue([ActionParameter] LinkIssueRequest input)
+    {
+        var requestBody = new
+        {
+            inwardIssue = new
+            {
+                key = input.InwardIssueKey
+            },
+            outwardIssue = new
+            {
+                key = input.OutwardIssueKey
+            },
+            type = new
+            {
+                name = input.LinkTypeName
+            },
+            comment = new
+            {
+                body = input.Comment ?? "Linked via API"
+            }
+        };
+
+        var request = new JiraRequest("/issueLink", Method.Post)
+            .WithJsonBody(requestBody);
+        await Client.ExecuteWithHandling(request);
     }
 
     [Action("Find issue", Description = "Find the first issue that matches given conditions. Allows appending custom JQL conditions.")]

@@ -3,8 +3,11 @@ using Apps.Jira.DataSourceHandlers;
 using Apps.Jira.DataSourceHandlers.CustomFields;
 using Apps.Jira.Models.Identifiers;
 using Apps.Jira.Models.Requests;
+using Apps.Jira.Webhooks.Inputs;
+using Apps.Jira.Webhooks.Polling;
 using Blackbird.Applications.Sdk.Common.Dynamic;
 using Blackbird.Applications.Sdk.Common.Exceptions;
+using Blackbird.Applications.Sdk.Common.Polling;
 using Tests.Jira.Base;
 
 namespace Tests.Jira;
@@ -362,5 +365,28 @@ public class DataSources : TestBase
             Console.WriteLine($"{item.Value}: {item.Key}");
         }
         Assert.IsNotNull(response);
+    }
+
+
+    [TestMethod]
+    public async Task OnIssuesReachStatusPolling_ReturnsValues()
+    {
+        var polling = new IssuesPolling(InvocationContext);
+        var projectId = new ProjectIdentifier { ProjectKey = "AC" };
+        var issueReach = new IssuesReachStatusInput
+        {
+            IssueKeys = ["AC-1", "AC-3"],
+            Statuses = ["10004", "10005"]
+        };
+        var request = new PollingEventRequest<PollingMemory>
+        {
+            //PollingTime = 
+        };
+        var response = await polling.OnIssuesReachStatusPolling(request,projectId, issueReach);
+
+        var json = Newtonsoft.Json.JsonConvert.SerializeObject(response, Newtonsoft.Json.Formatting.Indented);
+        Console.WriteLine(json);
+        Assert.IsNotNull(response);
+
     }
 }
