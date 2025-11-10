@@ -534,6 +534,7 @@ namespace Apps.Jira.Webhooks
                     Priority = issue.Fields.Priority?.Name,
                     AssigneeName = issue.Fields.Assignee?.DisplayName,
                     AssigneeAccountId = issue.Fields.Assignee?.AccountId,
+                    Parent = issue.Fields.Parent?.Key,
                     Status = issue.Fields.Status.Name,
                     Attachments = issue.Fields.Attachment,
                     DueDate = !string.IsNullOrEmpty(issue.Fields.DueDate) && DateTime.TryParse(issue.Fields.DueDate, out var dueDate)
