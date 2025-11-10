@@ -36,6 +36,9 @@ namespace Apps.Jira.Webhooks.Payload
         
         [JsonProperty("duedate")]
         public string? DueDate { get; set; }
+
+        [JsonProperty("parent")]
+        public Parent? Parent { get; set; }
     }
     
     public class IssueType
@@ -87,6 +90,13 @@ namespace Apps.Jira.Webhooks.Payload
         public string IconUrl { get; set; }
         public string Name { get; set; }
         public string Id { get; set; }
+    }
+
+    public class Parent
+    {
+        public string Id { get; set; }
+        public string Self { get; set; }
+        public string Key { get; set; }
     }
 }
 

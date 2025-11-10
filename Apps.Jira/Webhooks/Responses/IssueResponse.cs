@@ -27,7 +27,10 @@ namespace Apps.Jira.Webhooks.Responses
         public string? AssigneeName { get; set; }
       
         public string Status { get; set; }
-        
+
+        [Display("Parent")]
+        public string? Parent { get; set; }
+
         [Display("Due date")]
         public DateTime DueDate { get; set; }
         

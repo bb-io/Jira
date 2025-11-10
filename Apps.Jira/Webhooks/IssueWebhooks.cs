@@ -67,7 +67,8 @@ namespace Apps.Jira.Webhooks
             Description = "This webhook is triggered when an issue is created.")]
         public async Task<WebhookResponse<IssueResponse>> OnIssueCreated(WebhookRequest request,
             [WebhookParameter] ProjectIssueInput project,
-            [WebhookParameter] LabelsOptionalInput labels)
+            [WebhookParameter] LabelsOptionalInput labels,
+            [WebhookParameter] ParentIssueFilterInput parentFilter)
         {
             var payload = DeserializePayload(request);
 
@@ -77,6 +78,23 @@ namespace Apps.Jira.Webhooks
                     HttpResponseMessage = new HttpResponseMessage(HttpStatusCode.OK),
                     ReceivedWebhookRequestType = WebhookRequestType.Preflight
                 };
+
+            if (parentFilter?.ParentIssueKeys is not null && parentFilter.ParentIssueKeys.Any())
+            {
+                var parentKey = payload.Issue.Fields.Parent?.Key;
+
+                var parentMatches = !string.IsNullOrWhiteSpace(parentKey) &&
+                                    parentFilter.ParentIssueKeys.Contains(parentKey, StringComparer.OrdinalIgnoreCase);
+
+                if (!parentMatches)
+                {
+                    return new WebhookResponse<IssueResponse>
+                    {
+                        HttpResponseMessage = new HttpResponseMessage(HttpStatusCode.OK),
+                        ReceivedWebhookRequestType = WebhookRequestType.Preflight
+                    };
+                }
+            }
 
             var issueResponse = CreateIssueResponse(payload, labels);
             return issueResponse;
@@ -516,6 +534,7 @@ namespace Apps.Jira.Webhooks
                     Priority = issue.Fields.Priority?.Name,
                     AssigneeName = issue.Fields.Assignee?.DisplayName,
                     AssigneeAccountId = issue.Fields.Assignee?.AccountId,
+                    Parent = issue.Fields.Parent?.Key,
                     Status = issue.Fields.Status.Name,
                     Attachments = issue.Fields.Attachment,
                     DueDate = !string.IsNullOrEmpty(issue.Fields.DueDate) && DateTime.TryParse(issue.Fields.DueDate, out var dueDate)
