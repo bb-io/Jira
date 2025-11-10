@@ -61,6 +61,7 @@ public class IssueDto
     [Display("Due date")]
     public DateTime? DueDate { get; set; }
 
+    [Display("Parent key")]
     public string? Parent { get; set; }
 }
 
