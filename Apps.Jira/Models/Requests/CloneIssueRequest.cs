@@ -30,5 +30,4 @@ namespace Apps.Jira.Models.Requests
         [DataSource(typeof(AssigneeDataSourceHandler))]
         public string? ReporterName { get; set; }
     }
-
 }
