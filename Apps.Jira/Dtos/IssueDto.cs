@@ -17,6 +17,7 @@ public class IssueDto
         Reporter = issueWrapper.Fields.Reporter;
         Project = issueWrapper.Fields.Project ?? new ProjectDto();
         Description = issueWrapper.Fields.Description == null ? string.Empty : JiraDocToMarkdownConverter.ConvertToMarkdown(issueWrapper.Fields.Description);
+        Parent = issueWrapper.Fields.Parent?.Key;
         Labels = issueWrapper.Fields.Labels;
         SubTasks = issueWrapper.Fields.SubTasks?
             .Select(subTask => new SubTaskDto
@@ -59,6 +60,8 @@ public class IssueDto
 
     [Display("Due date")]
     public DateTime? DueDate { get; set; }
+
+    public string? Parent { get; set; }
 }
 
 public class SubTaskDto
