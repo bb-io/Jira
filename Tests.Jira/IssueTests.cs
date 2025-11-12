@@ -20,9 +20,9 @@ public class IssueTests :TestBase
         var request = new CreateIssueRequest
         {
             Summary = "Test issue local2",
-            IssueTypeId = "10006",
+            IssueTypeId = "10005",
             Description = "Test description",
-            ParentIssueKey = "AC-1"
+            Labels = new List<string> { "form", "api-created" }
         };
         var response = await action.CreateIssue(project,request);
 
