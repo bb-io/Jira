@@ -549,6 +549,18 @@ public class IssueActions(InvocationContext invocationContext, IFileManagementCl
         if (!string.IsNullOrEmpty(input.ParentIssueKey))
             fields.Add("parent", new { key = input.ParentIssueKey });
 
+        if (input.Labels is { } labels && labels.Any())
+        {
+            var normalized = labels
+                .Where(l => !string.IsNullOrWhiteSpace(l))
+                .Select(l => l.Trim())
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToArray();
+
+            if (normalized.Length > 0)
+                fields.Add("labels", normalized);
+        }
+
         var request = new JiraRequest("/issue", Method.Post).AddJsonBody(new
         {
             fields = fields

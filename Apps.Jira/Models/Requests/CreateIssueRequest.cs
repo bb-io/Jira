@@ -31,4 +31,8 @@ public class CreateIssueRequest
     [Display("Parent issue key")]
     [DataSource(typeof(IssueDataSourceHandler))]
     public string? ParentIssueKey { get; set; }
+
+    [Display("Labels", Description = "Optional list of labels (Jira labels are strings).")]
+    [DataSource(typeof(IssueLabelDataHandler))]
+    public IEnumerable<string>? Labels { get; set; }
 }
