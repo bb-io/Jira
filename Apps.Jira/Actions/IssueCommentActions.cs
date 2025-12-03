@@ -1,12 +1,14 @@
 ﻿using Apps.Jira.Dtos;
 using Apps.Jira.Models.Identifiers;
 using Apps.Jira.Models.Requests;
+using Apps.Jira.Models.Responses;
 using Blackbird.Applications.Sdk.Common;
 using Blackbird.Applications.Sdk.Common.Actions;
 using Blackbird.Applications.Sdk.Common.Authentication;
 using Blackbird.Applications.Sdk.Common.Invocation;
 using Newtonsoft.Json;
 using RestSharp;
+using System.Text;
 
 namespace Apps.Jira.Actions;
 
@@ -38,7 +40,36 @@ public class IssueCommentActions : JiraInvocable
             return comments.Comments;
         }
     }
-    
+
+    [Action("Find issue comment by text", Description = "Find the first comment in an issue that contains the specified text.")]
+    public async Task<CommentResponse> FindComment([ActionParameter] FindCommentRequest input)
+    {
+        var request = new JiraRequest($"/issue/{input.IssueKey}/comment", Method.Get);
+        var commentsWrapper = await Client.ExecuteWithHandling<IssueCommentsWrapper>(request);
+
+        if (commentsWrapper?.Comments == null || commentsWrapper.Comments.Length == 0)
+            return null;
+
+        foreach (var comment in commentsWrapper.Comments)
+        {
+            var bodyText = ExtractCommentText(comment);
+
+            if (!string.IsNullOrEmpty(bodyText) &&
+                bodyText.Contains(input.CommentContains, StringComparison.OrdinalIgnoreCase))
+            {
+                return new CommentResponse 
+                {
+                    CommentDto = comment,
+                    CommentFlattenedText = bodyText
+                    
+                };
+            }
+        }
+
+        return null;
+    }
+
+
     [Action("Get issue comment", Description = "Get a comment of the specified issue.")]
     public async Task<IssueCommentDto> GetIssueComment([ActionParameter] IssueCommentIdentifier input)
     {
@@ -120,4 +151,31 @@ public class IssueCommentActions : JiraInvocable
         
         return await Client.ExecuteWithHandling<IssueCommentDto>(request);
     }
+
+
+    private string ExtractCommentText(IssueCommentDto comment)
+    {
+        if (comment.Body?.Content == null)
+            return string.Empty;
+
+        var sb = new StringBuilder();
+
+        foreach (var block in comment.Body.Content) 
+        {
+            if (block?.Content == null)
+                continue;
+
+            foreach (var part in block.Content) 
+            {
+                if (!string.IsNullOrEmpty(part?.Text))
+                {
+                    sb.Append(part.Text);
+                    sb.Append(" ");
+                }
+            }
+        }
+
+        return sb.ToString().Trim();
+    }
 }
+
