@@ -64,6 +64,41 @@ public class IssueCustomFieldsActions : JiraInvocable
 
     }
 
+    [Action("Get custom multicheckbox field values", Description = "Retrieve the values of a custom multicheckbox field for a specific issue.")]
+    public async Task<List<string>> GetCustomMulticheckboxesFieldValue(
+    [ActionParameter] IssueIdentifier issue,
+    [ActionParameter] CustomMulticheckboxesFieldIdentifier customField)
+    {
+        var getIssueResponse = await GetIssue(issue.IssueKey);
+        var parsedIssue = JObject.Parse(getIssueResponse.Content);
+
+        var fieldToken = parsedIssue["fields"]?[customField.CustomMulticheckboxesFieldId];
+
+        var values = new List<string>();
+
+        if (fieldToken == null || fieldToken.Type == JTokenType.Null)
+            return values;
+
+        if (fieldToken.Type == JTokenType.Array)
+        {
+            foreach (var item in fieldToken)
+            {
+                var valueToken = item["value"] ?? item["name"] ?? item;
+                values.Add(valueToken.ToString());
+            }
+        }
+        else if (fieldToken.Type == JTokenType.Object)
+        {
+            var valueToken = fieldToken["value"] ?? fieldToken["name"] ?? fieldToken;
+            values.Add(valueToken.ToString());
+        }
+        else
+        {
+            values.Add(fieldToken.ToString());
+        }
+
+        return values;
+    }
 
     [Action("Get custom dropdown field value",
         Description = "Retrieve the value of a custom dropdown field for a specific issue.")]
@@ -155,6 +190,29 @@ public class IssueCustomFieldsActions : JiraInvocable
         var requestBody = new
         {
             fields = new Dictionary<string, string> { { customStringField.CustomStringFieldId, value } }
+        };
+
+        await SetCustomFieldValue(requestBody, issue.IssueKey);
+    }
+
+    [Action("Set custom multicheckbox field values",
+    Description = "Set the values of a custom multicheckbox field for a specific issue.")]
+    public async Task SetCustomMulticheckboxesFieldValue(
+    [ActionParameter] IssueIdentifier issue,
+    [ActionParameter] CustomMulticheckboxesFieldIdentifier customField,
+    [ActionParameter] CustomMulticheckboxesFieldInput input)
+    {
+        var optionObjects = input.Values
+            .Where(v => !string.IsNullOrWhiteSpace(v))
+            .Select(v => (object)new { value = v })
+            .ToList();
+
+        var requestBody = new
+        {
+            fields = new Dictionary<string, object>
+        {
+            { customField.CustomMulticheckboxesFieldId, optionObjects }
+        }
         };
 
         await SetCustomFieldValue(requestBody, issue.IssueKey);
