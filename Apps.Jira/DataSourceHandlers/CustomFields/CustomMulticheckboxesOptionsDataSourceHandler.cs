@@ -1,64 +1,58 @@
 ﻿using Apps.Jira.Models.Identifiers;
+using Apps.Jira.Webhooks.Payload;
 using Blackbird.Applications.Sdk.Common;
 using Blackbird.Applications.Sdk.Common.Dynamic;
 using Blackbird.Applications.Sdk.Common.Invocation;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using RestSharp;
 
 namespace Apps.Jira.DataSourceHandlers.CustomFields
 {
     public class CustomMulticheckboxesOptionsDataSourceHandler : JiraInvocable, IAsyncDataSourceHandler
     {
-        private readonly CustomMulticheckboxesFieldIdentifier _input;
-        public CustomMulticheckboxesOptionsDataSourceHandler(InvocationContext invocationContext, [ActionParameter] CustomMulticheckboxesFieldIdentifier input)
-             : base(invocationContext) { _input = input; }
+        private readonly IssueIdentifier _issue;
+        private readonly CustomMulticheckboxesFieldIdentifier _field;
+
+        public CustomMulticheckboxesOptionsDataSourceHandler(InvocationContext invocationContext,
+            [ActionParameter] IssueIdentifier issue, [ActionParameter] CustomMulticheckboxesFieldIdentifier field)
+             : base(invocationContext) { _issue = issue; _field = field; }
 
         public async Task<Dictionary<string, string>> GetDataAsync(
-             DataSourceContext context,
-             CancellationToken cancellationToken)
+            DataSourceContext context,
+            CancellationToken cancellationToken)
         {
             var result = new Dictionary<string, string>();
 
-            var fieldId = _input.CustomMulticheckboxesFieldId;
+            var fieldId = _field.CustomMulticheckboxesFieldId;
             if (string.IsNullOrWhiteSpace(fieldId))
                 return result;
 
-            var startAt = 0;
-            const int maxResults = 50;
+            var request = new JiraRequest($"/issue/{_issue.IssueKey}/editmeta", Method.Get);
+            var editMeta = await Client.ExecuteWithHandling<JObject>(request);
 
-            while (true)
+            var fieldToken = editMeta["fields"]?[fieldId];
+            if (fieldToken == null)
+                return result;
+
+            var allowedValues = fieldToken["allowedValues"] as JArray;
+            if (allowedValues == null || allowedValues.Count == 0)
+                return result;
+
+            foreach (var option in allowedValues)
             {
-                var request = new JiraRequest($"/field/{fieldId}/option", Method.Get);
-                request.AddQueryParameter("startAt", startAt.ToString());
-                request.AddQueryParameter("maxResults", maxResults.ToString());
+                var value = option["value"]?.ToString();
+                if (string.IsNullOrWhiteSpace(value))
+                    continue;
 
-                var page = await Client.ExecuteWithHandling<JiraFieldOptionsResponse>(request);
+                if (!string.IsNullOrEmpty(context.SearchString) &&
+                    !value.Contains(context.SearchString, StringComparison.OrdinalIgnoreCase))
+                    continue;
 
-                foreach (var o in page.Values)
-                {
-                    if (!string.IsNullOrEmpty(context.SearchString) &&
-                        !o.Value.Contains(context.SearchString, StringComparison.OrdinalIgnoreCase))
-                        continue;
-
-                    result[o.Value] = o.Value;
-                }
-
-                if (page.IsLast || page.Values.Count == 0)
-                    break;
-
-                startAt += maxResults;
+                result[value] = value;
             }
 
             return result;
-        }
-
-        private class JiraFieldOptionsResponse
-        {
-            [JsonProperty("values")]
-            public List<JiraFieldOption> Values { get; set; } = new();
-
-            [JsonProperty("isLast")]
-            public bool IsLast { get; set; }
         }
 
         private class JiraFieldOption

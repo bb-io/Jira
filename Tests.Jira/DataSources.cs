@@ -251,7 +251,6 @@ public class DataSources : TestBase
         Assert.IsNotNull(response);
 
     }
-    //CustomMulticheckboxFieldDataSourceHandler
 
     [TestMethod]
     public async Task CustomMulticheckboxFieldDataSourceHandler_IsSuccess()
@@ -266,7 +265,22 @@ public class DataSources : TestBase
         }
 
         Assert.IsNotNull(response);
+    }
 
+    [TestMethod]
+    public async Task CustomMulticheckboxesOptionsDataSourceHandler_IsSuccess()
+    {
+        var handler = new CustomMulticheckboxesOptionsDataSourceHandler(InvocationContext, new IssueIdentifier {  IssueKey="AC-33"},
+            new CustomMulticheckboxesFieldIdentifier {  CustomMulticheckboxesFieldId= "customfield_10182" });
+
+        var response = await handler.GetDataAsync(new DataSourceContext { SearchString = "" }, CancellationToken.None);
+
+        foreach (var item in response)
+        {
+            Console.WriteLine($"{item.Value}: {item.Key}");
+        }
+
+        Assert.IsNotNull(response);
     }
 
     [TestMethod]
