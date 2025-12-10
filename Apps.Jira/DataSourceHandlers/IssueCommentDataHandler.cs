@@ -21,9 +21,14 @@ public class IssueCommentDataHandler : JiraInvocable, IAsyncDataSourceHandler
         CancellationToken cancellationToken)
     {
         var issueCommentActions = new IssueCommentActions(InvocationContext);
-        
+
         var comments = await issueCommentActions.GetIssueComments(new GetIssueCommentsRequest { IssueKey = _issueKey });
         return comments
-            .ToDictionary(comment => comment.Id, comment => comment.Id);
+            .Where(c => c?.Comment?.Id != null)
+            .ToDictionary(
+                c => c.Comment.Id,
+                c => string.IsNullOrWhiteSpace(c.PlainText)
+                    ? c.Comment.Id
+                    : c.PlainText);
     }
 }

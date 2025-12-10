@@ -109,7 +109,7 @@ Please note: sending too many parallel requests to Jira may result in request re
 - **Get issue comment**: Retrieves a specific comment from a specified issue.
 - **Delete issue comment**: Deletes a comment from a specified issue.
 - **Add issue comment**: Adds a new comment to a specified issue.
-- **UpdateIssue comment**: Updates an existing comment on a specified issue.
+- **Append text to comment**: Append text to comment on a specified issue.
 - **Find issue comment by text**: Find the first comment in an issue that contains the specified text.
 
 ### Sprint Actions
