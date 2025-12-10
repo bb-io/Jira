@@ -21,8 +21,10 @@ public class IssueCommentActions : JiraInvocable
     }
 
     [Action("Get issue comments", Description = "Get comments of the specified issue.")]
-    public async Task<CommentWithTextResponse[]> GetIssueComments([ActionParameter] GetIssueCommentsRequest input)
+    public async Task<GetIssueCommentsResponse> GetIssueComments([ActionParameter] GetIssueCommentsRequest input)
     {
+        CommentWithTextResponse[] result;
+
         if (input.Issues != null)
         {
             var request = new JiraRequest($"/comment/list", Method.Post)
@@ -31,9 +33,10 @@ public class IssueCommentActions : JiraInvocable
                     ids = input.Issues.Select(int.Parse).ToList()
                 });
 
-            var commentsWrapper = await Client.ExecuteWithHandling<ModelWrapper<List<IssueCommentDto>>>(request);
+            var comments = await Client
+                .ExecuteWithHandling<ModelWrapper<List<IssueCommentDto>>>(request);
 
-            return commentsWrapper.Values
+            result = comments.Values
                 .Select(c => new CommentWithTextResponse
                 {
                     Comment = c,
@@ -46,7 +49,7 @@ public class IssueCommentActions : JiraInvocable
             var request = new JiraRequest($"/issue/{input.IssueKey}/comment", Method.Get);
             var commentsWrapper = await Client.ExecuteWithHandling<IssueCommentsWrapper>(request);
 
-            return commentsWrapper.Comments?
+            result = commentsWrapper.Comments?
                 .Select(c => new CommentWithTextResponse
                 {
                     Comment = c,
@@ -54,6 +57,11 @@ public class IssueCommentActions : JiraInvocable
                 })
                 .ToArray() ?? Array.Empty<CommentWithTextResponse>();
         }
+
+        return new GetIssueCommentsResponse
+        {
+            Comments = result
+        };
     }
 
     [Action("Find issue comment by text", Description = "Find the first comment in an issue that contains the specified text.")]
@@ -149,18 +157,18 @@ public class IssueCommentActions : JiraInvocable
     }
 
     [Action("Append text to comment", Description = "Append text to comment of the specified issue.")]
-    public async Task<CommentWithTextResponse> UpdateIssueComment(
+public async Task<CommentWithTextResponse> UpdateIssueComment(
     [ActionParameter] IssueCommentIdentifier input,
     [ActionParameter] AddIssueCommentRequest comment)
-    {
-        var request = new JiraRequest($"/issue/{input.IssueKey}/comment/{input.CommentId}", Method.Put);
+{
+    var request = new JiraRequest($"/issue/{input.IssueKey}/comment/{input.CommentId}", Method.Put);
 
-        request.AddJsonBody(new
+    request.AddJsonBody(new
+    {
+        body = new
         {
-            body = new
+            content = new[]
             {
-                content = new[]
-                {
                 new
                 {
                     type = comment.Type ?? "paragraph",
@@ -174,19 +182,19 @@ public class IssueCommentActions : JiraInvocable
                     }
                 }
             },
-                type = comment.BodyType ?? "doc",
-                version = comment.Version == null ? 1 : int.Parse(comment.Version)
-            },
-        });
+            type = comment.BodyType ?? "doc",
+            version = comment.Version == null ? 1 : int.Parse(comment.Version)
+        },
+    });
 
-        var updated = await Client.ExecuteWithHandling<IssueCommentDto>(request);
+    var updated = await Client.ExecuteWithHandling<IssueCommentDto>(request);
 
-        return new CommentWithTextResponse
-        {
-            Comment = updated,
-            PlainText = updated.ToPlainText()
-        };
-    }
+    return new CommentWithTextResponse
+    {
+        Comment = updated,
+        PlainText = updated.ToPlainText()
+    };
+}
 
 
     private string ExtractCommentText(IssueCommentDto comment)

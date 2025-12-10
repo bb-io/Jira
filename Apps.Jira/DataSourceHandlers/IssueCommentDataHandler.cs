@@ -1,6 +1,7 @@
 ﻿using Apps.Jira.Actions;
 using Apps.Jira.Models.Identifiers;
 using Apps.Jira.Models.Requests;
+using Apps.Jira.Models.Responses;
 using Blackbird.Applications.Sdk.Common;
 using Blackbird.Applications.Sdk.Common.Dynamic;
 using Blackbird.Applications.Sdk.Common.Invocation;
@@ -22,13 +23,25 @@ public class IssueCommentDataHandler : JiraInvocable, IAsyncDataSourceHandler
     {
         var issueCommentActions = new IssueCommentActions(InvocationContext);
 
-        var comments = await issueCommentActions.GetIssueComments(new GetIssueCommentsRequest { IssueKey = _issueKey });
+        var response = await issueCommentActions.GetIssueComments(
+            new GetIssueCommentsRequest { IssueKey = _issueKey });
+
+        var comments = response.Comments ?? Array.Empty<CommentWithTextResponse>();
+
         return comments
             .Where(c => c?.Comment?.Id != null)
             .ToDictionary(
                 c => c.Comment.Id,
-                c => string.IsNullOrWhiteSpace(c.PlainText)
-                    ? c.Comment.Id
-                    : c.PlainText);
+                c =>
+                {
+                    var text = string.IsNullOrWhiteSpace(c.PlainText)
+                        ? c.Comment.Id
+                        : c.PlainText;
+
+                    const int maxLen = 80;
+                    return text.Length <= maxLen
+                        ? text
+                        : text.Substring(0, maxLen) + "…";
+                });
     }
 }
