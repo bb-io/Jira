@@ -65,6 +65,97 @@ public class IssueTests :TestBase
     }
 
     [TestMethod]
+    public async Task GetIssueComment_ReturnsSuccess()
+    {
+        var action = new IssueCommentActions(InvocationContext);
+
+        var project = new IssueCommentIdentifier
+        {
+            IssueKey = "AC-33",
+            CommentId = "10042"
+        };
+
+        var response = await action.GetIssueComment(project);
+
+        var json = Newtonsoft.Json.JsonConvert.SerializeObject(response, Newtonsoft.Json.Formatting.Indented);
+        Console.WriteLine(json);
+        Assert.IsNotNull(response);
+    }
+
+    [TestMethod]
+    public async Task GetIssueComments_ReturnsSuccess()
+    {
+        var action = new IssueCommentActions(InvocationContext);
+
+        var project = new GetIssueCommentsRequest
+        {
+            IssueKey = "AC-33"
+        };
+
+        var response = await action.GetIssueComments(project);
+
+        var json = Newtonsoft.Json.JsonConvert.SerializeObject(response, Newtonsoft.Json.Formatting.Indented);
+        Console.WriteLine(json);
+        Assert.IsNotNull(response);
+    }
+
+    [TestMethod]
+    public async Task FindComment_ReturnsSuccess()
+    {
+        var action = new IssueCommentActions(InvocationContext);
+
+        var project = new FindCommentRequest
+        {
+            IssueKey = "AC-33",
+            CommentContains = "test"
+        };
+
+        var response = await action.FindComment(project);
+
+        var json = Newtonsoft.Json.JsonConvert.SerializeObject(response, Newtonsoft.Json.Formatting.Indented);
+        Console.WriteLine(json);
+        Assert.IsNotNull(response);
+    }
+
+    [TestMethod]
+    public async Task AddIssueComment_ReturnsSuccess()
+    {
+        var action = new IssueCommentActions(InvocationContext);
+
+        var issue = new IssueIdentifier
+        {
+            IssueKey = "AC-33"
+        };
+        var project = new AddIssueCommentRequest
+        {
+            Text = "This is a test comment from API"
+        };
+
+        var response = await action.AddIssueComment(issue, project);
+
+        var json = Newtonsoft.Json.JsonConvert.SerializeObject(response, Newtonsoft.Json.Formatting.Indented);
+        Console.WriteLine(json);
+        Assert.IsNotNull(response);
+    }
+
+    //DeleteIssueComment
+
+    [TestMethod]
+    public async Task DeleteIssueComment_ReturnsSuccess()
+    {
+        var action = new IssueCommentActions(InvocationContext);
+
+        var project = new IssueCommentIdentifier
+        {
+            IssueKey = "AC-33",
+            CommentId = "10042"
+        };
+
+        await action.DeleteIssueComment( project);
+        Assert.IsTrue(true);
+    }
+
+    [TestMethod]
     public async Task ListRecentlyCreatedIssues_ReturnsSuccess()
     {
         var action = new IssueActions(InvocationContext, FileManager);
@@ -83,28 +174,6 @@ public class IssueTests :TestBase
         Console.WriteLine(json);
 
         Assert.IsNotNull(response);
-    }
-
-    [TestMethod]
-    public async Task AddIssueComment_ReturnsSuccess()
-    {
-        var action = new IssueCommentActions(InvocationContext);
-
-        var project = new ProjectIdentifier
-        {
-            ProjectKey = "AC"
-        };
-
-        var issue = new IssueIdentifier
-        {
-            IssueKey = "AC-1"
-        };
-        var request = new AddIssueCommentRequest
-        {
-            Text= "Test comment Test",
-        };
-        await action.AddIssueComment(issue, request);
-        Assert.IsTrue(true);
     }
 
     [TestMethod]
