@@ -12,7 +12,7 @@ using UserDto = Apps.Jira.Models.Responses.UserDto;
 
 namespace Apps.Jira.Actions;
 
-[ActionList]
+[ActionList("Users")]
 public class UserActions : JiraInvocable
 {
     public UserActions(InvocationContext invocationContext) : base(invocationContext)

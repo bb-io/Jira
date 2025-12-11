@@ -22,7 +22,7 @@ using System.Web;
 using Method = RestSharp.Method;
 namespace Apps.Jira.Actions;
 
-[ActionList]
+[ActionList("Issues")]
 public class IssueActions(InvocationContext invocationContext, IFileManagementClient fileManagementClient)
     : JiraInvocable(invocationContext)
 {

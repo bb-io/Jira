@@ -9,7 +9,7 @@ using RestSharp;
 
 namespace Apps.Jira.Actions;
 
-[ActionList]
+[ActionList("User properties")]
 public class UserPropertiesAction : JiraInvocable
 {
     public UserPropertiesAction(InvocationContext invocationContext) : base(invocationContext)

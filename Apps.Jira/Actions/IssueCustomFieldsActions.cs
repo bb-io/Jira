@@ -14,7 +14,7 @@ using RestSharp;
 
 namespace Apps.Jira.Actions;
 
-[ActionList]
+[ActionList("Custom fields")]
 public class IssueCustomFieldsActions : JiraInvocable
 {
     public IssueCustomFieldsActions(InvocationContext invocationContext) : base(invocationContext)

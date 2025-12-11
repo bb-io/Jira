@@ -7,7 +7,7 @@ using RestSharp;
 
 namespace Apps.Jira.Actions;
 
-[ActionList]
+[ActionList("Sprints")]
 public class SprintActions(InvocationContext invocationContext) : JiraInvocable(invocationContext)
 {
     [Action("Get relevant sprint for date", Description = "Get Sprint corresponding to the specified date for a selected board.")]
