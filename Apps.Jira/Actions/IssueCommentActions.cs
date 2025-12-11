@@ -13,7 +13,7 @@ using System.Text;
 
 namespace Apps.Jira.Actions;
 
-[ActionList]
+[ActionList("Comments")]
 public class IssueCommentActions : JiraInvocable
 {
     public IssueCommentActions(InvocationContext invocationContext) : base(invocationContext)
