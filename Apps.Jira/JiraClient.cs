@@ -73,22 +73,39 @@ public class JiraClient : RestClient
 
     private Exception ConfigureErrorException(RestResponse response)
     {
+        if (response == null)
+            return new PluginApplicationException("Jira did not return a response.");
+
+        if (response.StatusCode == HttpStatusCode.TooManyRequests)
+        {
+            return new PluginApplicationException(
+                "Jira is limiting requests due to high activity. Please try again later."
+            );
+        }
+
+        if (string.IsNullOrWhiteSpace(response.Content))
+        {
+            return new PluginApplicationException(
+                $"Jira returned error {(int)response.StatusCode} {response.StatusDescription} with empty body."
+            );
+        }
+
+        ErrorDto? error = null;
         try
         {
-            if (response.StatusCode == HttpStatusCode.TooManyRequests) 
-            {
-                return new PluginApplicationException
-                (
-                    "Jira is limiting requests due to high activity. Please try again later"
-                );
-            }
+            error = response.Content.Deserialize<ErrorDto>();
+        }
+        catch (JsonException)
+        {
+            return new PluginApplicationException(
+                $"Jira returned error {(int)response.StatusCode} with body: {response.Content}"
+            );
+        }
 
-            var error = response.Content.Deserialize<ErrorDto>();
-
+        if (error != null)
+        {
             if (!string.IsNullOrEmpty(error.Message))
-            {
                 return new PluginApplicationException(error.Message);
-            }
 
             if (error.ErrorMessages?.Any() == true)
             {
@@ -102,24 +119,20 @@ public class JiraClient : RestClient
                     .Properties()
                     .Select(p => p.Value.ToString())
                     .FirstOrDefault();
-                if (!string.IsNullOrEmpty(firstError))
-                {
-                    return new PluginApplicationException(firstError);
-                }
-            }
 
-            return new PluginApplicationException("Internal system error");
+                if (!string.IsNullOrEmpty(firstError))
+                    return new PluginApplicationException(firstError);
+            }
         }
-        catch (JsonException)
+
+        if (response.StatusCode == HttpStatusCode.InternalServerError)
         {
             return new PluginApplicationException(
-                $"Unable to parse error response: {response.Content}"
+                $"Jira returned Internal Server Error. Body: {response.Content}"
             );
         }
-        catch (Exception ex)
-        {
-            return new PluginApplicationException(ex.Message);
-        }
+
+        return new PluginApplicationException("Internal system error");
     }
 
     public async Task<List<TItem>> Paginate<TItem>(JiraRequest originalRequest)
