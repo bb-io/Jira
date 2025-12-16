@@ -107,7 +107,8 @@ public class IssueTests :TestBase
         var project = new FindCommentRequest
         {
             IssueKey = "AC-33",
-            CommentContains = "test"
+            CommentContains = "test",
+            Latest = true
         };
 
         var response = await action.FindComment(project);

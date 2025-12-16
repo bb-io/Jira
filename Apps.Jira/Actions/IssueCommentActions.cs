@@ -73,22 +73,33 @@ public class IssueCommentActions : JiraInvocable
         if (commentsWrapper?.Comments == null || commentsWrapper.Comments.Length == 0)
             return null;
 
-        foreach (var comment in commentsWrapper.Comments)
-        {
-            var bodyText = comment.ToPlainText();
+        static DateTime ParseJiraDateOrMin(string? value)
+            => DateTime.TryParse(value, out var dt) ? dt : DateTime.MinValue;
 
-            if (!string.IsNullOrEmpty(bodyText) &&
-                bodyText.Contains(input.CommentContains, StringComparison.OrdinalIgnoreCase))
+        var matches = commentsWrapper.Comments
+            .Select(c => new
             {
-                return new CommentWithTextResponse
-                {
-                    Comment = comment,
-                    PlainText = bodyText
-                };
-            }
-        }
+                Comment = c,
+                PlainText = c.ToPlainText(),
+                Updated = ParseJiraDateOrMin(c.Updated),
+                Created = ParseJiraDateOrMin(c.Created)
+            })
+            .Where(x => !string.IsNullOrEmpty(x.PlainText) &&
+                        x.PlainText.Contains(input.CommentContains, StringComparison.OrdinalIgnoreCase))
+            .ToList();
 
-        return null;
+        if (matches.Count == 0)
+            return null;
+
+        var selected = input.Latest == true
+            ? matches.OrderByDescending(x => x.Updated != DateTime.MinValue ? x.Updated : x.Created).First()
+            : matches.First();
+
+        return new CommentWithTextResponse
+        {
+            Comment = selected.Comment,
+            PlainText = selected.PlainText
+        };
     }
 
 
