@@ -445,6 +445,16 @@ public class DataSources : TestBase
         Assert.IsNotNull(response);
     }
 
+    //SetResolution
+
+    [TestMethod]
+    public async Task SetResolution_ReturnsValues()
+    {
+        var action = new IssueCustomFieldsActions(InvocationContext);
+        await action.SetResolution(new IssueIdentifier { IssueKey= "LOC-15297" }, new SetResolutionRequest { ResolutionId= "10003" });
+        Assert.IsTrue(true);
+    }
+
 
     [TestMethod]
     public async Task OnIssuesReachStatusPolling_ReturnsValues()
