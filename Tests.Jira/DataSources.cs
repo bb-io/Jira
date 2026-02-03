@@ -433,6 +433,28 @@ public class DataSources : TestBase
         Assert.IsNotNull(response);
     }
 
+    [TestMethod]
+    public async Task IssueResolutionDataSourceHandler_ReturnsValues()
+    {
+        var handler = new IssueResolutionDataSourceHandler(InvocationContext);
+        var response = await handler.GetDataAsync(new DataSourceContext { SearchString = "" }, CancellationToken.None);
+        foreach (var item in response)
+        {
+            Console.WriteLine($"{item.Value}: {item.Key}");
+        }
+        Assert.IsNotNull(response);
+    }
+
+    //SetResolution
+
+    [TestMethod]
+    public async Task SetResolution_ReturnsValues()
+    {
+        var action = new IssueCustomFieldsActions(InvocationContext);
+        await action.SetResolution(new IssueIdentifier { IssueKey= "LOC-15297" }, new SetResolutionRequest { ResolutionId= "10003" });
+        Assert.IsTrue(true);
+    }
+
 
     [TestMethod]
     public async Task OnIssuesReachStatusPolling_ReturnsValues()
