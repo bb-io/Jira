@@ -433,6 +433,18 @@ public class DataSources : TestBase
         Assert.IsNotNull(response);
     }
 
+    [TestMethod]
+    public async Task IssueResolutionDataSourceHandler_ReturnsValues()
+    {
+        var handler = new IssueResolutionDataSourceHandler(InvocationContext);
+        var response = await handler.GetDataAsync(new DataSourceContext { SearchString = "" }, CancellationToken.None);
+        foreach (var item in response)
+        {
+            Console.WriteLine($"{item.Value}: {item.Key}");
+        }
+        Assert.IsNotNull(response);
+    }
+
 
     [TestMethod]
     public async Task OnIssuesReachStatusPolling_ReturnsValues()

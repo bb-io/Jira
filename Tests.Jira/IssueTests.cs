@@ -54,7 +54,7 @@ public class IssueTests :TestBase
 
         var project = new IssueIdentifier
         {
-            IssueKey = "AC-33"
+            IssueKey = "LOC-15297"
         };
 
         var response = await action.GetIssueByKey(project);

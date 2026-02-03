@@ -365,6 +365,75 @@ public class IssueCustomFieldsActions : JiraInvocable
         await SetCustomFieldValue(requestBody, issue.IssueKey);
     }
 
+
+    [Action("Set resolution", Description = "Set issue resolution via workflow transition (required by Jira workflows).")]
+    public async Task SetResolution(
+       [ActionParameter] IssueIdentifier issue,
+       [ActionParameter] SetResolutionRequest input)
+    {
+        if (string.IsNullOrWhiteSpace(input.ResolutionId))
+            throw new PluginMisconfigurationException("Resolution is required.");
+
+        var transitionId = await FindTransitionThatAcceptsResolution(issue.IssueKey, input.ResolutionId);
+
+        var body = new
+        {
+            transition = new { id = transitionId },
+            fields = new
+            {
+                resolution = new { id = input.ResolutionId }
+            }
+        };
+
+        var req = new JiraRequest($"/issue/{issue.IssueKey}/transitions", Method.Post);
+        req.AddJsonBody(body);
+
+        try
+        {
+            await Client.ExecuteWithHandling(req);
+        }
+        catch (Exception ex)
+        {
+            throw new PluginApplicationException(
+                $"Couldn't set resolution for issue {issue.IssueKey}. " +
+                $"Make sure there is an available transition that allows setting this resolution. Details: {ex.Message}");
+        }
+    }
+
+    private async Task<string> FindTransitionThatAcceptsResolution(string issueKey, string resolutionId)
+    {
+        var req = new JiraRequest($"/issue/{issueKey}/transitions?expand=transitions.fields", Method.Get);
+        var response = await Client.ExecuteWithHandling(req);
+
+        var json = JObject.Parse(response.Content ?? "{}");
+        var transitions = json["transitions"] as JArray;
+
+        if (transitions == null || transitions.Count == 0)
+            throw new PluginApplicationException($"No transitions are available for issue {issueKey}.");
+
+        foreach (var t in transitions)
+        {
+            var fields = t?["fields"];
+            var resField = fields?["resolution"];
+            if (resField == null) continue;
+
+            var allowed = resField["allowedValues"] as JArray;
+            if (allowed == null) continue;
+
+            var match = allowed.Any(a => a?["id"]?.ToString() == resolutionId);
+            if (!match) continue;
+
+            var id = t?["id"]?.ToString();
+            var name = t?["name"]?.ToString();
+
+            if (!string.IsNullOrWhiteSpace(id))
+                return id!;
+        }
+
+        throw new PluginApplicationException(
+            $"Resolution '{resolutionId}' cannot be set for issue {issueKey} via any available transition.");
+    }
+
     #endregion
 
     #region Utils
