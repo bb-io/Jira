@@ -26,7 +26,7 @@ public class IssuesWrapper
 public class IssueWrapper
 {
     public string Key { get; set; }
-    public IssueFields Fields { get; set; }
+    public IssueFields? Fields { get; set; }
 }
 
 public class IssueFields

@@ -515,14 +515,25 @@ namespace Apps.Jira.Webhooks
             }
         }
 
-       private async Task<bool> IssueMatchesJQL(string IssueKey,string customJql)
+        private async Task<bool> IssueMatchesJQL(string issueKey, string customJql)
         {
-           var request = new JiraRequest("/search/jql", Method.Get);
-            request.AddQueryParameter("jql", "customJql");
-            request.AddQueryParameter("fields", "id,key,summary,status,priority,assignee,reporter,project,description,labels,subtasks,duedate,parent");
-           var issues = await Client.ExecuteWithHandling<IssuesWrapper>(request);
-            return issues.Issues.Any(x => x.Key == IssueKey);
+            var combinedJql = $"key = \"{issueKey}\" AND ({customJql})";
+            var request = new JiraRequest("/search", Method.Get);
+            request.AddQueryParameter("jql", combinedJql);
+            request.AddQueryParameter("fields", "key");
+            request.AddQueryParameter("maxResults", "1");
+
+            try
+            {
+                var issues = await Client.ExecuteWithHandling<IssuesWrapper>(request);
+                return issues.Issues.Any();
+            }
+            catch
+            {
+                return false;
+            }
         }
+
 
         private WebhookResponse<IssueResponse> CreateIssueResponse(WebhookPayload payload, LabelsOptionalInput labelsInput)
         {
