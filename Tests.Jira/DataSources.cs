@@ -445,8 +445,6 @@ public class DataSources : TestBase
         Assert.IsNotNull(response);
     }
 
-    //SetResolution
-
     [TestMethod]
     public async Task SetResolution_ReturnsValues()
     {

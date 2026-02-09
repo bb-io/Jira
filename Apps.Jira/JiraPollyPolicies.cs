@@ -7,41 +7,48 @@ namespace Apps.Jira;
 
 public static class JiraPollyPolicies
 {
-    public static AsyncRetryPolicy<RestResponse> GetTooManyRequestsRetryPolicy(int retryCount = 6)
+    public static ResiliencePipeline<RestResponse> GetTooManyRequestsRetryPolicy(int retryCount = 6)
     {
-        double minDelaySeconds = 5.0;
-        double maxDelaySeconds = 45.0;
-        var random = new Random();
+        const double minDelaySeconds = 5.0;
+        const double maxDelaySeconds = 45.0;
 
-        return Policy
-            .HandleResult<RestResponse>(response => 
-                response.StatusCode == HttpStatusCode.TooManyRequests ||
-                response.StatusCode == HttpStatusCode.InternalServerError
-            )
-            .WaitAndRetryAsync(
-                retryCount,
-                sleepDurationProvider: (attempt, outcome, ctx) =>
+        var retryOptions = new RetryStrategyOptions<RestResponse>
+        {
+            MaxRetryAttempts = retryCount,
+
+            ShouldHandle = new PredicateBuilder<RestResponse>()
+                .HandleResult(r =>
+                    r.StatusCode == HttpStatusCode.TooManyRequests ||
+                    r.StatusCode == HttpStatusCode.InternalServerError ||
+                    r.StatusCode == HttpStatusCode.ServiceUnavailable)
+                .Handle<HttpRequestException>(ex =>
+                    ex.StatusCode == HttpStatusCode.TooManyRequests ||
+                    ex.StatusCode == HttpStatusCode.InternalServerError ||
+                    ex.StatusCode == HttpStatusCode.ServiceUnavailable),
+
+            DelayGenerator = args =>
+            {
+                var response = args.Outcome.Result;
+
+                var retryAfter = response?.Headers?
+                    .FirstOrDefault(h => h.Name?.Equals("Retry-After", StringComparison.OrdinalIgnoreCase) == true)
+                    ?.Value?.ToString();
+
+                if (!string.IsNullOrWhiteSpace(retryAfter) &&
+                    double.TryParse(retryAfter, out var headerSeconds))
                 {
-                    double delaySeconds = 0;
+                    return new ValueTask<TimeSpan?>(TimeSpan.FromSeconds(headerSeconds));
+                }
 
-                    var retryAfterHeader = outcome.Result.Headers
-                        .FirstOrDefault(h => h.Name.Equals("Retry-After", StringComparison.OrdinalIgnoreCase))
-                        ?.Value?.ToString();
+                var delaySeconds =
+                    Random.Shared.NextDouble() * (maxDelaySeconds - minDelaySeconds) + minDelaySeconds;
 
-                    if (!string.IsNullOrEmpty(retryAfterHeader) && double.TryParse(retryAfterHeader, out double headerSeconds))
-                    {
-                        delaySeconds = headerSeconds;
-                    }
-                    else
-                    {
-                        delaySeconds = random.NextDouble() * (maxDelaySeconds - minDelaySeconds) + minDelaySeconds;
-                    }
+                return new ValueTask<TimeSpan?>(TimeSpan.FromSeconds(delaySeconds));
+            }
+        };
 
-                    return TimeSpan.FromSeconds(delaySeconds);
-                },
-                onRetryAsync: async (outcome, timeSpan, attempt, ctx) =>
-                {
-                    await Task.CompletedTask;
-                });
+        return new ResiliencePipelineBuilder<RestResponse>()
+            .AddRetry(retryOptions)
+            .Build();
     }
 }
