@@ -1,18 +1,21 @@
-﻿using Apps.Jira.Webhooks.Handlers.IssueHandlers;
-using Apps.Jira.Webhooks.Payload;
-using Apps.Jira.Webhooks.Responses;
-using Blackbird.Applications.Sdk.Common.Webhooks;
-using Newtonsoft.Json;
-using System.Net;
+﻿using Apps.Jira.DataSourceHandlers;
 using Apps.Jira.Dtos;
-using Apps.Jira.Webhooks.Inputs;
-using Blackbird.Applications.Sdk.Common.Authentication;
-using Blackbird.Applications.Sdk.Common.Invocation;
-using RestSharp;
 using Apps.Jira.Models.Identifiers;
 using Apps.Jira.Models.Requests;
-using System.Net.Mail;
+using Apps.Jira.Webhooks.Handlers.IssueHandlers;
+using Apps.Jira.Webhooks.Inputs;
+using Apps.Jira.Webhooks.Payload;
+using Apps.Jira.Webhooks.Responses;
+using Blackbird.Applications.Sdk.Common;
+using Blackbird.Applications.Sdk.Common.Authentication;
+using Blackbird.Applications.Sdk.Common.Dynamic;
 using Blackbird.Applications.Sdk.Common.Exceptions;
+using Blackbird.Applications.Sdk.Common.Invocation;
+using Blackbird.Applications.Sdk.Common.Webhooks;
+using Newtonsoft.Json;
+using RestSharp;
+using System.Net;
+using System.Net.Mail;
 
 namespace Apps.Jira.Webhooks
 {
@@ -27,7 +30,8 @@ namespace Apps.Jira.Webhooks
         public async Task<WebhookResponse<IssueResponse>> OnIssueUpdated(WebhookRequest request,
             [WebhookParameter] IssueInput issue,
             [WebhookParameter] ProjectInput project,
-            [WebhookParameter] LabelsOptionalInput labels)
+            [WebhookParameter] LabelsOptionalInput labels,
+            [WebhookParameter] [Display("Custom JQL conditions")] string? CustomJQL)
         {
             var payload = DeserializePayload(request);
 
@@ -59,6 +63,16 @@ namespace Apps.Jira.Webhooks
                 }
             }
 
+            if (!String.IsNullOrEmpty(CustomJQL))
+            { 
+                if(await IssueMatchesJQL(payload.Issue.Key,CustomJQL) is false)
+                    return new WebhookResponse<IssueResponse>
+                    {
+                        HttpResponseMessage = new HttpResponseMessage(HttpStatusCode.OK),
+                        ReceivedWebhookRequestType = WebhookRequestType.Preflight
+                    };
+            }
+
             var issueResponse = CreateIssueResponse(payload, labels);
             return issueResponse;
         }
@@ -68,7 +82,8 @@ namespace Apps.Jira.Webhooks
         public async Task<WebhookResponse<IssueResponse>> OnIssueCreated(WebhookRequest request,
             [WebhookParameter] ProjectIssueInput project,
             [WebhookParameter] LabelsOptionalInput labels,
-            [WebhookParameter] ParentIssueFilterInput parentFilter)
+            [WebhookParameter] ParentIssueFilterInput parentFilter,
+            [WebhookParameter][Display("Custom JQL conditions")] string? CustomJQL)
         {
             var payload = DeserializePayload(request);
 
@@ -94,6 +109,16 @@ namespace Apps.Jira.Webhooks
                         ReceivedWebhookRequestType = WebhookRequestType.Preflight
                     };
                 }
+            }
+
+            if (!String.IsNullOrEmpty(CustomJQL))
+            {
+                if (await IssueMatchesJQL(payload.Issue.Key, CustomJQL) is false)
+                    return new WebhookResponse<IssueResponse>
+                    {
+                        HttpResponseMessage = new HttpResponseMessage(HttpStatusCode.OK),
+                        ReceivedWebhookRequestType = WebhookRequestType.Preflight
+                    };
             }
 
             var issueResponse = CreateIssueResponse(payload, labels);
@@ -489,6 +514,26 @@ namespace Apps.Jira.Webhooks
                 throw new InvalidCastException($"Failed to deserialize the webhook payload. Body: {request.Body}; Body null: {request.Body == null}; Got exception: {ex.Message};");
             }
         }
+
+        private async Task<bool> IssueMatchesJQL(string issueKey, string customJql)
+        {
+            var combinedJql = $"key = \"{issueKey}\" AND ({customJql})";
+            var request = new JiraRequest("/search", Method.Get);
+            request.AddQueryParameter("jql", combinedJql);
+            request.AddQueryParameter("fields", "key");
+            request.AddQueryParameter("maxResults", "1");
+
+            try
+            {
+                var issues = await Client.ExecuteWithHandling<IssuesWrapper>(request);
+                return issues.Issues.Any();
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
 
         private WebhookResponse<IssueResponse> CreateIssueResponse(WebhookPayload payload, LabelsOptionalInput labelsInput)
         {
