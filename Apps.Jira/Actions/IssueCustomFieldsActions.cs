@@ -460,10 +460,10 @@ public class IssueCustomFieldsActions : JiraInvocable
         {
             await Client.ExecuteWithHandling(updateFieldRequest);
         }
-        catch
+        catch (Exception e)
         {
             throw new PluginApplicationException("Couldn't set field value. Please make sure that field exists for specific issue " +
-                                "type in the project.");
+                                $"type in the project. Error details: {e.Message}");
         }
     }
 
