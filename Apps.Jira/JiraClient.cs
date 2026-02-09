@@ -4,6 +4,7 @@ using Apps.Jira.Models.Responses;
 using Blackbird.Applications.Sdk.Common.Authentication;
 using Blackbird.Applications.Sdk.Common.Exceptions;
 using Newtonsoft.Json;
+using Polly;
 using Polly.Retry;
 using RestSharp;
 using System.Net;
@@ -12,7 +13,10 @@ namespace Apps.Jira;
 
 public class JiraClient : RestClient
 {
-    private readonly AsyncRetryPolicy<RestResponse> _retryPolicy;
+    private static readonly ResiliencePipeline<RestResponse> CloudIdPipeline =
+        JiraPollyPolicies.GetTooManyRequestsRetryPolicy();
+
+    private readonly ResiliencePipeline<RestResponse> _retryPolicy;
 
     public JiraClient(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders, string routeType = "api")
         : base(new RestClientOptions
@@ -33,7 +37,7 @@ public class JiraClient : RestClient
 
     public async Task<RestResponse> ExecuteWithHandling(RestRequest request)
     {
-        var response = await _retryPolicy.ExecuteAsync(() => base.ExecuteAsync(request));
+        var response = await ExecuteSafeAsync(ct => base.ExecuteAsync(request, ct));
 
         if (response.IsSuccessful)
             return response;
@@ -62,13 +66,27 @@ public class JiraClient : RestClient
         string jiraUrl = authenticationCredentialsProviders.First(p => p.KeyName == "JiraUrl").Value;
         string authorizationHeader = authenticationCredentialsProviders.First(p => p.KeyName == "Authorization").Value;
         var restClient = new RestClient(new RestClientOptions
-        { ThrowOnAnyError = true, BaseUrl = new Uri(atlassianResourcesUrl) });
+        { ThrowOnAnyError = false, BaseUrl = new Uri(atlassianResourcesUrl) });
         var request = new RestRequest("");
         request.AddHeader("Authorization", authorizationHeader);
-        var atlassianCloudResources = restClient.Get<List<AtlassianCloudResourceDto>>(request);
-        var cloudId = atlassianCloudResources.First(jiraResource => jiraUrl.Contains(jiraResource.Url)).Id
-                      ?? throw new PluginMisconfigurationException("The Jira URL is incorrect. No matching Atlassian Cloud resource found.");
-        return cloudId;
+
+        var response = ExecuteSafe(CloudIdPipeline,ct => restClient.Execute(request));
+
+        if (!response.IsSuccessful)
+        {
+            if (response.StatusCode == HttpStatusCode.TooManyRequests)
+            {
+                throw new PluginApplicationException("Request rate limit exceeded - Too Many Requests. Please try again later or add a retry policy in your bird.");
+            }
+
+            throw new PluginApplicationException($"Atlassian accessible-resources failed: {(int)response.StatusCode} {response.StatusDescription}. Body: {response.Content}");
+        }
+
+        var resources = response.Content.Deserialize<List<AtlassianCloudResourceDto>>();
+
+        var cloudId = resources.FirstOrDefault(r => jiraUrl.Contains(r.Url, StringComparison.OrdinalIgnoreCase))?.Id;
+
+        return cloudId ?? throw new PluginMisconfigurationException("The Jira URL is incorrect. No matching Atlassian Cloud resource found.");
     }
 
     private Exception ConfigureErrorException(RestResponse response)
@@ -168,5 +186,37 @@ public class JiraClient : RestClient
         } while (!isLast);
 
         return allItems;
+    }
+
+    private async Task<RestResponse> ExecuteSafeAsync(Func<CancellationToken, Task<RestResponse>> action)
+    {
+        try
+        {
+            return await _retryPolicy.ExecuteAsync(ct => new ValueTask<RestResponse>(action(ct)),CancellationToken.None);
+        }
+        catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.TooManyRequests)
+        {
+            throw new PluginApplicationException("Request rate limit exceeded - Too Many Requests. Please try again later or add a retry policy in your bird.",ex);
+        }
+        catch (Exception ex) when (ex is not PluginApplicationException)
+        {
+            throw new PluginApplicationException($"Request failed: {ex.Message}", ex);
+        }
+    }
+
+    private static RestResponse ExecuteSafe(ResiliencePipeline<RestResponse> pipeline,Func<CancellationToken, RestResponse> action)
+    {
+        try
+        {
+            return pipeline.Execute(action, CancellationToken.None);
+        }
+        catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.TooManyRequests)
+        {
+            throw new PluginApplicationException("Request rate limit exceeded - Too Many Requests). Please try again later or add a retry policy in your bird.",ex);
+        }
+        catch (Exception ex) when (ex is not PluginApplicationException)
+        {
+            throw new PluginApplicationException($"Request failed: {ex.Message}", ex);
+        }
     }
 }
