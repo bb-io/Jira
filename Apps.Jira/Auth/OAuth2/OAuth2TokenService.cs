@@ -105,7 +105,7 @@ public class OAuth2TokenService(InvocationContext invocationContext)
                 throw new InvalidOperationException("OAuth response did not contain an access token");
 
             var utcNow = DateTime.UtcNow;
-            var expiresAt = utcNow.AddSeconds(tokenResponse.ExpiresIn);
+            var expiresAt = utcNow.AddSeconds(tokenResponse.ExpiresIn - 120);
             var cloudId = await CloudIdHelper.GetCloudIdAsync(tokenResponse.AccessToken, jiraUrl, cancellationToken);
 
             return new Dictionary<string, string>
