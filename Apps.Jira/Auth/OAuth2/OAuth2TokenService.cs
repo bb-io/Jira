@@ -3,6 +3,7 @@ using Blackbird.Applications.Sdk.Common.Invocation;
 using Apps.Jira.Contants;
 using Apps.Jira.Dtos;
 using Apps.Jira.Extensions;
+using Apps.Jira.Utils;
 using Blackbird.Applications.Sdk.Common;
 using Blackbird.Applications.Sdk.Common.Exceptions;
 using RestSharp;
@@ -105,7 +106,7 @@ public class OAuth2TokenService(InvocationContext invocationContext)
 
             var utcNow = DateTime.UtcNow;
             var expiresAt = utcNow.AddSeconds(tokenResponse.ExpiresIn);
-            var cloudId = await GetJiraCloudIdAsync(tokenResponse.AccessToken, jiraUrl, cancellationToken);
+            var cloudId = await CloudIdHelper.GetCloudIdAsync(tokenResponse.AccessToken, jiraUrl, cancellationToken);
 
             return new Dictionary<string, string>
             {
@@ -121,49 +122,6 @@ public class OAuth2TokenService(InvocationContext invocationContext)
         catch (Exception ex) when (ex is not PluginApplicationException && ex is not PluginMisconfigurationException && ex is not InvalidOperationException)
         {
             throw new PluginApplicationException($"Unexpected error during OAuth token fetch: {ex.Message}", ex);
-        }
-    }
-
-    private async Task<string> GetJiraCloudIdAsync(
-        string accessToken,
-        string jiraUrl,
-        CancellationToken cancellationToken)
-    {
-        try
-        {
-            var client = new RestClient(AtlassianResourcesUrl);
-            var request = new RestRequest(string.Empty, Method.Get);
-            request.AddHeader("Authorization", $"Bearer {accessToken}");
-
-            var response = await client.ExecuteAsync(request, cancellationToken);
-            
-            if (!response.IsSuccessful || string.IsNullOrWhiteSpace(response.Content))
-            {
-                throw new PluginApplicationException(
-                    $"Failed to fetch accessible resources: {response.StatusCode}. {response.ErrorMessage ?? response.Content}");
-            }
-
-            var resources = response.Content.Deserialize<List<AtlassianCloudResourceDto>>();
-            
-            if (resources == null)
-                throw new InvalidOperationException("Failed to deserialize Atlassian resources");
-
-            if (string.IsNullOrWhiteSpace(jiraUrl))
-                throw new PluginMisconfigurationException("Jira URL is not configured");
-            var matchingResource = resources.FirstOrDefault(r => 
-                !string.IsNullOrWhiteSpace(r.Url) && jiraUrl.Contains(r.Url, StringComparison.OrdinalIgnoreCase));
-
-            if (matchingResource == null || string.IsNullOrWhiteSpace(matchingResource.Id))
-            {
-                throw new PluginMisconfigurationException(
-                    $"No matching Atlassian Cloud resource found for Jira URL: {jiraUrl}");
-            }
-
-            return matchingResource.Id;
-        }
-        catch (Exception ex) when (ex is not PluginApplicationException && ex is not PluginMisconfigurationException && ex is not InvalidOperationException)
-        {
-            throw new PluginApplicationException($"Unexpected error fetching Jira Cloud ID: {ex.Message}", ex);
         }
     }
 }

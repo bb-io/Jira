@@ -1,6 +1,7 @@
 ﻿using Apps.Jira.Dtos;
 using Apps.Jira.Extensions;
 using Apps.Jira.Models.Responses;
+using Apps.Jira.Utils;
 using Blackbird.Applications.Sdk.Common.Authentication;
 using Blackbird.Applications.Sdk.Common.Exceptions;
 using Newtonsoft.Json;
@@ -83,13 +84,28 @@ public class JiraClient : RestClient
 
     private static Uri GetUri(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders, string routeType)
     {
-        var cloudIdProvider = authenticationCredentialsProviders.Get(CredNames.CloudId);
-        if (string.IsNullOrEmpty(cloudIdProvider.Value))
+        var cloudIdProvider = authenticationCredentialsProviders.FirstOrDefault(p => p.KeyName == CredNames.CloudId);
+        string cloudId;
+        
+        if (cloudIdProvider == null || string.IsNullOrEmpty(cloudIdProvider.Value))
         {
-            throw new PluginMisconfigurationException("Cloud ID is missing in authentication credentials providers.");
+            var jiraUrlProvider = authenticationCredentialsProviders.FirstOrDefault(p => p.KeyName == CredNames.JiraUrl);
+            var authProvider = authenticationCredentialsProviders.FirstOrDefault(p => p.KeyName == "Authorization");
+            
+            if (jiraUrlProvider == null || string.IsNullOrEmpty(jiraUrlProvider.Value))
+                throw new PluginMisconfigurationException("Jira URL is missing in authentication credentials providers.");
+            
+            if (authProvider == null || string.IsNullOrEmpty(authProvider.Value))
+                throw new PluginMisconfigurationException("Authorization token is missing in authentication credentials providers.");
+            
+            var accessToken = authProvider.Value.Replace("Bearer ", "", StringComparison.OrdinalIgnoreCase).Trim();
+            cloudId = CloudIdHelper.GetCloudId(accessToken, jiraUrlProvider.Value);
+        }
+        else
+        {
+            cloudId = cloudIdProvider.Value;
         }
         
-        var cloudId = cloudIdProvider.Value;
         string basePath = routeType switch
         {
             "agile" => $"/rest/agile/1.0",

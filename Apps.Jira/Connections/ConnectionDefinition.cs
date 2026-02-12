@@ -30,10 +30,12 @@ namespace Apps.Jira.Connections
             yield return new AuthenticationCredentialsProvider("Authorization", $"Bearer {token.Value}");
             
             var jiraUrl = new Uri(values.First(v => v.Key == CredNames.JiraUrl).Value).GetLeftPart(UriPartial.Authority);
-            yield return new AuthenticationCredentialsProvider("JiraUrl", jiraUrl);
+            yield return new AuthenticationCredentialsProvider(CredNames.JiraUrl, jiraUrl);
             
-            var cloudId = values.First(v => v.Key == CredNames.CloudId).Value;
-            yield return new AuthenticationCredentialsProvider(CredNames.CloudId, cloudId);
+            if (values.TryGetValue(CredNames.CloudId, out var cloudId))
+            {
+                yield return new AuthenticationCredentialsProvider(CredNames.CloudId, cloudId);
+            }
         }
     }
 }
