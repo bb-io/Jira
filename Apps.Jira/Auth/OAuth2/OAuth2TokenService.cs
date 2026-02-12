@@ -3,6 +3,7 @@ using Blackbird.Applications.Sdk.Common.Invocation;
 using Apps.Jira.Contants;
 using Apps.Jira.Dtos;
 using Apps.Jira.Extensions;
+using Apps.Jira.Utils;
 using Blackbird.Applications.Sdk.Common;
 using Blackbird.Applications.Sdk.Common.Exceptions;
 using RestSharp;
@@ -72,76 +73,173 @@ public class OAuth2TokenService(InvocationContext invocationContext)
         Dictionary<string, string> bodyParameters,
         CancellationToken cancellationToken)
     {
-        var client = new RestClient(AtlassianTokenUrl);
-        var request = new RestRequest(string.Empty, Method.Post);
-        
-        foreach (var (key, value) in bodyParameters)
-            request.AddParameter(key, value);
-
-        var response = await client.ExecutePostAsync(request, cancellationToken);
-        
-        if (!response.IsSuccessful || string.IsNullOrWhiteSpace(response.Content))
+        try
         {
-            throw new PluginApplicationException(
-                $"Failed to obtain OAuth token: {response.StatusCode}. {response.ErrorMessage ?? response.Content}");
+            var client = new RestClient(AtlassianTokenUrl);
+            var request = new RestRequest(string.Empty, Method.Post);
+            
+            foreach (var (key, value) in bodyParameters)
+                request.AddParameter(key, value);
+
+            var response = await client.ExecutePostAsync(request, cancellationToken);
+            
+            if (!response.IsSuccessful || string.IsNullOrWhiteSpace(response.Content))
+            {
+                await WebhookLogger.LogErrorAsync(
+                    "OAuth2TokenService.FetchOAuthTokenAsync",
+                    "Failed to obtain OAuth token",
+                    response.ErrorException,
+                    new
+                    {
+                        StatusCode = response.StatusCode,
+                        ErrorMessage = response.ErrorMessage,
+                        ResponseContent = response.Content,
+                        BodyParameters = WebhookLogger.RedactSensitiveData(bodyParameters)
+                    });
+
+                throw new PluginApplicationException(
+                    $"Failed to obtain OAuth token: {response.StatusCode}. {response.ErrorMessage ?? response.Content}");
+            }
+
+            var tokenResponse = response.Content.Deserialize<OAuth2TokenResponseDto>();
+            
+            if (tokenResponse == null)
+            {
+                await WebhookLogger.LogErrorAsync(
+                    "OAuth2TokenService.FetchOAuthTokenAsync",
+                    "Failed to deserialize OAuth token response",
+                    null,
+                    new
+                    {
+                        ResponseContent = response.Content,
+                        BodyParameters = WebhookLogger.RedactSensitiveData(bodyParameters)
+                    });
+                    
+                throw new InvalidOperationException("Failed to deserialize OAuth token response");
+            }
+
+            if (string.IsNullOrWhiteSpace(tokenResponse.AccessToken))
+            {
+                await WebhookLogger.LogErrorAsync(
+                    "OAuth2TokenService.FetchOAuthTokenAsync",
+                    "OAuth response did not contain an access token",
+                    null,
+                    new { BodyParameters = WebhookLogger.RedactSensitiveData(bodyParameters) });
+                    
+                throw new InvalidOperationException("OAuth response did not contain an access token");
+            }
+
+            var utcNow = DateTime.UtcNow;
+            var expiresAt = utcNow.AddSeconds(tokenResponse.ExpiresIn);
+            var cloudId = await GetJiraCloudIdAsync(tokenResponse.AccessToken, cancellationToken);
+
+            return new Dictionary<string, string>
+            {
+                ["access_token"] = tokenResponse.AccessToken,
+                ["refresh_token"] = tokenResponse.RefreshToken,
+                ["expires_in"] = tokenResponse.ExpiresIn.ToString(),
+                ["token_type"] = tokenResponse.TokenType,
+                [ExpiresAtKeyName] = expiresAt.ToString("O"),
+                [CredNames.CloudId] = cloudId
+            };
         }
-
-        var tokenResponse = response.Content.Deserialize<OAuth2TokenResponseDto>() 
-            ?? throw new InvalidOperationException("Failed to deserialize OAuth token response");
-
-        if (string.IsNullOrWhiteSpace(tokenResponse.AccessToken))
-            throw new InvalidOperationException("OAuth response did not contain an access token");
-
-        var utcNow = DateTime.UtcNow;
-        var expiresAt = utcNow.AddSeconds(tokenResponse.ExpiresIn);
-        var cloudId = await GetJiraCloudIdAsync(tokenResponse.AccessToken, cancellationToken);
-
-        return new Dictionary<string, string>
+        catch (Exception ex) when (ex is not PluginApplicationException && ex is not PluginMisconfigurationException)
         {
-            ["access_token"] = tokenResponse.AccessToken,
-            ["refresh_token"] = tokenResponse.RefreshToken,
-            ["expires_in"] = tokenResponse.ExpiresIn.ToString(),
-            ["token_type"] = tokenResponse.TokenType,
-            [ExpiresAtKeyName] = expiresAt.ToString("O"),
-            [CredNames.CloudId] = cloudId
-        };
+            await WebhookLogger.LogErrorAsync(
+                "OAuth2TokenService.FetchOAuthTokenAsync",
+                "Unexpected exception during OAuth token fetch",
+                ex,
+                new { BodyParameters = WebhookLogger.RedactSensitiveData(bodyParameters) });
+            throw;
+        }
     }
 
     private async Task<string> GetJiraCloudIdAsync(
         string accessToken,
         CancellationToken cancellationToken)
     {
-        var client = new RestClient(AtlassianResourcesUrl);
-        var request = new RestRequest(string.Empty, Method.Get);
-        request.AddHeader("Authorization", $"Bearer {accessToken}");
-
-        var response = await client.ExecuteAsync(request, cancellationToken);
-        
-        if (!response.IsSuccessful || string.IsNullOrWhiteSpace(response.Content))
+        try
         {
-            throw new PluginApplicationException(
-                $"Failed to fetch accessible resources: {response.StatusCode}. {response.ErrorMessage ?? response.Content}");
+            var client = new RestClient(AtlassianResourcesUrl);
+            var request = new RestRequest(string.Empty, Method.Get);
+            request.AddHeader("Authorization", $"Bearer {accessToken}");
+
+            var response = await client.ExecuteAsync(request, cancellationToken);
+            
+            if (!response.IsSuccessful || string.IsNullOrWhiteSpace(response.Content))
+            {
+                await WebhookLogger.LogErrorAsync(
+                    "OAuth2TokenService.GetJiraCloudIdAsync",
+                    "Failed to fetch accessible resources",
+                    response.ErrorException,
+                    new
+                    {
+                        StatusCode = response.StatusCode,
+                        ErrorMessage = response.ErrorMessage,
+                        ResponseContent = response.Content
+                    });
+
+                throw new PluginApplicationException(
+                    $"Failed to fetch accessible resources: {response.StatusCode}. {response.ErrorMessage ?? response.Content}");
+            }
+
+            var resources = response.Content.Deserialize<List<AtlassianCloudResourceDto>>();
+            
+            if (resources == null)
+            {
+                await WebhookLogger.LogErrorAsync(
+                    "OAuth2TokenService.GetJiraCloudIdAsync",
+                    "Failed to deserialize Atlassian resources",
+                    null,
+                    new { ResponseContent = response.Content });
+                    
+                throw new InvalidOperationException("Failed to deserialize Atlassian resources");
+            }
+
+            var jiraUrlCred = InvocationContext.AuthenticationCredentialsProviders
+                .FirstOrDefault(p => p.KeyName == CredNames.JiraUrl);
+
+            if (jiraUrlCred == null || string.IsNullOrWhiteSpace(jiraUrlCred.Value))
+            {
+                await WebhookLogger.LogErrorAsync(
+                    "OAuth2TokenService.GetJiraCloudIdAsync",
+                    "Jira URL is not configured",
+                    null,
+                    new { AvailableCredentials = InvocationContext.AuthenticationCredentialsProviders.Select(p => p.KeyName).ToList() });
+                    
+                throw new PluginMisconfigurationException("Jira URL is not configured");
+            }
+
+            var jiraUrl = jiraUrlCred.Value;
+            var matchingResource = resources.FirstOrDefault(r => 
+                !string.IsNullOrWhiteSpace(r.Url) && jiraUrl.Contains(r.Url, StringComparison.OrdinalIgnoreCase));
+
+            if (matchingResource == null || string.IsNullOrWhiteSpace(matchingResource.Id))
+            {
+                await WebhookLogger.LogErrorAsync(
+                    "OAuth2TokenService.GetJiraCloudIdAsync",
+                    "No matching Atlassian Cloud resource found",
+                    null,
+                    new
+                    {
+                        JiraUrl = jiraUrl,
+                        AvailableResources = resources.Select(r => new { r.Id, r.Url }).ToList()
+                    });
+
+                throw new PluginMisconfigurationException(
+                    $"No matching Atlassian Cloud resource found for Jira URL: {jiraUrl}");
+            }
+
+            return matchingResource.Id;
         }
-
-        var resources = response.Content.Deserialize<List<AtlassianCloudResourceDto>>() 
-            ?? throw new InvalidOperationException("Failed to deserialize Atlassian resources");
-
-        var jiraUrlCred = InvocationContext.AuthenticationCredentialsProviders
-            .FirstOrDefault(p => p.KeyName == CredNames.JiraUrl);
-
-        if (jiraUrlCred == null || string.IsNullOrWhiteSpace(jiraUrlCred.Value))
-            throw new PluginMisconfigurationException("Jira URL is not configured");
-
-        var jiraUrl = jiraUrlCred.Value;
-        var matchingResource = resources.FirstOrDefault(r => 
-            !string.IsNullOrWhiteSpace(r.Url) && jiraUrl.Contains(r.Url, StringComparison.OrdinalIgnoreCase));
-
-        if (matchingResource == null || string.IsNullOrWhiteSpace(matchingResource.Id))
+        catch (Exception ex) when (ex is not PluginApplicationException && ex is not PluginMisconfigurationException)
         {
-            throw new PluginMisconfigurationException(
-                $"No matching Atlassian Cloud resource found for Jira URL: {jiraUrl}");
+            await WebhookLogger.LogErrorAsync(
+                "OAuth2TokenService.GetJiraCloudIdAsync",
+                "Unexpected exception during cloud ID fetch",
+                ex,
+                null);
+            throw;
         }
-
-        return matchingResource.Id;
     }
 }

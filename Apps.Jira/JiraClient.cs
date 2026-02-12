@@ -33,7 +33,6 @@ public class JiraClient : RestClient
     public async Task<T> ExecuteWithHandling<T>(RestRequest request)
     {
         var response = await ExecuteWithHandling(request);
-
         return response.Content.Deserialize<T>();
     }
 
