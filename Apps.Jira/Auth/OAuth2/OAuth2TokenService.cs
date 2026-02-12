@@ -101,6 +101,18 @@ public class OAuth2TokenService(InvocationContext invocationContext)
                     $"Failed to obtain OAuth token: {response.StatusCode}. {response.ErrorMessage ?? response.Content}");
             }
 
+            // Log raw response for debugging serialization issues
+            await WebhookLogger.LogErrorAsync(
+                "OAuth2TokenService.FetchOAuthTokenAsync",
+                "Raw OAuth response received (for debugging)",
+                null,
+                new
+                {
+                    RawResponse = response.Content,
+                    ContentType = response.ContentType,
+                    BodyParameters = WebhookLogger.RedactSensitiveData(bodyParameters)
+                });
+
             var tokenResponse = response.Content.Deserialize<OAuth2TokenResponseDto>();
             
             if (tokenResponse == null)
