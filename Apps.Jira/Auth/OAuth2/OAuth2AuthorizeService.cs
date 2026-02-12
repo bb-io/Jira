@@ -3,31 +3,27 @@ using Blackbird.Applications.Sdk.Common.Authentication.OAuth2;
 using Blackbird.Applications.Sdk.Common.Invocation;
 using Microsoft.AspNetCore.WebUtilities;
 
-namespace Apps.Jira.Auth.OAuth2
-{
-    public class OAuth2AuthorizeService : BaseInvocable, IOAuth2AuthorizeService
-    {
-        public OAuth2AuthorizeService(InvocationContext invocationContext) : base(invocationContext)
-        {
-        }
+namespace Apps.Jira.Auth.OAuth2;
 
-        public string GetAuthorizationUrl(Dictionary<string, string> values)
+public class OAuth2AuthorizeService(InvocationContext invocationContext)
+    : BaseInvocable(invocationContext), IOAuth2AuthorizeService
+{
+    public string GetAuthorizationUrl(Dictionary<string, string> values)
+    {
+        string bridgeOauthUrl = $"{InvocationContext.UriInfo.BridgeServiceUrl.ToString().TrimEnd('/')}/oauth";
+        const string atlassianAuthorizeUrl = "https://auth.atlassian.com/authorize";
+        var parameters = new Dictionary<string, string>
         {
-            string bridgeOauthUrl = $"{InvocationContext.UriInfo.BridgeServiceUrl.ToString().TrimEnd('/')}/oauth";
-            const string atlassianAuthorizeUrl = "https://auth.atlassian.com/authorize";
-            var parameters = new Dictionary<string, string>
-            {
-                { "audience", "api.atlassian.com" },
-                { "client_id", ApplicationConstants.ClientId },
-                { "scope", ApplicationConstants.Scopes },
-                { "redirect_uri", $"{InvocationContext.UriInfo.BridgeServiceUrl.ToString().TrimEnd('/')}/AuthorizationCode" },
-                { "state", values["state"] },
-                { "response_type", "code" },
-                { "prompt", "consent" },
-                { "authorization_url", atlassianAuthorizeUrl},
-                { "actual_redirect_uri", InvocationContext.UriInfo.AuthorizationCodeRedirectUri.ToString() },
-            };
-            return QueryHelpers.AddQueryString(bridgeOauthUrl, parameters);
-        }
+            { "audience", "api.atlassian.com" },
+            { "client_id", ApplicationConstants.ClientId },
+            { "scope", ApplicationConstants.Scopes },
+            { "redirect_uri", $"{InvocationContext.UriInfo.BridgeServiceUrl.ToString().TrimEnd('/')}/AuthorizationCode" },
+            { "state", values["state"] },
+            { "response_type", "code" },
+            { "prompt", "consent" },
+            { "authorization_url", atlassianAuthorizeUrl},
+            { "actual_redirect_uri", InvocationContext.UriInfo.AuthorizationCodeRedirectUri.ToString() },
+        };
+        return QueryHelpers.AddQueryString(bridgeOauthUrl, parameters);
     }
 }
