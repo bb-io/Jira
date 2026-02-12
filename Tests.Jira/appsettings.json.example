@@ -1,7 +1,8 @@
 {
     "ConnectionDefinition": {
         "Authorization": "YOUR_API_KEY",
-        "JiraUrl": "YOUR_URL"
+        "JiraUrl": "YOUR_URL",
+        "CloudId": "YOUR_CLOUD_ID"
     },
     "TestFolder": "TestFile"
 }

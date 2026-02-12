@@ -1,5 +1,4 @@
 ﻿using System.Net;
-using Apps.Jira.Utils;
 using Blackbird.Applications.Sdk.Common;
 using Blackbird.Applications.Sdk.Common.Authentication;
 using Blackbird.Applications.Sdk.Common.Connections;
@@ -20,23 +19,7 @@ public class ConnectionValidator(InvocationContext invocationContext) : BaseInvo
         try
         {
             var response = await client.ExecuteAsync(request, cancellationToken);
-            
             var isValid = response.StatusCode != HttpStatusCode.Unauthorized;
-            
-            if (!isValid)
-            {
-                await WebhookLogger.LogErrorAsync(
-                    "ConnectionValidator.ValidateConnection",
-                    "Connection validation failed",
-                    null,
-                    new
-                    {
-                        StatusCode = response.StatusCode,
-                        ErrorMessage = response.ErrorMessage,
-                        ResponseContent = response.Content,
-                        AvailableCredentials = authenticationCredentialsProviders.Select(p => p.KeyName).ToList()
-                    });
-            }
             
             return new ConnectionValidationResponse
             {
@@ -46,21 +29,12 @@ public class ConnectionValidator(InvocationContext invocationContext) : BaseInvo
         }
         catch (Exception ex)
         {
-            await WebhookLogger.LogErrorAsync(
-                "ConnectionValidator.ValidateConnection",
-                "Exception during connection validation",
-                ex,
-                new
-                {
-                    AvailableCredentials = authenticationCredentialsProviders.Select(p => p.KeyName).ToList()
-                });
-
-            InvocationContext.Logger?.LogError($"[JiraConnectionValidator] Exception occurred while validating connection: {ex.Message}", []);
+            InvocationContext.Logger?.LogError($"Connection validation failed: {ex.Message}", []);
             
             return new ConnectionValidationResponse
             {
                 IsValid = false,
-                Message = "Ping failed"
+                Message = "Connection validation failed"
             };
         }
     }
