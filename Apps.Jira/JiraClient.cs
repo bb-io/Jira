@@ -8,6 +8,8 @@ using Polly;
 using Polly.Retry;
 using RestSharp;
 using System.Net;
+using Apps.Jira.Contants;
+using Blackbird.Applications.Sdk.Utils.Extensions.Sdk;
 
 namespace Apps.Jira;
 
@@ -44,11 +46,51 @@ public class JiraClient : RestClient
 
         throw ConfigureErrorException(response);
     }
+    
+    public async Task<List<TItem>> Paginate<TItem>(JiraRequest originalRequest)
+    {
+        var allItems = new List<TItem>();
+        var endpoint = originalRequest.Resource;
+        var method = originalRequest.Method;
+        int startAt = 0;
+
+        bool isLast = false;
+
+        do
+        {
+            var pageRequest = new JiraRequest(endpoint, method);
+
+            foreach (var p in originalRequest.Parameters
+                         .Where(x => x.Type == ParameterType.QueryString))
+            {
+                pageRequest.AddQueryParameter(p.Name, p.Value?.ToString());
+            }
+
+            pageRequest.AddQueryParameter("startAt", startAt.ToString());
+            pageRequest.AddQueryParameter("maxResults", "50");
+
+            var page = await ExecuteWithHandling<PaginationResponse<TItem>>(pageRequest);
+
+            if (page?.Values != null)
+                allItems.AddRange(page.Values);
+
+            isLast = page?.IsLast ?? true;
+            startAt = (page?.StartAt ?? 0) + (page?.Values?.Count ?? 0);
+
+        } while (!isLast);
+
+        return allItems;
+    }
 
     private static Uri GetUri(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders, string routeType)
     {
-        var cloudId = GetJiraCloudId(authenticationCredentialsProviders);
-
+        var cloudIdProvider = authenticationCredentialsProviders.Get(CredNames.CloudId);
+        if (string.IsNullOrEmpty(cloudIdProvider.Value))
+        {
+            throw new PluginMisconfigurationException("Cloud ID is missing in authentication credentials providers.");
+        }
+        
+        var cloudId = cloudIdProvider.Value;
         string basePath = routeType switch
         {
             "agile" => $"/rest/agile/1.0",
@@ -59,36 +101,7 @@ public class JiraClient : RestClient
         var uri = $"https://api.atlassian.com/ex/jira/{cloudId}{basePath}";
         return new Uri(uri);
     }
-
-    private static string GetJiraCloudId(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders)
-    {
-        const string atlassianResourcesUrl = "https://api.atlassian.com/oauth/token/accessible-resources";
-        string jiraUrl = authenticationCredentialsProviders.First(p => p.KeyName == "JiraUrl").Value;
-        string authorizationHeader = authenticationCredentialsProviders.First(p => p.KeyName == "Authorization").Value;
-        var restClient = new RestClient(new RestClientOptions
-        { ThrowOnAnyError = false, BaseUrl = new Uri(atlassianResourcesUrl) });
-        var request = new RestRequest("");
-        request.AddHeader("Authorization", authorizationHeader);
-
-        var response = ExecuteSafe(CloudIdPipeline,ct => restClient.Execute(request));
-
-        if (!response.IsSuccessful)
-        {
-            if (response.StatusCode == HttpStatusCode.TooManyRequests)
-            {
-                throw new PluginApplicationException("Request rate limit exceeded - Too Many Requests. Please try again later or add a retry policy in your bird.");
-            }
-
-            throw new PluginApplicationException($"Atlassian accessible-resources failed: {(int)response.StatusCode} {response.StatusDescription}. Body: {response.Content}");
-        }
-
-        var resources = response.Content.Deserialize<List<AtlassianCloudResourceDto>>();
-
-        var cloudId = resources.FirstOrDefault(r => jiraUrl.Contains(r.Url, StringComparison.OrdinalIgnoreCase))?.Id;
-
-        return cloudId ?? throw new PluginMisconfigurationException("The Jira URL is incorrect. No matching Atlassian Cloud resource found.");
-    }
-
+    
     private Exception ConfigureErrorException(RestResponse response)
     {
         if (response == null)
@@ -151,41 +164,6 @@ public class JiraClient : RestClient
         }
 
         return new PluginApplicationException("Internal system error");
-    }
-
-    public async Task<List<TItem>> Paginate<TItem>(JiraRequest originalRequest)
-    {
-        var allItems = new List<TItem>();
-        var endpoint = originalRequest.Resource;
-        var method = originalRequest.Method;
-        int startAt = 0;
-
-        bool isLast = false;
-
-        do
-        {
-            var pageRequest = new JiraRequest(endpoint, method);
-
-            foreach (var p in originalRequest.Parameters
-                                         .Where(x => x.Type == ParameterType.QueryString))
-            {
-                pageRequest.AddQueryParameter(p.Name, p.Value?.ToString());
-            }
-
-            pageRequest.AddQueryParameter("startAt", startAt.ToString());
-            pageRequest.AddQueryParameter("maxResults", "50");
-
-            var page = await ExecuteWithHandling<PaginationResponse<TItem>>(pageRequest);
-
-            if (page?.Values != null)
-                allItems.AddRange(page.Values);
-
-            isLast = page?.IsLast ?? true;
-            startAt = (page?.StartAt ?? 0) + (page?.Values?.Count ?? 0);
-
-        } while (!isLast);
-
-        return allItems;
     }
 
     private async Task<RestResponse> ExecuteSafeAsync(Func<CancellationToken, Task<RestResponse>> action)

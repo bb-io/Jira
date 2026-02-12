@@ -1,10 +1,13 @@
-﻿using Blackbird.Applications.Sdk.Common.Authentication;
+﻿using System.Net;
+using Blackbird.Applications.Sdk.Common;
+using Blackbird.Applications.Sdk.Common.Authentication;
 using Blackbird.Applications.Sdk.Common.Connections;
+using Blackbird.Applications.Sdk.Common.Invocation;
 using RestSharp;
 
 namespace Apps.Jira.Connections;
 
-public class ConnectionValidator : IConnectionValidator
+public class ConnectionValidator(InvocationContext invocationContext) : BaseInvocable(invocationContext), IConnectionValidator
 {
     public async ValueTask<ConnectionValidationResponse> ValidateConnection(
         IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders, 
@@ -15,15 +18,16 @@ public class ConnectionValidator : IConnectionValidator
         
         try
         {
-            await client.ExecuteWithHandling(request);
+            var response = await client.ExecuteAsync(request, cancellationToken);
             return new ConnectionValidationResponse
             {
-                IsValid = true,
+                IsValid = response.StatusCode != HttpStatusCode.Unauthorized,
                 Message = "Success"
             };
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            InvocationContext.Logger?.LogError($"[JiraConnectionValidator] Exception occurred while validating connection: {ex.Message}", []);
             return new ConnectionValidationResponse
             {
                 IsValid = false,

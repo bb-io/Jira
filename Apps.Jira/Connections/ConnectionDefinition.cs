@@ -1,4 +1,5 @@
-﻿using Blackbird.Applications.Sdk.Common.Authentication;
+﻿using Apps.Jira.Contants;
+using Blackbird.Applications.Sdk.Common.Authentication;
 using Blackbird.Applications.Sdk.Common.Connections;
 
 namespace Apps.Jira.Connections
@@ -13,7 +14,7 @@ namespace Apps.Jira.Connections
                 AuthenticationType = ConnectionAuthenticationType.OAuth2,
                 ConnectionProperties =
                 [
-                    new("Jira URL")
+                    new(CredNames.JiraUrl)
                     {
                         DisplayName = "Jira URL",
                         Sensitive = false
@@ -28,8 +29,11 @@ namespace Apps.Jira.Connections
             var token = values.First(v => v.Key == "access_token");
             yield return new AuthenticationCredentialsProvider("Authorization", $"Bearer {token.Value}");
             
-            var jiraUrl = new Uri(values.First(v => v.Key == "Jira URL").Value).GetLeftPart(UriPartial.Authority);
+            var jiraUrl = new Uri(values.First(v => v.Key == CredNames.JiraUrl).Value).GetLeftPart(UriPartial.Authority);
             yield return new AuthenticationCredentialsProvider("JiraUrl", jiraUrl);
+            
+            var cloudId = values.First(v => v.Key == CredNames.CloudId).Value;
+            yield return new AuthenticationCredentialsProvider(CredNames.CloudId, cloudId);
         }
     }
 }
