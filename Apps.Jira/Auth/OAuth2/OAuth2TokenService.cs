@@ -32,6 +32,9 @@ public class OAuth2TokenService(InvocationContext invocationContext)
         if (!values.TryGetValue("refresh_token", out var refreshToken))
             throw new InvalidOperationException("Refresh token not found in authentication values");
 
+        if (!values.TryGetValue(CredNames.JiraUrl, out var jiraUrl))
+            throw new InvalidOperationException("Jira URL not found in authentication values");
+
         var bodyParameters = new Dictionary<string, string>
         {
             ["grant_type"] = "refresh_token",
@@ -40,7 +43,7 @@ public class OAuth2TokenService(InvocationContext invocationContext)
             ["refresh_token"] = refreshToken
         };
 
-        return await FetchOAuthTokenAsync(bodyParameters, cancellationToken);
+        return await FetchOAuthTokenAsync(bodyParameters, jiraUrl, cancellationToken);
     }
 
     public async Task<Dictionary<string, string>> RequestToken(
@@ -52,6 +55,9 @@ public class OAuth2TokenService(InvocationContext invocationContext)
         var bridgeServiceUrl = InvocationContext.UriInfo.BridgeServiceUrl.ToString().TrimEnd('/');
         var redirectUri = $"{bridgeServiceUrl}/AuthorizationCode";
 
+        if (!values.TryGetValue(CredNames.JiraUrl, out var jiraUrl))
+            throw new InvalidOperationException("Jira URL not found in values");
+
         var bodyParameters = new Dictionary<string, string>
         {
             ["grant_type"] = "authorization_code",
@@ -61,7 +67,7 @@ public class OAuth2TokenService(InvocationContext invocationContext)
             ["code"] = code
         };
 
-        return await FetchOAuthTokenAsync(bodyParameters, cancellationToken);
+        return await FetchOAuthTokenAsync(bodyParameters, jiraUrl, cancellationToken);
     }
 
     public Task RevokeToken(Dictionary<string, string> values)
@@ -71,6 +77,7 @@ public class OAuth2TokenService(InvocationContext invocationContext)
 
     private async Task<Dictionary<string, string>> FetchOAuthTokenAsync(
         Dictionary<string, string> bodyParameters,
+        string jiraUrl,
         CancellationToken cancellationToken)
     {
         try
@@ -100,18 +107,6 @@ public class OAuth2TokenService(InvocationContext invocationContext)
                 throw new PluginApplicationException(
                     $"Failed to obtain OAuth token: {response.StatusCode}. {response.ErrorMessage ?? response.Content}");
             }
-
-            // Log raw response for debugging serialization issues
-            await WebhookLogger.LogErrorAsync(
-                "OAuth2TokenService.FetchOAuthTokenAsync",
-                "Raw OAuth response received (for debugging)",
-                null,
-                new
-                {
-                    RawResponse = response.Content,
-                    ContentType = response.ContentType,
-                    BodyParameters = WebhookLogger.RedactSensitiveData(bodyParameters)
-                });
 
             var tokenResponse = response.Content.Deserialize<OAuth2TokenResponseDto>();
             
@@ -143,7 +138,7 @@ public class OAuth2TokenService(InvocationContext invocationContext)
 
             var utcNow = DateTime.UtcNow;
             var expiresAt = utcNow.AddSeconds(tokenResponse.ExpiresIn);
-            var cloudId = await GetJiraCloudIdAsync(tokenResponse.AccessToken, cancellationToken);
+            var cloudId = await GetJiraCloudIdAsync(tokenResponse.AccessToken, jiraUrl, cancellationToken);
 
             return new Dictionary<string, string>
             {
@@ -152,7 +147,8 @@ public class OAuth2TokenService(InvocationContext invocationContext)
                 ["expires_in"] = tokenResponse.ExpiresIn.ToString(),
                 ["token_type"] = tokenResponse.TokenType,
                 [ExpiresAtKeyName] = expiresAt.ToString("O"),
-                [CredNames.CloudId] = cloudId
+                [CredNames.CloudId] = cloudId,
+                [CredNames.JiraUrl] = jiraUrl
             };
         }
         catch (Exception ex) when (ex is not PluginApplicationException && ex is not PluginMisconfigurationException)
@@ -161,13 +157,14 @@ public class OAuth2TokenService(InvocationContext invocationContext)
                 "OAuth2TokenService.FetchOAuthTokenAsync",
                 "Unexpected exception during OAuth token fetch",
                 ex,
-                new { BodyParameters = WebhookLogger.RedactSensitiveData(bodyParameters) });
+                new { BodyParameters = WebhookLogger.RedactSensitiveData(bodyParameters), JiraUrl = jiraUrl });
             throw;
         }
     }
 
     private async Task<string> GetJiraCloudIdAsync(
         string accessToken,
+        string jiraUrl,
         CancellationToken cancellationToken)
     {
         try
@@ -208,21 +205,16 @@ public class OAuth2TokenService(InvocationContext invocationContext)
                 throw new InvalidOperationException("Failed to deserialize Atlassian resources");
             }
 
-            var jiraUrlCred = InvocationContext.AuthenticationCredentialsProviders
-                .FirstOrDefault(p => p.KeyName == CredNames.JiraUrl);
-
-            if (jiraUrlCred == null || string.IsNullOrWhiteSpace(jiraUrlCred.Value))
+            if (string.IsNullOrWhiteSpace(jiraUrl))
             {
                 await WebhookLogger.LogErrorAsync(
                     "OAuth2TokenService.GetJiraCloudIdAsync",
-                    "Jira URL is not configured",
+                    "Jira URL parameter is null or empty",
                     null,
-                    new { AvailableCredentials = InvocationContext.AuthenticationCredentialsProviders.Select(p => p.KeyName).ToList() });
+                    null);
                     
                 throw new PluginMisconfigurationException("Jira URL is not configured");
             }
-
-            var jiraUrl = jiraUrlCred.Value;
             var matchingResource = resources.FirstOrDefault(r => 
                 !string.IsNullOrWhiteSpace(r.Url) && jiraUrl.Contains(r.Url, StringComparison.OrdinalIgnoreCase));
 
@@ -250,7 +242,7 @@ public class OAuth2TokenService(InvocationContext invocationContext)
                 "OAuth2TokenService.GetJiraCloudIdAsync",
                 "Unexpected exception during cloud ID fetch",
                 ex,
-                null);
+                new { JiraUrl = jiraUrl });
             throw;
         }
     }
