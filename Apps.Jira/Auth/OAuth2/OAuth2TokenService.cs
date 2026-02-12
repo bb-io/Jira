@@ -1,17 +1,18 @@
-﻿using Blackbird.Applications.Sdk.Common.Authentication.OAuth2;
-using Blackbird.Applications.Sdk.Common.Invocation;
-using Apps.Jira.Contants;
+﻿using Apps.Jira.Contants;
 using Apps.Jira.Dtos;
 using Apps.Jira.Extensions;
 using Apps.Jira.Utils;
 using Blackbird.Applications.Sdk.Common;
+using Blackbird.Applications.Sdk.Common.Authentication;
+using Blackbird.Applications.Sdk.Common.Authentication.OAuth2;
 using Blackbird.Applications.Sdk.Common.Exceptions;
+using Blackbird.Applications.Sdk.Common.Invocation;
 using RestSharp;
 
 namespace Apps.Jira.Auth.OAuth2;
 
 public class OAuth2TokenService(InvocationContext invocationContext)
-    : BaseInvocable(invocationContext), IOAuth2TokenService
+    : BaseInvocable(invocationContext), IOAuth2TokenService, ITokenRefreshable
 {
     private const string AtlassianTokenUrl = "https://auth.atlassian.com/oauth/token";
     private const string AtlassianResourcesUrl = "https://api.atlassian.com/oauth/token/accessible-resources";
@@ -23,6 +24,19 @@ public class OAuth2TokenService(InvocationContext invocationContext)
             return false;
 
         return DateTime.TryParse(expireValue, out var expiresAt) && DateTime.UtcNow > expiresAt;
+    }
+
+    public int? GetRefreshTokenExprireInMinutes(Dictionary<string, string> values)
+    {
+        if (!values.TryGetValue(ExpiresAtKeyName, out var expireValue))
+            return null;
+
+        if (!DateTime.TryParse(expireValue, out var expireDate))
+            return null;
+
+        var difference = expireDate - DateTime.UtcNow;
+
+        return (int)difference.TotalMinutes - 1;
     }
 
     public async Task<Dictionary<string, string>> RefreshToken(
