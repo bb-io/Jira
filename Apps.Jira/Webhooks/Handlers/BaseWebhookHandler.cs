@@ -1,4 +1,5 @@
-﻿using Apps.Jira.Webhooks.Payload;
+﻿using Apps.Jira.Contants;
+using Apps.Jira.Webhooks.Payload;
 using Blackbird.Applications.Sdk.Common;
 using Blackbird.Applications.Sdk.Common.Authentication;
 using Blackbird.Applications.Sdk.Common.Invocation;
@@ -19,7 +20,8 @@ namespace Apps.Jira.Webhooks.Handlers
         public async Task SubscribeAsync(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders, 
             Dictionary<string, string> values)
         {
-            var jiraHost = new Uri(authenticationCredentialsProviders.First(p => p.KeyName == "JiraUrl").Value).Host;
+            var jiraUrl = authenticationCredentialsProviders.First(p => p.KeyName == CredNames.JiraUrl).Value;
+            var jiraHost = new Uri(jiraUrl).Host;
             var payloadUrl = values["payloadUrl"];
             var bridgeClient = new RestClient($"{InvocationContext.UriInfo.BridgeServiceUrl.ToString().TrimEnd('/')}/webhooks/jira");
             
@@ -35,7 +37,8 @@ namespace Apps.Jira.Webhooks.Handlers
         public async Task UnsubscribeAsync(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders, 
             Dictionary<string, string> values)
         {
-            var jiraHost = new Uri(authenticationCredentialsProviders.First(p => p.KeyName == "JiraUrl").Value).Host;
+            var jiraUrl = authenticationCredentialsProviders.First(p => p.KeyName == CredNames.JiraUrl).Value;
+            var jiraHost = new Uri(jiraUrl).Host;
             var payloadUrl = values["payloadUrl"];
             var bridgeClient = new RestClient($"{InvocationContext.UriInfo.BridgeServiceUrl.ToString().TrimEnd('/')}/webhooks/jira");
             
