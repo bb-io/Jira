@@ -203,6 +203,21 @@ public class DataSources : TestBase
         }
     }
 
+    [TestMethod]
+    public async Task UserDataSourceHandler_ReturnsValues()
+    {
+        var handler = new UserDataSourceHandler(InvocationContext);
+
+        var response = await handler.GetDataAsync(new DataSourceContext { SearchString = "" }, CancellationToken.None);
+
+        foreach (var item in response)
+        {
+            Console.WriteLine($"{item.Value}: {item.Key}");
+        }
+
+        Assert.IsNotNull(response);
+
+    }
 
     [TestMethod]
     public async Task GetIssuesHandlerReturnsValues()
@@ -218,6 +233,19 @@ public class DataSources : TestBase
 
         Assert.IsNotNull(response);
 
+    }
+
+    [TestMethod]
+    public async Task AddIssueComment_ReturnsValues()
+    {
+        var action = new IssueCommentActions(InvocationContext);
+
+        var response = await action.AddIssueComment(new IssueIdentifier { IssueKey = "AC-18" }, 
+            new AddIssueCommentRequest { Text="Hello, please check the issue", MentionAccountIds = ["712020:75495005-bcf9-4f19-8ea8-d038a4dba86b", "712020:2f4f8cf9-07c6-47b6-9d01-a073466da93d"] });
+
+        Console.WriteLine(Newtonsoft.Json.JsonConvert.SerializeObject(response));
+
+        Assert.IsNotNull(response);
     }
 
     [TestMethod]

@@ -8,8 +8,10 @@ using Blackbird.Applications.Sdk.Common.Actions;
 using Blackbird.Applications.Sdk.Common.Authentication;
 using Blackbird.Applications.Sdk.Common.Invocation;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 using RestSharp;
 using System.Text;
+using UserDto = Apps.Jira.Dtos.UserDto;
 
 namespace Apps.Jira.Actions;
 
@@ -130,33 +132,77 @@ public class IssueCommentActions : JiraInvocable
     {
         var request = new JiraRequest($"/issue/{input.IssueKey}/comment", Method.Post);
 
-        request.AddStringBody(JsonConvert.SerializeObject(new
+        var bodyType = comment.BodyType ?? "doc";
+        var version = comment.Version == null ? 1 : int.Parse(comment.Version);
+        var paragraphType = comment.Type ?? "paragraph";
+        var textType = comment.ContentType ?? "text";
+
+        var inline = new List<object>
+    {
+        new { type = textType, text = comment.Text ?? string.Empty }
+    };
+
+        var ids = (comment.MentionAccountIds ?? Array.Empty<string>())
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Select(x => x.Trim())
+            .Distinct()
+            .ToList();
+
+        if (ids.Count > 0)
+        {
+            inline.Add(new { type = "hardBreak" });
+            inline.Add(new { type = "hardBreak" });
+
+            var namesById = await GetDisplayNamesByAccountIds(ids);
+
+            for (var i = 0; i < ids.Count; i++)
+            {
+                var id = ids[i];
+
+                var displayName = namesById.TryGetValue(id, out var dn) && !string.IsNullOrWhiteSpace(dn)
+                    ? dn
+                    : "user";
+
+                inline.Add(new
+                {
+                    type = "mention",
+                    attrs = new
+                    {
+                        id,
+                        text = "@" + displayName,
+                        accessLevel = "NONE"
+                    }
+                });
+
+                if (i < ids.Count - 1)
+                    inline.Add(new { type = "text", text = ", " });
+            }
+        }
+
+        var payload = new
         {
             body = new
             {
-                type = comment.BodyType ?? "doc",
-                version = comment.Version == null ? 1 : int.Parse(comment.Version),
+                type = bodyType,
+                version,
                 content = new[]
                 {
                 new
                 {
-                    type = comment.Type ?? "paragraph",
-                    content = new[]
-                    {
-                        new
-                        {
-                            type = comment.ContentType ?? "text",
-                            text = comment.Text
-                        }
-                    }
+                    type = paragraphType,
+                    content = inline.ToArray()
                 }
             }
-            },
-        }, Formatting.None,
-        new JsonSerializerSettings
-        {
-            NullValueHandling = NullValueHandling.Ignore
-        }), DataFormat.Json);
+            }
+        };
+
+        request.AddStringBody(
+            JsonConvert.SerializeObject(payload, Formatting.None, new JsonSerializerSettings
+            {
+                NullValueHandling = NullValueHandling.Ignore,
+                ContractResolver = new CamelCasePropertyNamesContractResolver()
+            }),
+            DataFormat.Json);
 
         var created = await Client.ExecuteWithHandling<IssueCommentDto>(request);
 
@@ -165,6 +211,30 @@ public class IssueCommentActions : JiraInvocable
             Comment = created,
             PlainText = created.ToPlainText()
         };
+    }
+
+    private async Task<Dictionary<string, string>> GetDisplayNamesByAccountIds(List<string> accountIds)
+    {
+        var result = new Dictionary<string, string>();
+
+        foreach (var id in accountIds)
+        {
+            try
+            {
+                var userReq = new JiraRequest("/user", Method.Get);
+                userReq.AddQueryParameter("accountId", id);
+
+                var user = await Client.ExecuteWithHandling<UserDto>(userReq);
+
+                if (!string.IsNullOrWhiteSpace(user?.DisplayName))
+                    result[id] = user.DisplayName;
+            }
+            catch
+            {
+            }
+        }
+
+        return result;
     }
 
     [Action("Append text to comment", Description = "Append text to comment of the specified issue.")]
