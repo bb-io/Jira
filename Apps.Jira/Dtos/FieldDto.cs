@@ -11,5 +11,6 @@ public class FieldDto
 public class SchemaDto 
 {
     public string Type { get; set; }
+    public string? Items { get; set; }
     public string? Custom { get; set; }
 }

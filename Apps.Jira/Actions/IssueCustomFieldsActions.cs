@@ -177,6 +177,46 @@ public class IssueCustomFieldsActions : JiraInvocable
         return values;
     }
 
+    [Action("Get custom user picker field values",
+        Description = "Retrieve the account IDs from a custom user picker field for a specific issue.")]
+    public async Task<List<string>> GetCustomUserPickerFieldValue(
+        [ActionParameter] IssueIdentifier issue,
+        [ActionParameter] CustomUserPickerFieldIdentifier customUserPickerField)
+    {
+        var getIssueResponse = await GetIssue(issue.IssueKey);
+        var parsedIssue = JObject.Parse(getIssueResponse.Content);
+        var customField = parsedIssue["fields"]?[customUserPickerField.CustomUserPickerFieldId];
+
+        var values = new List<string>();
+
+        if (customField == null || customField.Type == JTokenType.Null)
+            return values;
+
+        if (customField.Type == JTokenType.Array)
+        {
+            foreach (var item in customField)
+            {
+                var accountId = item?["accountId"]?.ToString();
+                if (!string.IsNullOrWhiteSpace(accountId))
+                    values.Add(accountId);
+            }
+        }
+        else if (customField.Type == JTokenType.Object)
+        {
+            var accountId = customField["accountId"]?.ToString();
+            if (!string.IsNullOrWhiteSpace(accountId))
+                values.Add(accountId);
+        }
+        else if (customField.Type == JTokenType.String)
+        {
+            var accountId = customField.ToString();
+            if (!string.IsNullOrWhiteSpace(accountId))
+                values.Add(accountId);
+        }
+
+        return values;
+    }
+
     #endregion
 
     #region Put
@@ -232,6 +272,30 @@ public class IssueCustomFieldsActions : JiraInvocable
         {
             { customStringField.CustomMultiselectFieldId, multiSelectValues }
         }
+        };
+
+        await SetCustomFieldValue(requestBody, issue.IssueKey);
+    }
+
+    [Action("Set custom user picker field values",
+        Description = "Set the account IDs in a custom user picker field for a specific issue.")]
+    public async Task SetCustomUserPickerFieldValue([ActionParameter] IssueIdentifier issue,
+        [ActionParameter] CustomUserPickerFieldIdentifier customUserPickerField,
+        [ActionParameter] CustomUserPickerFieldInput input)
+    {
+        var userObjects = input.AccountIds
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Select(x => x.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Select(x => (object)new { accountId = x })
+            .ToList();
+
+        var requestBody = new
+        {
+            fields = new Dictionary<string, object>
+            {
+                { customUserPickerField.CustomUserPickerFieldId, userObjects }
+            }
         };
 
         await SetCustomFieldValue(requestBody, issue.IssueKey);
