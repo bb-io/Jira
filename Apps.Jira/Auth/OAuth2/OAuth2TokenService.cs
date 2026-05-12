@@ -1,6 +1,7 @@
 ﻿using Apps.Jira.Contants;
 using Apps.Jira.Dtos;
 using Apps.Jira.Extensions;
+using Apps.Jira.Models.Utility;
 using Apps.Jira.Utils;
 using Blackbird.Applications.Sdk.Common;
 using Blackbird.Applications.Sdk.Common.Authentication;
@@ -15,7 +16,6 @@ public class OAuth2TokenService(InvocationContext invocationContext)
     : BaseInvocable(invocationContext), IOAuth2TokenService, ITokenRefreshable
 {
     private const string AtlassianTokenUrl = "https://auth.atlassian.com/oauth/token";
-    private const string AtlassianResourcesUrl = "https://api.atlassian.com/oauth/token/accessible-resources";
     private const string ExpiresAtKeyName = "expires_at";
 
     public bool IsRefreshToken(Dictionary<string, string> values)
@@ -49,11 +49,12 @@ public class OAuth2TokenService(InvocationContext invocationContext)
         if (!values.TryGetValue(CredNames.JiraUrl, out var jiraUrl))
             throw new InvalidOperationException("Jira URL not found in authentication values");
 
+        var creds = OAuth2Credentials.Create(values);
         var bodyParameters = new Dictionary<string, string>
         {
             ["grant_type"] = "refresh_token",
-            ["client_id"] = ApplicationConstants.ClientId,
-            ["client_secret"] = ApplicationConstants.ClientSecret,
+            ["client_id"] = creds.ClientId,
+            ["client_secret"] = creds.ClientSecret,
             ["refresh_token"] = refreshToken
         };
 
@@ -72,11 +73,12 @@ public class OAuth2TokenService(InvocationContext invocationContext)
         if (!values.TryGetValue(CredNames.JiraUrl, out var jiraUrl))
             throw new InvalidOperationException("Jira URL not found in values");
 
+        var creds = OAuth2Credentials.Create(values);
         var bodyParameters = new Dictionary<string, string>
         {
             ["grant_type"] = "authorization_code",
-            ["client_id"] = ApplicationConstants.ClientId,
-            ["client_secret"] = ApplicationConstants.ClientSecret,
+            ["client_id"] = creds.ClientId,
+            ["client_secret"] = creds.ClientSecret,
             ["redirect_uri"] = redirectUri,
             ["code"] = code
         };
