@@ -7,11 +7,13 @@ public class OAuth2Credentials
 {
     public string ClientId { get; set; }
     public string ClientSecret { get; set; }
+    public string Scopes { get; set; }
 
-    private OAuth2Credentials(string clientId, string clientSecret)
+    private OAuth2Credentials(string clientId, string clientSecret, string scopes)
     {
         ClientId = clientId;
         ClientSecret = clientSecret;
+        Scopes = scopes;
     }
     
     public static OAuth2Credentials Create(Dictionary<string, string> values)
@@ -25,19 +27,22 @@ public class OAuth2Credentials
 
         string clientId = string.Empty; 
         string clientSecret = string.Empty;
+        string scopes = string.Empty;
         
         switch (connectionType)
         {
             case ConnectionTypes.OAuth2:
                 clientId = ApplicationConstants.ClientId;
                 clientSecret = ApplicationConstants.ClientSecret;
+                scopes = ApplicationConstants.Scopes;
                 break;
             case ConnectionTypes.OAuth2CustomApp:
                 clientId = values[CredNames.ClientId];
                 clientSecret = values[CredNames.ClientSecret];
+                scopes = values[CredNames.CustomScopes];
                 break;
         }
 
-        return new(clientId, clientSecret);
+        return new(clientId, clientSecret, scopes);
     }
 }

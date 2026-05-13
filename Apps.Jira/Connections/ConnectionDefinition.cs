@@ -30,7 +30,8 @@ namespace Apps.Jira.Connections
                 [
                     new(CredNames.JiraUrl) { DisplayName = "Jira URL" },
                     new(CredNames.ClientId) { DisplayName = "Client ID" },
-                    new(CredNames.ClientSecret) { DisplayName = "Secret", Sensitive = true }
+                    new(CredNames.ClientSecret) { DisplayName = "Secret", Sensitive = true },
+                    new(CredNames.CustomScopes) { DisplayName = "Scopes" },
                 ]
             },
         ];
@@ -51,14 +52,19 @@ namespace Apps.Jira.Connections
             };
             yield return new AuthenticationCredentialsProvider(CredNames.ConnectionType, connectionType);
             
-            if (values.TryGetValue(CredNames.CloudId, out var cloudId))
-                yield return new AuthenticationCredentialsProvider(CredNames.CloudId, cloudId);
-            
-            if (values.TryGetValue(CredNames.ClientId, out var clientId))
-                yield return new AuthenticationCredentialsProvider(CredNames.ClientId, clientId);
-            
-            if (values.TryGetValue(CredNames.ClientSecret, out var secret))
-                yield return new AuthenticationCredentialsProvider(CredNames.ClientSecret, secret);
+            var customKeys = new[] 
+            { 
+                CredNames.CloudId, 
+                CredNames.ClientId, 
+                CredNames.ClientSecret, 
+                CredNames.CustomScopes 
+            };
+
+            foreach (var key in customKeys)
+            {
+                if (values.TryGetValue(key, out var value) && !string.IsNullOrWhiteSpace(value))
+                    yield return new AuthenticationCredentialsProvider(key, value);
+            }
         }
     }
 }

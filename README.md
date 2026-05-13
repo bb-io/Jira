@@ -25,6 +25,10 @@ If you want to use your custom OAuth2 app to connect, you need to:
 - Name your app for future reference, read and agree to be bound by Atlassian's developer terms and click _Create_.
 - Go to _Authorization_ and click _Add_ for the OAuth 2.0 (3LO) authorization type.
 - In the _Callback URLs_ field, specify `https://bridge.blackbird.io/api/AuthorizationCode` and click _Save changes_.
+- Go to _Permissions_ and configure the scopes you want to use. Currently, our app supports these scopes: 
+`read:email-address:jira read:me read:sprint:jira-software read:jira-work write:jira-work 
+read:jira-user offline_access read:board-scope:jira-software read:project:jira write:sprint:jira-software`. 
+If you don't need to configure your own scopes, simply copy and paste the beforementioned ones.
 - Go to _Settings_ > _Authentication details_ and copy `Client ID` and `Secret` values.
 
 ### Enable webhooks
