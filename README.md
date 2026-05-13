@@ -16,6 +16,17 @@ Before you can connect you need to make sure that:
 - You have a [project created](https://support.atlassian.com/jira-software-cloud/docs/create-a-new-project/).
 - You have the right [permissions](https://support.atlassian.com/jira-cloud-administration/docs/permissions-for-company-managed-projects/#Issue-permissions).
 
+### Custom OAuth2 apps
+
+If you want to use your custom OAuth2 app to connect, you need to:
+
+- Go to [Atlassian Developer Console](https://developer.atlassian.com/console/myapps/).
+- Click _Create_ > _OAuth 2.0 Integration_.
+- Name your app for future reference, read and agree to be bound by Atlassian's developer terms and click _Create_.
+- Go to _Authorization_ and click _Add_ for the OAuth 2.0 (3LO) authorization type.
+- In the _Callback URLs_ field, specify `https://bridge.blackbird.io/api/AuthorizationCode` and click _Save changes_.
+- Go to _Settings_ > _Authentication details_ and copy `Client ID` and `Secret` values.
+
 ### Enable webhooks
 
 If you want to use Jira webhooks, you need to:
@@ -46,15 +57,28 @@ Note: this app currently supports only short text (plain text only) custom field
 
 ## Connecting
 
-1. Navigate to apps and search for Jira. If you cannot find Jira then click _Add App_ in the top right corner, select Jira and add the app to your Blackbird environment.
-2. Click _Add Connection_.
-3. Name your connection for future reference e.g. 'My organization'.
-4. Fill in the base URL to the Jira site you want to connect to. The base URL is of shape `https://<organization name>.atlassian.net`. You can usually copy this part of the URL when you are logged into your Jira instance.
-5. Click _Authorize connection_.
-6. Follow the instructions that Jira gives you, authorizing Blackbird.io to act on your behalf.
-7. When you return to Blackbird, confirm that the connection has appeared and the status is _Connected_.
+Navigate to apps and search for Jira. Click _Add Connection_ and name it for future reference e.g. 'My organization'.
 
-![Connecting](Images/README/connection.png)
+### OAuth2
+
+1. Select the `OAuth2` connection type from the dropdown.
+2. Fill in the base URL to the Jira site you want to connect to. The base URL is of shape `https://<organization name>.atlassian.net`. You can usually copy this part of the URL when you are logged into your Jira instance.
+3. Click _Authorize connection_.
+4. Follow the instructions that Jira gives you, authorizing Blackbird.io to act on your behalf.
+5. When you return to Blackbird, confirm that the connection has appeared and the status is _Connected_.
+
+![Connecting using OAuth2](Images/README/oauth2_connection.png)
+
+### OAuth2 (custom app)
+
+1. Select the `OAuth2 (custom app)` connection type from the dropdown.
+2. Fill in the base URL to the Jira site you want to connect to. The base URL is of shape `https://<organization name>.atlassian.net`. You can usually copy this part of the URL when you are logged into your Jira instance.
+3. Fill in the `Client ID` and `Secret` values you obtained from Atlassian Developer Console.
+4. Click _Authorize connection_.
+5. Follow the instructions that Jira gives you, authorizing Blackbird.io to act on your behalf.
+6. When you return to Blackbird, confirm that the connection has appeared and the status is _Connected_.
+
+![Connecting using OAuth2 custom app](Images/README/oauth2_customapp_connection.png)
 
 ## Actions
 
@@ -162,7 +186,7 @@ This approach ensures flexibility by providing two methods for inputs, accommoda
 
 This example bird fetches newest issues and assigns those with highest priority to a specific assignee.
 
-![example_2](image/README/1708600402619.png)
+![example_2](Images/README/1708600402619.png)
 
 This example shows how to create new TMS (Phrase) projects from issues.
 
