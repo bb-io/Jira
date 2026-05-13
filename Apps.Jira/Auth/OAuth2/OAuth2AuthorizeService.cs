@@ -19,7 +19,7 @@ public class OAuth2AuthorizeService(InvocationContext invocationContext)
         {
             { "audience", "api.atlassian.com" },
             { "client_id", creds.ClientId },
-            { "scope", ApplicationConstants.Scopes },
+            { "scope", creds.Scopes },
             { "redirect_uri", $"{InvocationContext.UriInfo.BridgeServiceUrl.ToString().TrimEnd('/')}/AuthorizationCode" },
             { "state", values["state"] },
             { "response_type", "code" },
