@@ -10,7 +10,7 @@ namespace Apps.Jira.Connections
         [
             new()
             {
-                Name = "OAuth2",
+                Name = ConnectionTypes.OAuth2,
                 AuthenticationType = ConnectionAuthenticationType.OAuth2,
                 ConnectionProperties =
                 [
@@ -19,6 +19,19 @@ namespace Apps.Jira.Connections
                         DisplayName = "Jira URL",
                         Sensitive = false
                     }
+                ]
+            },
+            new()
+            {
+                Name = ConnectionTypes.OAuth2CustomApp,
+                DisplayName = "OAuth2 (custom app)",
+                AuthenticationType = ConnectionAuthenticationType.OAuth2,
+                ConnectionProperties =
+                [
+                    new(CredNames.JiraUrl) { DisplayName = "Jira URL" },
+                    new(CredNames.ClientId) { DisplayName = "Client ID" },
+                    new(CredNames.ClientSecret) { DisplayName = "Secret", Sensitive = true },
+                    new(CredNames.CustomScopes) { DisplayName = "Scopes" },
                 ]
             },
         ];
@@ -32,9 +45,25 @@ namespace Apps.Jira.Connections
             var jiraUrl = new Uri(values.First(v => v.Key == CredNames.JiraUrl).Value).GetLeftPart(UriPartial.Authority);
             yield return new AuthenticationCredentialsProvider(CredNames.JiraUrl, jiraUrl);
             
-            if (values.TryGetValue(CredNames.CloudId, out var cloudId))
+            var connectionType = values[nameof(ConnectionPropertyGroup)] switch
             {
-                yield return new AuthenticationCredentialsProvider(CredNames.CloudId, cloudId);
+                var ct when ConnectionTypes.SupportedConnectionTypes.Contains(ct) => ct,
+                _ => throw new Exception($"Unknown connection type: {values[nameof(ConnectionPropertyGroup)]}")
+            };
+            yield return new AuthenticationCredentialsProvider(CredNames.ConnectionType, connectionType);
+            
+            var customKeys = new[] 
+            { 
+                CredNames.CloudId, 
+                CredNames.ClientId, 
+                CredNames.ClientSecret, 
+                CredNames.CustomScopes 
+            };
+
+            foreach (var key in customKeys)
+            {
+                if (values.TryGetValue(key, out var value) && !string.IsNullOrWhiteSpace(value))
+                    yield return new AuthenticationCredentialsProvider(key, value);
             }
         }
     }
