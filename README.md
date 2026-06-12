@@ -102,6 +102,7 @@ Please note: sending too many parallel requests to Jira may result in request re
 - **Add labels to issue** adds labels to an issue. Returns the updated issue.
 - **Move issues to sprint** Moves issues to a specific sprint
 - **Find issue** returns the first issue that matches given conditions. Allows appending custom JQL conditions.
+- **Link issue** links two issues with a specific relationship type.
 
 ### Issue custom fields
 
