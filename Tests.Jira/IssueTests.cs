@@ -139,8 +139,6 @@ public class IssueTests :TestBase
         Assert.IsNotNull(response);
     }
 
-    //DeleteIssueComment
-
     [TestMethod]
     public async Task DeleteIssueComment_ReturnsSuccess()
     {
@@ -193,5 +191,22 @@ public class IssueTests :TestBase
         Console.WriteLine(json);
 
         Assert.IsNotNull(response);
+    }
+
+    [TestMethod]
+    public async Task LinkIssue_IsSuccess()
+    {
+        // Arrange
+        var actions = new IssueActions(InvocationContext, FileManager);
+        var input = new LinkIssueRequest
+        {
+            InwardIssueKey = "KAN-2",
+            OutwardIssueKey = "KAN-3",
+            LinkTypeName = "Relates",
+            Comment = "12345"
+        };
+
+        // Act
+        await actions.LinkIssue(input);
     }
 }

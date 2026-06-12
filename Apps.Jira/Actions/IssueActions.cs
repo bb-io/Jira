@@ -373,21 +373,27 @@ public class IssueActions(InvocationContext invocationContext, IFileManagementCl
     {
         var requestBody = new
         {
-            inwardIssue = new
+            inwardIssue = new { key = input.InwardIssueKey },
+            outwardIssue = new { key = input.OutwardIssueKey },
+            type = new { name = input.LinkTypeName },
+            comment = input.Comment == null ? null : new
             {
-                key = input.InwardIssueKey
-            },
-            outwardIssue = new
-            {
-                key = input.OutwardIssueKey
-            },
-            type = new
-            {
-                name = input.LinkTypeName
-            },
-            comment = new
-            {
-                body = input.Comment ?? "Linked via API"
+                body = new
+                {
+                    type = "doc",
+                    version = 1,
+                    content = new[]
+                    {
+                        new
+                        {
+                            type = "paragraph",
+                            content = new[]
+                            {
+                                new { type = "text", text = input.Comment }
+                            }
+                        }
+                    }
+                }
             }
         };
 
