@@ -4,7 +4,6 @@ using Apps.Jira.Models.Identifiers;
 using Apps.Jira.Models.Requests;
 using Apps.Jira.Models.Responses;
 using Apps.Jira.Utils;
-using Apps.Jira.Webhooks.Payload;
 using Blackbird.Applications.Sdk.Common;
 using Blackbird.Applications.Sdk.Common.Actions;
 using Blackbird.Applications.Sdk.Common.Dynamic;
@@ -18,8 +17,8 @@ using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Serialization;
 using RestSharp;
 using System.Globalization;
-using System.Web;
 using Method = RestSharp.Method;
+
 namespace Apps.Jira.Actions;
 
 [ActionList("Issues")]
@@ -369,25 +368,32 @@ public class IssueActions(InvocationContext invocationContext, IFileManagementCl
         }
     }
 
+    [Action("Link issue", Description = "Link two issues with a specific relationship type")]
     public async Task LinkIssue([ActionParameter] LinkIssueRequest input)
     {
         var requestBody = new
         {
-            inwardIssue = new
+            inwardIssue = new { key = input.InwardIssueKey },
+            outwardIssue = new { key = input.OutwardIssueKey },
+            type = new { name = input.LinkTypeName },
+            comment = input.Comment == null ? null : new
             {
-                key = input.InwardIssueKey
-            },
-            outwardIssue = new
-            {
-                key = input.OutwardIssueKey
-            },
-            type = new
-            {
-                name = input.LinkTypeName
-            },
-            comment = new
-            {
-                body = input.Comment ?? "Linked via API"
+                body = new
+                {
+                    type = "doc",
+                    version = 1,
+                    content = new[]
+                    {
+                        new
+                        {
+                            type = "paragraph",
+                            content = new[]
+                            {
+                                new { type = "text", text = input.Comment }
+                            }
+                        }
+                    }
+                }
             }
         };
 
@@ -593,7 +599,6 @@ public class IssueActions(InvocationContext invocationContext, IFileManagementCl
 
         return await GetIssueByKey(issue);
     }
-
 
     [Action("Move issues to sprint", Description = "Moves issues to a specific sprint")]
     public async Task<MoveIssuesToSprintResponse> MoveIssuesToSprint(
