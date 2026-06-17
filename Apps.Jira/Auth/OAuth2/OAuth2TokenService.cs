@@ -60,7 +60,7 @@ public class OAuth2TokenService(InvocationContext invocationContext)
             ["refresh_token"] = refreshToken
         };
 
-        InvocationContext.Logger?.LogInformation(
+        InvocationContext.Logger?.LogError(
             $"[Jira][OAuth] Starting refresh token flow. JiraUrl: {jiraUrl}; RefreshToken: {GetTokenFingerprint(refreshToken)}; LocalExpiresAt: {GetSafeValue(values, ExpiresAtKeyName)}; MinutesUntilLocalExpiry: {GetRefreshTokenExprireInMinutes(values)?.ToString() ?? "n/a"}",
             null);
 
@@ -117,7 +117,7 @@ public class OAuth2TokenService(InvocationContext invocationContext)
                 ? GetTokenFingerprint(currentRefreshToken)
                 : "n/a";
 
-            InvocationContext.Logger?.LogInformation(
+            InvocationContext.Logger?.LogError(
                 $"[Jira][OAuth] Requesting OAuth token. GrantType: {grantType}; JiraUrl: {jiraUrl}; RefreshToken: {refreshTokenFingerprint}",
                 null);
 
@@ -128,7 +128,7 @@ public class OAuth2TokenService(InvocationContext invocationContext)
                 InvocationContext.Logger?.LogWarning(
                     $"[Jira][OAuth] OAuth token request failed. GrantType: {grantType}; JiraUrl: {jiraUrl}; StatusCode: {(int)response.StatusCode} {response.StatusCode}; Error: {response.ErrorMessage ?? response.Content}",
                     null);
-                InvocationContext.Logger?.LogInformation(
+                InvocationContext.Logger?.LogError(
                     $"[Jira][OAuth] OAuth token response body. GrantType: {grantType}; JiraUrl: {jiraUrl}; Body: {SanitizeOAuthResponseBody(response.Content)}",
                     null);
 
@@ -138,7 +138,7 @@ public class OAuth2TokenService(InvocationContext invocationContext)
 
             var tokenResponse = response.Content.Deserialize<OAuth2TokenResponseDto>();
 
-            InvocationContext.Logger?.LogInformation(
+            InvocationContext.Logger?.LogError(
                 $"[Jira][OAuth] OAuth token response body. GrantType: {grantType}; JiraUrl: {jiraUrl}; Body: {SanitizeOAuthResponseBody(response.Content)}",
                 null);
              
@@ -163,10 +163,10 @@ public class OAuth2TokenService(InvocationContext invocationContext)
                 ? currentRefreshToken ?? string.Empty
                 : tokenResponse.RefreshToken;
 
-            InvocationContext.Logger?.LogInformation(
+            InvocationContext.Logger?.LogError(
                 $"[Jira][OAuth] OAuth token request succeeded. GrantType: {grantType}; JiraUrl: {jiraUrl}; ExpiresInSeconds: {tokenResponse.ExpiresIn}; RefreshBufferMinutes: {RefreshBufferMinutes}; LocalExpiresAt: {expiresAt:O}; NewRefreshToken: {GetTokenFingerprint(tokenResponse.RefreshToken)}; CloudIdResolved: {!string.IsNullOrWhiteSpace(cloudId)}",
                 null);
-            InvocationContext.Logger?.LogInformation(
+            InvocationContext.Logger?.LogError(
                 $"[Jira][OAuth] Refresh token rotation. GrantType: {grantType}; JiraUrl: {jiraUrl}; PreviousRefreshToken: {refreshTokenFingerprint}; NextRefreshToken: {GetTokenFingerprint(nextRefreshToken)}; RefreshTokenReturned: {!string.IsNullOrWhiteSpace(tokenResponse.RefreshToken)}",
                 null);
 
