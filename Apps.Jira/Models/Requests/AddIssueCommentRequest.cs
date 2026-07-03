@@ -6,17 +6,13 @@ namespace Apps.Jira.Models.Requests;
 
 public class AddIssueCommentRequest
 {
-    public string Text { get; set; }
+    public string? Text { get; set; }
 
-    [Display("Content type")]
-    public string? ContentType { get; set; }
-        
-    public string? Type { get; set; }
+    [Display("Link URL")]
+    public string? LinkUrl { get; set; }
 
-    [Display("Body type")]
-    public string? BodyType { get; set; }
-        
-    public string? Version { get; set; }
+    [Display("Link text")]
+    public string? LinkText { get; set; }
 
     [Display("Mention users")]
     [DataSource(typeof(UserDataSourceHandler))]

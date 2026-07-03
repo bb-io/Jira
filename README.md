@@ -137,7 +137,7 @@ Please note: sending too many parallel requests to Jira may result in request re
 - **Get sssue comments**: Fetches comments for a specified issue. It can retrieve comments for multiple issues if IDs are provided.
 - **Get issue comment**: Retrieves a specific comment from a specified issue.
 - **Delete issue comment**: Deletes a comment from a specified issue.
-- **Add issue comment**: Adds a new comment to a specified issue.
+- **Add issue comment**: Adds a new comment to a specified issue. Supports optional user mentions and an optional link via dedicated inputs.
 - **Append text to comment**: Append text to comment on a specified issue.
 - **Find issue comment by text**: Find the first comment in an issue that contains the specified text.
 
