@@ -6,9 +6,9 @@ using RestSharp;
 
 namespace Apps.Jira.DataSourceHandlers.CustomFields;
 
-public class CustomOptionFieldDataSourceHandler : JiraInvocable, IAsyncDataSourceHandler
+public class CustomCascadingFieldDataSourceHandler : JiraInvocable, IAsyncDataSourceHandler
 {
-    public CustomOptionFieldDataSourceHandler(InvocationContext invocationContext) : base(invocationContext)
+    public CustomCascadingFieldDataSourceHandler(InvocationContext invocationContext) : base(invocationContext)
     {
     }
 
@@ -17,14 +17,14 @@ public class CustomOptionFieldDataSourceHandler : JiraInvocable, IAsyncDataSourc
     {
         var request = new JiraRequest("/field", Method.Get);
         var fields = await Client.ExecuteWithHandling<IEnumerable<FieldDto>>(request);
-        var customStringFields = fields
+        var cascadingFields = fields
             .Where(field => field.Custom
-                            && field.Schema!.Type == "option"
-                            && !string.Equals(field.Schema?.Custom, CustomFieldTypeIds.CascadingSelect,
+                            && field.Schema?.Type == "option"
+                            && string.Equals(field.Schema?.Custom, CustomFieldTypeIds.CascadingSelect,
                                 StringComparison.OrdinalIgnoreCase))
             .Where(field => context.SearchString == null ||
                             field.Name.Contains(context.SearchString, StringComparison.OrdinalIgnoreCase));
 
-        return customStringFields.ToDictionary(field => field.Id, field => field.Name);
+        return cascadingFields.ToDictionary(field => field.Id, field => field.Name);
     }
 }

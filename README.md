@@ -57,7 +57,7 @@ To create custom fields, follow [this guide](https://confluence.atlassian.com/ad
 - Search for the field you are interested in and drag it to issue's fields.
 - Click _Save changes_ button.
 
-Note: this app currently supports only short text (plain text only) custom fields.
+Note: this app supports a curated subset of custom field types. See the "Issue custom fields" section below for the currently available actions.
 
 ## Connecting
 
@@ -110,6 +110,8 @@ Please note: sending too many parallel requests to Jira may result in request re
 - **Set custom text field value** sets the value of a custom string field for a specific issue.
 - **Get custom dropdown field value** returns the value of a custom dropdown field for a specific issue.
 - **Set custom dropdown field value** sets the value of a custom dropdown field for a specific issue.
+- **Get custom cascading field value** returns the selected parent and child values of a custom cascading field for a specific issue.
+- **Set custom cascading field value** sets the parent and optional child values of a custom cascading field for a specific issue.
 - **Get custom date field value** returns the value of a custom date field for a specific issue.
 - **Set custom date field value** sets the value of a custom date field for a specific issue.
 - **Get custom multiselect field values** gets the selected values of a multiple choice select list custom field for a specific issue.

@@ -118,6 +118,28 @@ public class IssueCustomFieldsActions : JiraInvocable
         }     
     }
 
+    [Action("Get custom cascading field value",
+        Description = "Retrieve the parent and child values of a custom cascading field for a specific issue.")]
+    public async Task<GetCustomCascadingFieldValueResponse> GetCustomCascadingFieldValue(
+        [ActionParameter] IssueIdentifier issue, [ActionParameter] CustomCascadingFieldIdentifier customCascadingField)
+    {
+        var getIssueResponse = await GetIssue(issue.IssueKey);
+        var fieldToken = JObject.Parse(getIssueResponse.Content)["fields"]?[customCascadingField.CustomCascadingFieldId];
+
+        if (fieldToken == null || fieldToken.Type == JTokenType.Null)
+            return new GetCustomCascadingFieldValueResponse();
+
+        var childToken = fieldToken["child"];
+
+        return new GetCustomCascadingFieldValueResponse
+        {
+            ParentOptionId = fieldToken["id"]?.ToString(),
+            ParentValue = fieldToken["value"]?.ToString(),
+            ChildOptionId = childToken?["id"]?.ToString(),
+            ChildValue = childToken?["value"]?.ToString()
+        };
+    }
+
     [Action("Get custom date field value",
         Description = "Retrieve the value of a custom date field for a specific issue.")]
     public async Task<GetCustomFieldValueResponse<DateTime>> GetCustomDateFieldValue(
@@ -326,6 +348,34 @@ public class IssueCustomFieldsActions : JiraInvocable
         var requestBody = new
         {
             fields = new Dictionary<string, object> { { customOptionField.CustomOptionFieldId, new { value } } }
+        };
+
+        await SetCustomFieldValue(requestBody, issue.IssueKey);
+    }
+
+    [Action("Set custom cascading field value",
+        Description = "Set the parent and optional child values of a custom cascading field for a specific issue.")]
+    public async Task SetCustomCascadingFieldValue([ActionParameter] IssueIdentifier issue,
+        [ActionParameter] CustomCascadingFieldIdentifier customCascadingField,
+        [ActionParameter] CustomCascadingFieldValueInput input)
+    {
+        if (string.IsNullOrWhiteSpace(input.ParentOptionId))
+            throw new PluginMisconfigurationException("Parent option ID is required.");
+
+        object cascadingValue = string.IsNullOrWhiteSpace(input.ChildOptionId)
+            ? new { id = input.ParentOptionId }
+            : new
+            {
+                id = input.ParentOptionId,
+                child = new { id = input.ChildOptionId }
+            };
+
+        var requestBody = new
+        {
+            fields = new Dictionary<string, object>
+            {
+                { customCascadingField.CustomCascadingFieldId, cascadingValue }
+            }
         };
 
         await SetCustomFieldValue(requestBody, issue.IssueKey);

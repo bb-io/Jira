@@ -4,6 +4,7 @@ using Apps.Jira.Models.Identifiers;
 using Apps.Jira.Models.Requests;
 using Apps.Jira.Models.Responses;
 using Apps.Jira.Utils;
+using Apps.Jira.Contants;
 using Blackbird.Applications.Sdk.Common;
 using Blackbird.Applications.Sdk.Common.Actions;
 using Blackbird.Applications.Sdk.Common.Dynamic;
@@ -299,6 +300,34 @@ public class IssueActions(InvocationContext invocationContext, IFileManagementCl
                 {
                     var id = srcValue["id"]?.ToString();
                     var value = srcValue["value"]?.ToString();
+                    if (string.Equals(schema.Custom, CustomFieldTypeIds.CascadingSelect, StringComparison.OrdinalIgnoreCase))
+                    {
+                        var childId = srcValue["child"]?["id"]?.ToString();
+                        var childValue = srcValue["child"]?["value"]?.ToString();
+
+                        if (!string.IsNullOrEmpty(id))
+                        {
+                            return string.IsNullOrEmpty(childId)
+                                ? new { id }
+                                : new
+                                {
+                                    id,
+                                    child = new { id = childId }
+                                };
+                        }
+
+                        if (!string.IsNullOrEmpty(value))
+                        {
+                            return string.IsNullOrEmpty(childValue)
+                                ? new { value }
+                                : new
+                                {
+                                    value,
+                                    child = new { value = childValue }
+                                };
+                        }
+                    }
+
                     if (!string.IsNullOrEmpty(id)) return new { id };
                     if (!string.IsNullOrEmpty(value)) return new { value };
                     return null;
