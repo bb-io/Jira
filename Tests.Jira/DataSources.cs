@@ -312,6 +312,115 @@ public class DataSources : TestBase
     }
 
     [TestMethod]
+    public async Task CustomCascadingFieldDataSourceHandler_IsSuccess()
+    {
+        var handler = new CustomCascadingFieldDataSourceHandler(InvocationContext);
+
+        var response = await handler.GetDataAsync(new DataSourceContext { SearchString = "" }, CancellationToken.None);
+
+        foreach (var item in response)
+        {
+            Console.WriteLine($"{item.Value}: {item.Key}");
+        }
+
+        Assert.IsNotNull(response);
+        Assert.IsTrue(response.Any(), "No cascading fields were returned by the server.");
+    }
+
+    [TestMethod]
+    public async Task CustomCascadingParentOptionsDataSourceHandler_IsSuccess()
+    {
+        var (project, issueType, targetField) = await ResolveCascadingFieldContext();
+
+        var handler = new CustomCascadingParentOptionsDataSourceHandler(InvocationContext,
+            project,
+            issueType,
+            new CustomCascadingFieldIdentifier { CustomCascadingFieldId = targetField.Key });
+
+        var response = await handler.GetDataAsync(new DataSourceContext { SearchString = "" }, CancellationToken.None);
+
+        foreach (var item in response)
+        {
+            Console.WriteLine($"Parent: {item.Value}: {item.Key}");
+        }
+
+        Assert.IsNotNull(response);
+        Assert.IsTrue(response.Any(), $"No parent options were returned for field {targetField.Key}.");
+    }
+
+    [TestMethod]
+    public async Task CustomCascadingChildOptionsDataSourceHandler_IsSuccess()
+    {
+        var (project, issueType, targetField) = await ResolveCascadingFieldContext();
+
+        var parentHandler = new CustomCascadingParentOptionsDataSourceHandler(InvocationContext,
+            project,
+            issueType,
+            new CustomCascadingFieldIdentifier { CustomCascadingFieldId = targetField.Key });
+
+        var parents = await parentHandler.GetDataAsync(new DataSourceContext { SearchString = "" }, CancellationToken.None);
+        Assert.IsTrue(parents.Any(), $"No parent options were returned for field {targetField.Key}.");
+
+        var parent = parents.First();
+        Console.WriteLine($"Using parent option: {parent.Value}: {parent.Key}");
+
+        var handler = new CustomCascadingChildOptionsDataSourceHandler(InvocationContext,
+            project,
+            issueType,
+            new CustomCascadingFieldIdentifier { CustomCascadingFieldId = targetField.Key },
+            new CustomCascadingFieldValueInput { ParentOptionId = parent.Key });
+
+        var response = await handler.GetDataAsync(new DataSourceContext { SearchString = "" }, CancellationToken.None);
+
+        foreach (var item in response)
+        {
+            Console.WriteLine($"Child: {item.Value}: {item.Key}");
+        }
+
+        Assert.IsNotNull(response);
+    }
+
+    private async Task<(ProjectIdentifier Project, IssueTypeIdentifier IssueType, KeyValuePair<string, string> Field)>
+        ResolveCascadingFieldContext()
+    {
+        var fieldHandler = new CustomCascadingFieldDataSourceHandler(InvocationContext);
+        var fields = await fieldHandler.GetDataAsync(new DataSourceContext { SearchString = "Test_Cascading" }, CancellationToken.None);
+
+        if (!fields.Any())
+            fields = await fieldHandler.GetDataAsync(new DataSourceContext { SearchString = "" }, CancellationToken.None);
+
+        Assert.IsTrue(fields.Any(), "No cascading fields were returned by the server.");
+
+        var targetField = fields.First();
+        Console.WriteLine($"Using cascading field: {targetField.Value}: {targetField.Key}");
+
+        var project = new ProjectIdentifier { ProjectKey = "TES" };
+        var issueTypeHandler = new IssueTypeDataSourceHandler(InvocationContext, project);
+        var issueTypes = await issueTypeHandler.GetDataAsync(new DataSourceContext { SearchString = "" }, CancellationToken.None);
+
+        Assert.IsTrue(issueTypes.Any(), $"No issue types were returned for project {project.ProjectKey}.");
+
+        foreach (var issueType in issueTypes)
+        {
+            var issueTypeIdentifier = new IssueTypeIdentifier { IssueTypeId = issueType.Key };
+            var parentHandler = new CustomCascadingParentOptionsDataSourceHandler(InvocationContext,
+                project,
+                issueTypeIdentifier,
+                new CustomCascadingFieldIdentifier { CustomCascadingFieldId = targetField.Key });
+
+            var parents = await parentHandler.GetDataAsync(new DataSourceContext { SearchString = "" }, CancellationToken.None);
+            if (!parents.Any())
+                continue;
+
+            Console.WriteLine($"Using issue type: {issueType.Value}: {issueType.Key}");
+            return (project, issueTypeIdentifier, targetField);
+        }
+
+        throw new AssertFailedException(
+            $"No issue type in project {project.ProjectKey} returned parent options for field {targetField.Key}.");
+    }
+
+    [TestMethod]
     public async Task GetIssuesWrongReturnsValues()
     {
         var handler = new IssueActions(InvocationContext, FileManager);

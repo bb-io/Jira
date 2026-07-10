@@ -8,13 +8,19 @@ namespace Apps.Jira.DataSourceHandlers.CustomFields;
 
 public class CustomCascadingChildOptionsDataSourceHandler : JiraInvocable, IAsyncDataSourceHandler
 {
+    private readonly ProjectIdentifier _project;
+    private readonly IssueTypeIdentifier _issueType;
     private readonly CustomCascadingFieldIdentifier _field;
     private readonly CustomCascadingFieldValueInput _input;
 
     public CustomCascadingChildOptionsDataSourceHandler(InvocationContext invocationContext,
+        [ActionParameter] ProjectIdentifier project,
+        [ActionParameter] IssueTypeIdentifier issueType,
         [ActionParameter] CustomCascadingFieldIdentifier field,
         [ActionParameter] CustomCascadingFieldValueInput input) : base(invocationContext)
     {
+        _project = project;
+        _issueType = issueType;
         _field = field;
         _input = input;
     }
@@ -24,11 +30,14 @@ public class CustomCascadingChildOptionsDataSourceHandler : JiraInvocable, IAsyn
     {
         var result = new Dictionary<string, string>();
 
-        if (string.IsNullOrWhiteSpace(_field.CustomCascadingFieldId) ||
+        if (string.IsNullOrWhiteSpace(_project.ProjectKey) ||
+            string.IsNullOrWhiteSpace(_issueType.IssueTypeId) ||
+            string.IsNullOrWhiteSpace(_field.CustomCascadingFieldId) ||
             string.IsNullOrWhiteSpace(_input.ParentOptionId))
             return result;
 
-        var options = await CustomCascadingOptionsLookup.GetAllOptionsAsync(Client, _field.CustomCascadingFieldId);
+        var options = await CustomCascadingOptionsLookup.GetAllOptionsAsync(Client, _project.ProjectKey,
+            _issueType.IssueTypeId, _field.CustomCascadingFieldId);
         foreach (var child in options.Where(x =>
                      string.Equals(x.OptionId, _input.ParentOptionId, StringComparison.OrdinalIgnoreCase)))
         {

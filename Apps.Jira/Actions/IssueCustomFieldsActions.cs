@@ -121,7 +121,10 @@ public class IssueCustomFieldsActions : JiraInvocable
     [Action("Get custom cascading field value",
         Description = "Retrieve the parent and child values of a custom cascading field for a specific issue.")]
     public async Task<GetCustomCascadingFieldValueResponse> GetCustomCascadingFieldValue(
-        [ActionParameter] IssueIdentifier issue, [ActionParameter] CustomCascadingFieldIdentifier customCascadingField)
+        [ActionParameter] ProjectIdentifier project,
+        [ActionParameter] IssueTypeIdentifier issueType,
+        [ActionParameter] IssueIdentifier issue,
+        [ActionParameter] CustomCascadingFieldIdentifier customCascadingField)
     {
         var getIssueResponse = await GetIssue(issue.IssueKey);
         var fieldToken = JObject.Parse(getIssueResponse.Content)["fields"]?[customCascadingField.CustomCascadingFieldId];
@@ -355,10 +358,14 @@ public class IssueCustomFieldsActions : JiraInvocable
 
     [Action("Set custom cascading field value",
         Description = "Set the parent and optional child values of a custom cascading field for a specific issue.")]
-    public async Task SetCustomCascadingFieldValue([ActionParameter] IssueIdentifier issue,
+    public async Task SetCustomCascadingFieldValue([ActionParameter] ProjectIdentifier project,
+        [ActionParameter] IssueTypeIdentifier issueType,
+        [ActionParameter] IssueIdentifier issue,
         [ActionParameter] CustomCascadingFieldIdentifier customCascadingField,
         [ActionParameter] CustomCascadingFieldValueInput input)
     {
+        ValidateCascadingContext(project, issueType);
+
         if (string.IsNullOrWhiteSpace(input.ParentOptionId))
             throw new PluginMisconfigurationException("Parent option ID is required.");
 
@@ -579,6 +586,15 @@ public class IssueCustomFieldsActions : JiraInvocable
             throw new PluginApplicationException("Couldn't set field value. Please make sure that field exists for specific issue " +
                                 $"type in the project. Error details: {e.Message}");
         }
+    }
+
+    private static void ValidateCascadingContext(ProjectIdentifier project, IssueTypeIdentifier issueType)
+    {
+        if (string.IsNullOrWhiteSpace(project.ProjectKey))
+            throw new PluginMisconfigurationException("Project key is required.");
+
+        if (string.IsNullOrWhiteSpace(issueType.IssueTypeId))
+            throw new PluginMisconfigurationException("Issue type ID is required.");
     }
 
     #endregion

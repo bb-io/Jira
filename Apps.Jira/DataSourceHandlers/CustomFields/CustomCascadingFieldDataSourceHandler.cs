@@ -1,3 +1,4 @@
+using Apps.Jira.Contants;
 using Apps.Jira.Dtos;
 using Blackbird.Applications.Sdk.Common.Dynamic;
 using Blackbird.Applications.Sdk.Common.Invocation;
@@ -19,7 +20,11 @@ public class CustomCascadingFieldDataSourceHandler : JiraInvocable, IAsyncDataSo
         var fields = await Client.ExecuteWithHandling<IEnumerable<FieldDto>>(request);
 
         return fields
-            .Where(field => field.Custom && field.Schema?.Type == "option")
+            .Where(field => field.Custom &&
+                            (string.Equals(field.Schema?.Custom, CustomFieldTypeIds.CascadingSelect,
+                                 StringComparison.OrdinalIgnoreCase) ||
+                             string.Equals(field.Schema?.Type, "option-with-child",
+                                 StringComparison.OrdinalIgnoreCase)))
             .Where(field => context.SearchString == null ||
                             field.Name.Contains(context.SearchString, StringComparison.OrdinalIgnoreCase))
             .ToDictionary(field => field.Id, field => field.Name);

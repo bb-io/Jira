@@ -1,46 +1,93 @@
-using Apps.Jira.Models.Responses;
 using Blackbird.Applications.Sdk.Common.Invocation;
+using Newtonsoft.Json.Linq;
 using RestSharp;
 
 namespace Apps.Jira.DataSourceHandlers.CustomFields;
 
 internal static class CustomCascadingOptionsLookup
 {
-    public static async Task<List<CustomFieldContextOptionDto>> GetAllOptionsAsync(JiraClient client, string fieldId)
+    public static async Task<List<CustomFieldOptionDto>> GetAllOptionsAsync(JiraClient client, string projectKey,
+        string issueTypeId, string fieldId)
     {
-        var contexts = await GetContextsAsync(client, fieldId);
-        var result = new List<CustomFieldContextOptionDto>();
+        var request = new JiraRequest("/issue/createmeta", Method.Get)
+            .AddQueryParameter("projectKeys", projectKey)
+            .AddQueryParameter("issuetypeIds", issueTypeId)
+            .AddQueryParameter("expand", "projects.issuetypes.fields");
+        var response = await client.ExecuteWithHandling<JObject>(request);
+
+        var allowedValues = response["projects"]?.First?["issuetypes"]?.First?["fields"]?[fieldId]?["allowedValues"] as JArray;
+        if (allowedValues == null || allowedValues.Count == 0)
+            return [];
+
+        var result = new List<CustomFieldOptionDto>();
         var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-        foreach (var context in contexts)
+        foreach (var option in ParseAllowedValues(allowedValues))
         {
-            var optionsRequest = new JiraRequest($"/field/{fieldId}/context/{context.Id}/option", Method.Get);
-            var options = await client.Paginate<CustomFieldContextOptionDto>(optionsRequest);
+            if (string.IsNullOrWhiteSpace(option.Id) || !seen.Add(option.Id))
+                continue;
 
-            foreach (var option in options)
-            {
-                if (string.IsNullOrWhiteSpace(option.Id) || !seen.Add(option.Id))
-                    continue;
-
-                result.Add(option);
-            }
+            result.Add(option);
         }
 
         return result;
     }
 
-    private static async Task<List<CustomFieldContextDto>> GetContextsAsync(JiraClient client, string fieldId)
+    private static List<CustomFieldOptionDto> ParseAllowedValues(JArray allowedValues)
     {
-        var contextsRequest = new JiraRequest($"/field/{fieldId}/context", Method.Get);
-        return await client.Paginate<CustomFieldContextDto>(contextsRequest);
+        var options = new List<CustomFieldOptionDto>();
+
+        foreach (var option in allowedValues.OfType<JObject>())
+        {
+            ParseOption(option, null, options);
+        }
+
+        return options;
     }
 
-    internal class CustomFieldContextDto
+    private static void ParseOption(JObject optionToken, string? parentOptionId, List<CustomFieldOptionDto> result)
     {
-        public string Id { get; set; } = default!;
+        var id = optionToken["id"]?.ToString();
+        var value = optionToken["value"]?.ToString() ?? optionToken["name"]?.ToString();
+        var resolvedParentId = optionToken["optionId"]?.ToString() ?? optionToken["parentId"]?.ToString() ?? parentOptionId;
+
+        if (!string.IsNullOrWhiteSpace(id) && !string.IsNullOrWhiteSpace(value))
+        {
+            result.Add(new CustomFieldOptionDto
+            {
+                Id = id,
+                Value = value,
+                OptionId = resolvedParentId
+            });
+        }
+
+        foreach (var childArray in GetChildOptionArrays(optionToken))
+        {
+            foreach (var child in childArray.OfType<JObject>())
+            {
+                ParseOption(child, id, result);
+            }
+        }
     }
 
-    internal class CustomFieldContextOptionDto
+    private static IEnumerable<JArray> GetChildOptionArrays(JObject optionToken)
+    {
+        foreach (var property in optionToken.Properties())
+        {
+            if (property.Value is not JArray array || array.Count == 0)
+                continue;
+
+            if (array.All(item => item is JObject child && HasOptionIdentity(child)))
+                yield return array;
+        }
+    }
+
+    private static bool HasOptionIdentity(JObject token)
+    {
+        return token["id"] != null && (token["value"] != null || token["name"] != null);
+    }
+
+    internal class CustomFieldOptionDto
     {
         public string Id { get; set; } = default!;
 
