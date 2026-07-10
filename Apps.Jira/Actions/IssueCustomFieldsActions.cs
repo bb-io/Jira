@@ -121,8 +121,6 @@ public class IssueCustomFieldsActions : JiraInvocable
     [Action("Get custom cascading field value",
         Description = "Retrieve the parent and child values of a custom cascading field for a specific issue.")]
     public async Task<GetCustomCascadingFieldValueResponse> GetCustomCascadingFieldValue(
-        [ActionParameter] ProjectIdentifier project,
-        [ActionParameter] IssueTypeIdentifier issueType,
         [ActionParameter] IssueIdentifier issue,
         [ActionParameter] CustomCascadingFieldIdentifier customCascadingField)
     {
