@@ -3,23 +3,24 @@ using Apps.Jira.Models.Requests;
 using Blackbird.Applications.Sdk.Common;
 using Blackbird.Applications.Sdk.Common.Dynamic;
 using Blackbird.Applications.Sdk.Common.Invocation;
-using Newtonsoft.Json.Linq;
-using RestSharp;
 
 namespace Apps.Jira.DataSourceHandlers.CustomFields;
 
 public class CustomCascadingChildOptionsDataSourceHandler : JiraInvocable, IAsyncDataSourceHandler
 {
-    private readonly IssueIdentifier _issue;
+    private readonly ProjectIdentifier _project;
+    private readonly IssueTypeIdentifier _issueType;
     private readonly CustomCascadingFieldIdentifier _field;
     private readonly CustomCascadingFieldValueInput _input;
 
     public CustomCascadingChildOptionsDataSourceHandler(InvocationContext invocationContext,
-        [ActionParameter] IssueIdentifier issue,
+        [ActionParameter] ProjectIdentifier project,
+        [ActionParameter] IssueTypeIdentifier issueType,
         [ActionParameter] CustomCascadingFieldIdentifier field,
         [ActionParameter] CustomCascadingFieldValueInput input) : base(invocationContext)
     {
-        _issue = issue;
+        _project = project;
+        _issueType = issueType;
         _field = field;
         _input = input;
     }
@@ -29,29 +30,19 @@ public class CustomCascadingChildOptionsDataSourceHandler : JiraInvocable, IAsyn
     {
         var result = new Dictionary<string, string>();
 
-        if (string.IsNullOrWhiteSpace(_issue.IssueKey) ||
+        if (string.IsNullOrWhiteSpace(_project.ProjectKey) ||
+            string.IsNullOrWhiteSpace(_issueType.IssueTypeId) ||
             string.IsNullOrWhiteSpace(_field.CustomCascadingFieldId) ||
             string.IsNullOrWhiteSpace(_input.ParentOptionId))
             return result;
 
-        var request = new JiraRequest($"/issue/{_issue.IssueKey}/editmeta", Method.Get);
-        var editMeta = await Client.ExecuteWithHandling<JObject>(request);
-
-        var allowedValues = editMeta["fields"]?[_field.CustomCascadingFieldId]?["allowedValues"] as JArray;
-        if (allowedValues == null || allowedValues.Count == 0)
-            return result;
-
-        var parentOption = allowedValues.FirstOrDefault(option =>
-            string.Equals(option?["id"]?.ToString(), _input.ParentOptionId, StringComparison.OrdinalIgnoreCase));
-
-        var childOptions = parentOption?["children"] as JArray;
-        if (childOptions == null || childOptions.Count == 0)
-            return result;
-
-        foreach (var child in childOptions)
+        var options = await CustomCascadingOptionsLookup.GetAllOptionsAsync(Client, _project.ProjectKey,
+            _issueType.IssueTypeId, _field.CustomCascadingFieldId);
+        foreach (var child in options.Where(x =>
+                     string.Equals(x.OptionId, _input.ParentOptionId, StringComparison.OrdinalIgnoreCase)))
         {
-            var id = child["id"]?.ToString();
-            var value = child["value"]?.ToString();
+            var id = child.Id;
+            var value = child.Value;
 
             if (string.IsNullOrWhiteSpace(id) || string.IsNullOrWhiteSpace(value))
                 continue;

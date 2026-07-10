@@ -530,6 +530,7 @@ public class IssueActions(InvocationContext invocationContext, IFileManagementCl
         {
             throw new PluginMisconfigurationException($"Invalid issue type ID: {input.IssueTypeId}. Valid issue type IDs for project {project.ProjectKey} are: {string.Join(", ", validIssueTypes)}");
         }
+        var issueType = projectResponse.IssueTypes.First(x => x.Id == input.IssueTypeId);
 
         var fields = new Dictionary<string, object>
         {
@@ -602,6 +603,11 @@ public class IssueActions(InvocationContext invocationContext, IFileManagementCl
         });
 
         var createdIssue = await Client.ExecuteWithHandling<CreatedIssueDto>(request);
+        createdIssue.ProjectKey = projectResponse.Key;
+        createdIssue.ProjectId = projectResponse.Id;
+        createdIssue.ProjectName = projectResponse.Name;
+        createdIssue.IssueTypeId = issueType.Id;
+        createdIssue.IssueTypeName = issueType.Name;
         return createdIssue;
     }
 
