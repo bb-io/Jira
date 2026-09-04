@@ -1,4 +1,5 @@
 ﻿using Apps.Jira.Actions;
+using Apps.Jira.DataSourceHandlers;
 using Apps.Jira.Models.Identifiers;
 using Apps.Jira.Models.Requests;
 using Tests.Jira.Base;
@@ -89,7 +90,9 @@ public class IssueTests :TestBase
 
         var project = new GetIssueCommentsRequest
         {
-            IssueKey = "AC-33"
+            IssueKey = "AC-33",
+            Limit = 2,
+            Sort = CommentSortDataSource.NewestFirst
         };
 
         var response = await action.GetIssueComments(project);
@@ -97,6 +100,12 @@ public class IssueTests :TestBase
         var json = Newtonsoft.Json.JsonConvert.SerializeObject(response, Newtonsoft.Json.Formatting.Indented);
         Console.WriteLine(json);
         Assert.IsNotNull(response);
+        Assert.IsTrue(response.Comments.Length <= project.Limit);
+        Assert.IsTrue(response.Comments
+            .Select(x => DateTimeOffset.Parse(x.Comment.Created))
+            .SequenceEqual(response.Comments
+                .Select(x => DateTimeOffset.Parse(x.Comment.Created))
+                .OrderByDescending(x => x)));
     }
 
     [TestMethod]
