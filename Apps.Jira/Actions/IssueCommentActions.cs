@@ -1,4 +1,5 @@
 ﻿using Apps.Jira.Dtos;
+using Apps.Jira.DataSourceHandlers;
 using Apps.Jira.Models.Identifiers;
 using Apps.Jira.Models.Requests;
 using Apps.Jira.Models.Responses;
@@ -25,7 +26,17 @@ public class IssueCommentActions : JiraInvocable
     [Action("Get issue comments", Description = "Get comments of the specified issue.")]
     public async Task<GetIssueCommentsResponse> GetIssueComments([ActionParameter] GetIssueCommentsRequest input)
     {
-        CommentWithTextResponse[] result;
+        if (input.Limit is <= 0)
+            throw new PluginMisconfigurationException("Limit must be greater than zero.");
+
+        var sort = string.IsNullOrWhiteSpace(input.Sort) ? null : input.Sort;
+        if (sort is not null && sort is not CommentSortDataSource.NewestFirst and not CommentSortDataSource.OldestFirst)
+        {
+            throw new PluginMisconfigurationException(
+                "Sort must be either 'Newest to oldest' or 'Oldest to newest'.");
+        }
+
+        IEnumerable<IssueCommentDto> comments;
 
         if (input.Issues != null)
         {
@@ -35,35 +46,55 @@ public class IssueCommentActions : JiraInvocable
                     ids = input.Issues.Select(int.Parse).ToList()
                 });
 
-            var comments = await Client
+            var commentsWrapper = await Client
                 .ExecuteWithHandling<ModelWrapper<List<IssueCommentDto>>>(request);
 
-            result = comments.Values
-                .Select(c => new CommentWithTextResponse
-                {
-                    Comment = c,
-                    PlainText = c.ToPlainText()
-                })
-                .ToArray();
+            comments = commentsWrapper.Values ?? [];
         }
         else
         {
             var request = new JiraRequest($"/issue/{input.IssueKey}/comment", Method.Get);
+
+            if (input.Limit.HasValue)
+                request.AddQueryParameter("maxResults", input.Limit.Value);
+
+            if (sort is not null)
+                request.AddQueryParameter("orderBy", sort);
+
             var commentsWrapper = await Client.ExecuteWithHandling<IssueCommentsWrapper>(request);
 
-            result = commentsWrapper.Comments?
-                .Select(c => new CommentWithTextResponse
-                {
-                    Comment = c,
-                    PlainText = c.ToPlainText()
-                })
-                .ToArray() ?? Array.Empty<CommentWithTextResponse>();
+            comments = commentsWrapper.Comments ?? [];
         }
+
+        comments = sort switch
+        {
+            CommentSortDataSource.NewestFirst => comments.OrderByDescending(GetCreatedAt),
+            CommentSortDataSource.OldestFirst => comments.OrderBy(GetCreatedAt),
+            _ => comments
+        };
+
+        if (input.Limit.HasValue)
+            comments = comments.Take(input.Limit.Value);
+
+        var result = comments
+            .Select(c => new CommentWithTextResponse
+            {
+                Comment = c,
+                PlainText = c.ToPlainText()
+            })
+            .ToArray();
 
         return new GetIssueCommentsResponse
         {
             Comments = result
         };
+    }
+
+    private static DateTimeOffset GetCreatedAt(IssueCommentDto comment)
+    {
+        return DateTimeOffset.TryParse(comment.Created, out var createdAt)
+            ? createdAt
+            : DateTimeOffset.MinValue;
     }
 
     [Action("Find issue comment by text", Description = "Find the first comment in an issue that contains the specified text.")]
