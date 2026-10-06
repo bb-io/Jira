@@ -23,7 +23,7 @@ public class IssueCommentActions : JiraInvocable
     {
     }
 
-    [Action("Get issue comments", Description = "Get comments of the specified issue.")]
+    [Action("Get issue comments", Description = "Get comments for an issue or selected comment IDs, with optional sorting and a limit. Output each comment with its plain text.")]
     public async Task<GetIssueCommentsResponse> GetIssueComments([ActionParameter] GetIssueCommentsRequest input)
     {
         if (input.Limit is <= 0)
@@ -97,7 +97,7 @@ public class IssueCommentActions : JiraInvocable
             : DateTimeOffset.MinValue;
     }
 
-    [Action("Find issue comment by text", Description = "Find the first comment in an issue that contains the specified text.")]
+    [Action("Find issue comment by text", Description = "Find a comment containing the supplied text, ignoring capitalization. Output the first match or, when Latest is enabled, the most recently updated match, with its plain text.")]
     public async Task<CommentWithTextResponse?> FindComment([ActionParameter] FindCommentRequest input)
     {
         var request = new JiraRequest($"/issue/{input.IssueKey}/comment", Method.Get);
@@ -136,7 +136,7 @@ public class IssueCommentActions : JiraInvocable
     }
 
 
-    [Action("Get issue comment", Description = "Get a comment of the specified issue.")]
+    [Action("Get issue comment", Description = "Get the selected issue comment and output its details and plain text.")]
     public async Task<CommentWithTextResponse> GetIssueComment([ActionParameter] IssueCommentIdentifier input)
     {
         var request = new JiraRequest($"/issue/{input.IssueKey}/comment/{input.CommentId}", Method.Get);
@@ -149,14 +149,14 @@ public class IssueCommentActions : JiraInvocable
         };
     }
 
-    [Action("Delete issue comment", Description = "Delete a comment of the specified issue.")]
+    [Action("Delete issue comment", Description = "Delete the selected comment from an issue.")]
     public async Task DeleteIssueComment([ActionParameter] IssueCommentIdentifier input)
     {
         var request = new JiraRequest($"/issue/{input.IssueKey}/comment/{input.CommentId}", Method.Delete);
         await Client.ExecuteWithHandling(request);
     }
 
-    [Action("Add issue comment", Description = "Add a comment to the specified issue.")]
+    [Action("Add issue comment", Description = "Add a comment containing Text, a link, or user mentions, and output its details and plain text. Supply at least one of these inputs.")]
     public async Task<CommentWithTextResponse> AddIssueComment(
     [ActionParameter] IssueIdentifier input,
     [ActionParameter] AddIssueCommentRequest comment)
@@ -209,7 +209,7 @@ public class IssueCommentActions : JiraInvocable
         return result;
     }
 
-    [Action("Append text to comment", Description = "Append text to comment of the specified issue.")]
+    [Action("Append text to comment", Description = "Replace the selected comment body with the supplied Text, link, or user mentions, and output its details and plain text. Supply at least one of these inputs.")]
     public async Task<CommentWithTextResponse> UpdateIssueComment(
         [ActionParameter] IssueCommentIdentifier input,
         [ActionParameter] AddIssueCommentRequest comment)

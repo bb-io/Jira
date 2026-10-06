@@ -41,6 +41,8 @@ public class OAuth2Credentials
                 clientSecret = values[CredNames.ClientSecret];
                 scopes = values[CredNames.CustomScopes];
                 break;
+            default:
+                throw new InvalidOperationException("The selected Jira connection type does not use OAuth2.");
         }
 
         return new(clientId, clientSecret, scopes);

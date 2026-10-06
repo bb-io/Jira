@@ -98,8 +98,18 @@ public class JiraClient : RestClient
             if (authProvider == null || string.IsNullOrEmpty(authProvider.Value))
                 throw new PluginMisconfigurationException("Authorization token is missing in authentication credentials providers.");
             
-            var accessToken = authProvider.Value.Replace("Bearer ", "", StringComparison.OrdinalIgnoreCase).Trim();
-            cloudId = CloudIdHelper.GetCloudId(accessToken, jiraUrlProvider.Value);
+            var connectionType = authenticationCredentialsProviders
+                .FirstOrDefault(p => p.KeyName == CredNames.ConnectionType)?.Value;
+
+            if (connectionType == ConnectionTypes.ServiceAccount)
+            {
+                cloudId = CloudIdHelper.GetCloudIdFromSiteAsync(jiraUrlProvider.Value).GetAwaiter().GetResult();
+            }
+            else
+            {
+                var accessToken = authProvider.Value.Replace("Bearer ", "", StringComparison.OrdinalIgnoreCase).Trim();
+                cloudId = CloudIdHelper.GetCloudId(accessToken, jiraUrlProvider.Value);
+            }
         }
         else
         {

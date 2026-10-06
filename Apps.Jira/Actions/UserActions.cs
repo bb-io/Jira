@@ -19,7 +19,7 @@ public class UserActions : JiraInvocable
     {
     }
     
-    [Action("List users", Description = "List users.")]
+    [Action("List users", Description = "Search for users and output up to 20 users.")]
     public async Task<UsersResponse> ListUsers()
     {
         var request = new JiraRequest("/users/search?maxResults=20", Method.Get);
@@ -27,7 +27,7 @@ public class UserActions : JiraInvocable
         return new UsersResponse { Users = users };
     }
 
-    [Action("Find user by email", Description = "Finds user by email")]
+    [Action("Find user by email", Description = "Search for a user with an exact email address match, ignoring capitalization. Output the user if a match is found.")]
     public async Task<UserDto?> FindUserByEmail([ActionParameter] UserEmailRequest input)
     {
         var startAt = 0;
@@ -53,7 +53,7 @@ public class UserActions : JiraInvocable
         }
     }
 
-    [Action("Get user", Description = "Get the specified user.")]
+    [Action("Get user", Description = "Get the details of a user by account ID.")]
     public async Task<ExpandedUserDto> GetUser([ActionParameter] UserIdentifier input)
     {
         var request = new JiraRequest($"/user?accountId={input.AccountId}", Method.Get);
@@ -61,14 +61,14 @@ public class UserActions : JiraInvocable
         return user;
     }
     
-    [Action("Delete user", Description = "Delete the specified user.")]
+    [Action("Delete user", Description = "Delete the selected user. This action is irreversible.")]
     public async Task DeleteUser([ActionParameter] UserIdentifier input)
     {
         var request = new JiraRequest($"/user?accountId={input.AccountId}", Method.Delete);
         await Client.ExecuteWithHandling(request);
     }
     
-    [Action("Create user", Description = "Create a user.")]
+    [Action("Create user", Description = "Create a user with the supplied email address, optional product access and additional properties, and output the user details.")]
     public async Task<UserDto> CreateUser([ActionParameter] CreateUserRequest input)
     {
         var request = new JiraRequest("/user", Method.Post)
@@ -83,7 +83,7 @@ public class UserActions : JiraInvocable
         return user;
     }
     
-    [Action("Get groups", Description = "Get the groups for the specified user.")]
+    [Action("Get groups", Description = "Get the groups associated with the selected user.")]
     public async Task<List<GroupDto>> GetGroups([ActionParameter] UserIdentifier input)
     {
         var request = new JiraRequest($"/user/groups?accountId={input.AccountId}", Method.Get);
@@ -91,7 +91,7 @@ public class UserActions : JiraInvocable
         return groups;
     }
     
-    [Action("Get user email", Description = "Get the email for the specified user.")]
+    [Action("Get user email", Description = "Get the email address of the selected user.")]
     public async Task<UserEmailDto> GetUserEmail([ActionParameter] UserIdentifier input)
     {
         var request = new JiraRequest($"/user/email?accountId={input.AccountId}", Method.Get);
@@ -99,7 +99,7 @@ public class UserActions : JiraInvocable
         return email;
     }
     
-    [Action("Get user columns", Description = "Get the columns for the specified user.")]
+    [Action("Get user columns", Description = "Get the issue search columns configured for the selected user.")]
     public async Task<List<ColumnDto>> GetUserColumns([ActionParameter] UserIdentifier input)
     {
         var request = new JiraRequest($"/user/columns?accountId={input.AccountId}", Method.Get);
@@ -107,14 +107,14 @@ public class UserActions : JiraInvocable
         return columns;
     }
     
-    [Action("Reset user default columns", Description = "Reset the default columns for the specified user.")]
+    [Action("Reset user default columns", Description = "Reset the selected user's issue search columns to the default configuration.")]
     public async Task ResetUserDefaultColumns([ActionParameter] UserIdentifier input)
     {
         var request = new JiraRequest($"/user/columns?accountId={input.AccountId}", Method.Delete);
         await Client.ExecuteWithHandling(request);
     }
     
-    [Action("Set user columns", Description = "Set the columns for the specified user.")]
+    [Action("Set user columns", Description = "Set the issue search columns for the selected user.")]
     public async Task SetUserColumns([ActionParameter] UserIdentifier input, [ActionParameter] SetUserColumns columnsRequest)
     {
         var request = new JiraRequest($"/user/columns?accountId={input.AccountId}", Method.Put)
@@ -126,7 +126,7 @@ public class UserActions : JiraInvocable
         await Client.ExecuteWithHandling(request);
     }
     
-    [Action("Bulk get users", Description = "Bulk get users.")]
+    [Action("Bulk get users", Description = "Get user details for multiple account IDs.")]
     public async Task<List<BulkUserDto>> BulkGetUsers([ActionParameter] IEnumerable<UserIdentifier> inputs)
     {
         var request = new JiraRequest("/users/bulk", Method.Post)

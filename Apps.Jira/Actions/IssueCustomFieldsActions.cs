@@ -24,7 +24,7 @@ public class IssueCustomFieldsActions : JiraInvocable
     #region Get
 
     [Action("Get custom text field value",
-        Description = "Retrieve the value of a custom string field for a specific issue.")]
+        Description = "Get the Text value of a custom field for the selected issue.")]
     public async Task<GetCustomFieldValueResponse<string>> GetCustomStringFieldValue(
         [ActionParameter] IssueIdentifier issue, [ActionParameter] CustomStringFieldIdentifier customStringField)
     {
@@ -45,7 +45,7 @@ public class IssueCustomFieldsActions : JiraInvocable
 
 
     [Action("Get custom number field value",
-        Description = "Retrieve the value of a custom number field for a specific issue.")]
+        Description = "Get the value of a custom number field for the selected issue and output it as Text.")]
     public async Task<GetCustomFieldValueResponse<string>> GetCustomNumericFieldValue(
         [ActionParameter] IssueIdentifier issue, [ActionParameter] CustomNumericFieldIdentifier customStringField)
     {
@@ -64,7 +64,7 @@ public class IssueCustomFieldsActions : JiraInvocable
 
     }
 
-    [Action("Get custom multicheckbox field values", Description = "Retrieve the values of a custom multicheckbox field for a specific issue.")]
+    [Action("Get custom multicheckbox field values", Description = "Get the selected values of a custom field with multiple checkboxes for the selected issue.")]
     public async Task<List<string>> GetCustomMulticheckboxesFieldValue(
     [ActionParameter] IssueIdentifier issue,
     [ActionParameter] CustomMulticheckboxesFieldIdentifier customField)
@@ -101,7 +101,7 @@ public class IssueCustomFieldsActions : JiraInvocable
     }
 
     [Action("Get custom dropdown field value",
-        Description = "Retrieve the value of a custom dropdown field for a specific issue.")]
+        Description = "Get the selected value of a custom dropdown field for the selected issue.")]
     public async Task<GetCustomFieldValueResponse<string>> GetCustomOptionFieldValue(
         [ActionParameter] IssueIdentifier issue, [ActionParameter] CustomOptionFieldIdentifier customOptionField)
     {
@@ -119,7 +119,7 @@ public class IssueCustomFieldsActions : JiraInvocable
     }
 
     [Action("Get custom cascading field value",
-        Description = "Retrieve the parent and child values of a custom cascading field for a specific issue.")]
+        Description = "Get the selected parent and child values and option IDs of a custom cascading field for the selected issue.")]
     public async Task<GetCustomCascadingFieldValueResponse> GetCustomCascadingFieldValue(
         [ActionParameter] IssueIdentifier issue,
         [ActionParameter] CustomCascadingFieldIdentifier customCascadingField)
@@ -142,7 +142,7 @@ public class IssueCustomFieldsActions : JiraInvocable
     }
 
     [Action("Get custom date field value",
-        Description = "Retrieve the value of a custom date field for a specific issue.")]
+        Description = "Get the date value of a custom field for the selected issue.")]
     public async Task<GetCustomFieldValueResponse<DateTime>> GetCustomDateFieldValue(
         [ActionParameter] IssueIdentifier issue, [ActionParameter] CustomDateFieldIdentifier customStringField)
     {
@@ -163,7 +163,7 @@ public class IssueCustomFieldsActions : JiraInvocable
     }
 
     [Action("Get custom multiselect field values",
-    Description = "Retrieve the values of a custom multiselect field for a specific issue.")]
+    Description = "Get the selected values of a custom field with multiple selection options for the selected issue.")]
     public async Task<List<string>> GetCustomMultiselectFieldValue(
     [ActionParameter] IssueIdentifier issue, [ActionParameter] CustomMultiselectFieldIdentifier customMultiselectField)
     {
@@ -201,7 +201,7 @@ public class IssueCustomFieldsActions : JiraInvocable
     }
 
     [Action("Get custom user picker field values",
-        Description = "Retrieve the account IDs from a custom user picker field for a specific issue.")]
+        Description = "Get the account IDs selected in a custom user picker field for the selected issue.")]
     public async Task<List<string>> GetCustomUserPickerFieldValue(
         [ActionParameter] IssueIdentifier issue,
         [ActionParameter] CustomUserPickerFieldIdentifier customUserPickerField)
@@ -245,7 +245,7 @@ public class IssueCustomFieldsActions : JiraInvocable
     #region Put
 
     [Action("Set custom text field value",
-        Description = "Set the value of a custom string field for a specific issue.")]
+        Description = "Set the Text value of a custom field for the selected issue.")]
     public async Task SetCustomStringFieldValue([ActionParameter] IssueIdentifier issue,
         [ActionParameter] CustomStringFieldIdentifier customStringField,
         [ActionParameter] [Display("Value")] string value)
@@ -259,7 +259,7 @@ public class IssueCustomFieldsActions : JiraInvocable
     }
 
     [Action("Set custom multicheckbox field values",
-    Description = "Set the values of a custom multicheckbox field for a specific issue.")]
+    Description = "Replace the selected values of a custom field with multiple checkboxes for the selected issue.")]
     public async Task SetCustomMulticheckboxesFieldValue(
     [ActionParameter] IssueIdentifier issue,
     [ActionParameter] CustomMulticheckboxesFieldIdentifier customField,
@@ -282,7 +282,7 @@ public class IssueCustomFieldsActions : JiraInvocable
     }
 
     [Action("Set custom multiselect field value",
-        Description = "Set the values of a custom multiselect field for a specific issue.")]
+        Description = "Replace the selected values of a custom field with multiple selection options for the selected issue.")]
     public async Task SetCustomMultiselectFieldValue([ActionParameter] IssueIdentifier issue,
         [ActionParameter] CustomMultiselectFieldIdentifier customStringField,
         [ActionParameter] CustomMultiselectFieldInput values)
@@ -301,7 +301,7 @@ public class IssueCustomFieldsActions : JiraInvocable
     }
 
     [Action("Set custom user picker field values",
-        Description = "Set the account IDs in a custom user picker field for a specific issue.")]
+        Description = "Replace the users selected in a custom user picker field using their account IDs.")]
     public async Task SetCustomUserPickerFieldValue([ActionParameter] IssueIdentifier issue,
         [ActionParameter] CustomUserPickerFieldIdentifier customUserPickerField,
         [ActionParameter] CustomUserPickerFieldInput input)
@@ -326,7 +326,7 @@ public class IssueCustomFieldsActions : JiraInvocable
 
 
     [Action("Set custom number field value",
-        Description = "Set the value of a custom string field for a specific issue.")]
+        Description = "Set the value of a custom number field for the selected issue.")]
     public async Task SetCustomNumericFieldValue([ActionParameter] IssueIdentifier issue,
         [ActionParameter] CustomNumericFieldIdentifier customStringField,
         [ActionParameter][Display("Value")] double value)
@@ -340,7 +340,7 @@ public class IssueCustomFieldsActions : JiraInvocable
     }
 
     [Action("Set custom dropdown field value",
-        Description = "Set the value of a custom dropdown field for a specific issue.")]
+        Description = "Set the selected value of a custom dropdown field for the selected issue.")]
     public async Task SetCustomOptionFieldValue([ActionParameter] IssueIdentifier issue,
         [ActionParameter] CustomOptionFieldIdentifier customOptionField,
         [ActionParameter] [Display("Value")] [DataSource(typeof(CustomOptionFieldValueDataSourceHandler))] 
@@ -355,7 +355,7 @@ public class IssueCustomFieldsActions : JiraInvocable
     }
 
     [Action("Set custom cascading field value",
-        Description = "Set the parent and optional child values of a custom cascading field for a specific issue.")]
+        Description = "Set the parent and optional child option of a custom cascading field for the selected issue.")]
     public async Task SetCustomCascadingFieldValue([ActionParameter] ProjectIdentifier project,
         [ActionParameter] IssueTypeIdentifier issueType,
         [ActionParameter] IssueIdentifier issue,
@@ -387,7 +387,7 @@ public class IssueCustomFieldsActions : JiraInvocable
     }
 
     [Action("Set custom date field value",
-        Description = "Set the value of a custom date field for a specific issue.")]
+        Description = "Set the date or date and time value of a custom field for the selected issue.")]
     public async Task SetCustomDateFieldValue([ActionParameter] IssueIdentifier issue,
         [ActionParameter] CustomDateFieldIdentifier customDateField,
         [ActionParameter] [Display("Value")] DateTime value)
@@ -407,7 +407,7 @@ public class IssueCustomFieldsActions : JiraInvocable
         await SetCustomFieldValue(requestBody, issue.IssueKey);
     }
 
-    [Action("Set custom rich text field value", Description = "Set the value of a custom rich text field for a specific issue.")]
+    [Action("Set custom rich text field value", Description = "Set the Text of a custom rich text field with optional formatting. Link formatting requires a Link URL.")]
     public async Task SetCustomRichTextFieldValue(
     [ActionParameter] IssueIdentifier issue,
     [ActionParameter] CustomStringFieldIdentifier customTextField,
@@ -485,7 +485,7 @@ public class IssueCustomFieldsActions : JiraInvocable
     }
 
 
-    [Action("Set resolution", Description = "Set issue resolution via workflow transition (required by Jira workflows).")]
+    [Action("Set resolution", Description = "Set an issue resolution through an available workflow transition that allows the selected resolution.")]
     public async Task SetResolution(
        [ActionParameter] IssueIdentifier issue,
        [ActionParameter] SetResolutionRequest input)

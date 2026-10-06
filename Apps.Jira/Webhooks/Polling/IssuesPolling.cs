@@ -14,7 +14,7 @@ namespace Apps.Jira.Webhooks.Polling
     [PollingEventList]
     public class IssuesPolling(InvocationContext invocationContext) : JiraInvocable(invocationContext)
     {
-        [PollingEvent("On issues reach status (polling)")]
+        [PollingEvent("On issues reach status (polling)", Description = "Start when all specified issues in the selected project are in one of the selected statuses, and output the issues. Can start again while this condition remains true.")]
         public async Task<PollingEventResponse<PollingMemory,IssuesReachedStatusResponse>> OnIssuesReachStatusPolling(PollingEventRequest<PollingMemory> request,
             [PollingEventParameter] ProjectIdentifier projectId, [PollingEventParameter] IssuesReachStatusInput input)
         {

@@ -26,7 +26,7 @@ namespace Apps.Jira.Webhooks
             InvocationContext.AuthenticationCredentialsProviders;
 
         [Webhook("On issue updated", typeof(IssueUpdatedHandler),
-            Description = "This webhook is triggered when an issue is updated.")]
+            Description = "Start when an issue is updated, with optional filters for the issue, projects, changed fields, labels, and custom JQL conditions.")]
         public async Task<WebhookResponse<IssueResponse>> OnIssueUpdated(WebhookRequest request,
             [WebhookParameter] IssueInput issue,
             [WebhookParameter] ProjectInput project,
@@ -78,7 +78,7 @@ namespace Apps.Jira.Webhooks
         }
 
         [Webhook("On issue created", typeof(IssueCreatedHandler),
-            Description = "This webhook is triggered when an issue is created.")]
+            Description = "Start when an issue is created, with optional filters for projects, labels, parent issues, and custom JQL conditions.")]
         public async Task<WebhookResponse<IssueResponse>> OnIssueCreated(WebhookRequest request,
             [WebhookParameter] ProjectIssueInput project,
             [WebhookParameter] LabelsOptionalInput labels,
@@ -126,7 +126,7 @@ namespace Apps.Jira.Webhooks
         }
 
         [Webhook("On issue assigned", typeof(IssueCreatedOrUpdatedHandler),
-            Description = "This webhook is triggered when an issue is assigned to specific user.")]
+            Description = "Start when an issue is assigned to the selected user, with optional project and label filters.")]
         public async Task<WebhookResponse<IssueResponse>> IssueAssigned(WebhookRequest request,
             [WebhookParameter] AssigneeInput assignee,
             [WebhookParameter] ProjectIssueInput project,
@@ -171,7 +171,7 @@ namespace Apps.Jira.Webhooks
         }
 
         [Webhook("On issue with specific type created", typeof(IssueCreatedOrUpdatedHandler),
-            Description = "This webhook is triggered when an issue created has specific type or issue was updated to have specific type.")]
+            Description = "Start when an issue is created with the selected type or its type changes to the selected type, with optional project and label filters.")]
         public async Task<WebhookResponse<IssueResponse>> OnIssueWithSpecificTypeCreated(WebhookRequest request,
             [WebhookParameter] IssueTypeInput issueType,
             [WebhookParameter] ProjectIssueInput project,
@@ -194,7 +194,7 @@ namespace Apps.Jira.Webhooks
         }
 
         [Webhook("On issue with specific priority created", typeof(IssueCreatedOrUpdatedHandler),
-            Description = "This webhook is triggered when an issue created has specified priority or issue was updated to have specified priority.")]
+            Description = "Start when an issue is created or updated with an assignment to the selected priority, with optional project and label filters.")]
         public async Task<WebhookResponse<IssueResponse>> OnIssueWithSpecificPriorityCreated(WebhookRequest request,
             [WebhookParameter] PriorityInput priority,
             [WebhookParameter] ProjectIssueInput project,
@@ -217,7 +217,7 @@ namespace Apps.Jira.Webhooks
         }
 
         [Webhook("On issue deleted", typeof(IssueDeletedHandler),
-            Description = "This webhook is triggered when an issue is deleted.")]
+            Description = "Start when an issue is deleted, with optional project and label filters.")]
         public async Task<WebhookResponse<IssueResponse>> OnIssueDeleted(WebhookRequest request,
             [WebhookParameter] ProjectIssueInput project,
             [WebhookParameter] LabelsOptionalInput labels)
@@ -236,7 +236,7 @@ namespace Apps.Jira.Webhooks
         }
 
         [Webhook("On file attached to issue", typeof(IssueUpdatedHandler),
-            Description = "This webhook is triggered when a file is attached to an issue.")]
+            Description = "Start when a file is attached to an issue and output the attachment details, with optional issue and project filters.")]
         public async Task<WebhookResponse<IssueAttachmentResponse>> OnFileAttachedToIssue(WebhookRequest request,
             [WebhookParameter] IssueInput issue,
             [WebhookParameter] ProjectIssueInput project)
@@ -266,7 +266,7 @@ namespace Apps.Jira.Webhooks
             };
         }
 
-        [Webhook("On issue status changed", typeof(IssueUpdatedHandler),Description = "This webhook is triggered when issue status is changed.")]
+        [Webhook("On issue status changed", typeof(IssueUpdatedHandler),Description = "Start when an issue changes status, with filters for the project and optional issue, target status, labels, issue type, and summary.")]
         public async Task<WebhookResponse<IssueResponse>> OnIssueStatusChanged(WebhookRequest request,
             [WebhookParameter] ProjectIdentifier project,
             [WebhookParameter] OptionalStatusInput status,
@@ -295,7 +295,7 @@ namespace Apps.Jira.Webhooks
         }
 
         [Webhook("On issues reach status", typeof(IssuesStatusReachedHandler),
-          Description = "Triggered when ALL specified issues reach the given status. Emits preflight until all are in that status.")]
+          Description = "Start when a selected issue is updated and all specified issues are in one of the selected statuses. Output the specified issues; they can span multiple projects.")]
         public async Task<WebhookResponse<IssuesReachedStatusResponse>> OnIssuesReachStatus(
           WebhookRequest request, [WebhookParameter] ProjectIdentifier projectId,[WebhookParameter] IssuesReachStatusInput input)
         {

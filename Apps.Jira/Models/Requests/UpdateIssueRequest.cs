@@ -23,10 +23,10 @@ public class UpdateIssueRequest
     [Display("Description", Description = "The description of the issue. Expected to be in markdown format but can be plain text.")]
     public string? Description { get; set; }
 
-    [Display("Original Estimate")]
+    [Display("Original estimate")]
     public string? OriginalEstimate { get; set; }
 
-    [Display("Due Date")]
+    [Display("Due date")]
     public DateTime? DueDate { get; set; }
 
     [Display("Reporter account ID")]

@@ -2,6 +2,8 @@ using Apps.Jira.Dtos;
 using Apps.Jira.Extensions;
 using Blackbird.Applications.Sdk.Common.Exceptions;
 using RestSharp;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace Apps.Jira.Utils;
 
@@ -61,5 +63,37 @@ public static class CloudIdHelper
     public static string GetCloudId(string accessToken, string jiraUrl)
     {
         return GetCloudIdAsync(accessToken, jiraUrl, CancellationToken.None).GetAwaiter().GetResult();
+    }
+
+    public static async Task<string> GetCloudIdFromSiteAsync(
+        string jiraUrl,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(jiraUrl))
+            throw new PluginMisconfigurationException("Jira URL is not configured");
+
+        // Scoped service-account tokens cannot use OAuth's accessible-resources endpoint.
+        // This public endpoint resolves the site without sending any credentials.
+        using var client = new RestClient(new Uri(jiraUrl).GetLeftPart(UriPartial.Authority));
+        var response = await client.ExecuteAsync(new RestRequest("/_edge/tenant_info"), cancellationToken);
+
+        if (!response.IsSuccessful || string.IsNullOrWhiteSpace(response.Content))
+            throw new PluginApplicationException($"Failed to fetch Jira Cloud ID from the site: {response.StatusCode}.");
+
+        JObject tenantInfo;
+        try
+        {
+            tenantInfo = JObject.Parse(response.Content);
+        }
+        catch (JsonReaderException ex)
+        {
+            throw new PluginApplicationException("Failed to resolve Jira Cloud ID. Check the Jira URL.", ex);
+        }
+
+        var cloudId = tenantInfo.Value<string>("cloudId");
+        if (!Guid.TryParse(cloudId, out _))
+            throw new PluginMisconfigurationException($"The Jira site returned an invalid Cloud ID: '{cloudId ?? "null"}'. Check the Jira URL.");
+
+        return cloudId!;
     }
 }
