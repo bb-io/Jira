@@ -81,7 +81,7 @@ Navigate to apps and search for Jira. Click _Add Connection_ and name it for fut
 
 ![Connecting using OAuth2 custom app](Images/README/oauth2_customapp_connection.png)
 
-### Service account
+### Service account with API token
 
 1. Select the `Service account` connection type from the dropdown.
 2. Enter your Jira site's base URL, for example `https://<organization name>.atlassian.net`.
@@ -94,7 +94,7 @@ The app resolves the Cloud ID from your Jira URL and sends API requests through 
 
 ## Required scopes
 
-The following set covers the documented Jira endpoints currently used by this app's actions, data sources, connection validator, and events. Select the scopes needed by your workflows, keeping `read:jira-user` for connection validation. These requirements use Atlassian's recommended classic scopes where available, plus the specific scopes required for email addresses and Jira Software. Granular alternatives are listed in the linked [Jira platform API reference](https://developer.atlassian.com/cloud/jira/platform/rest/v3/intro/) and [Jira Software API reference](https://developer.atlassian.com/cloud/jira/software/rest/intro/).
+Select the scopes needed by your workflows, keeping `read:jira-user` for connection validation. These requirements use Atlassian's recommended classic scopes where available, plus the specific scopes required for email addresses and Jira Software. Granular alternatives are listed in the linked [Jira platform API reference](https://developer.atlassian.com/cloud/jira/platform/rest/v3/intro/) and [Jira Software API reference](https://developer.atlassian.com/cloud/jira/software/rest/intro/).
 
 | Scope | Required for |
 | --- | --- |
@@ -124,102 +124,272 @@ Please note: sending too many parallel requests to Jira may result in request re
 
 ### Issues
 
-- **Get issue** returns the details for an issue (summary, description, status, priority, assignee, project).
-- **Search issues** returns issues that meet the provided criteria. Allows appending custom JQL conditions.
-- **List attachments** returns a list of files attached to an issue.
-- **Download attachment** returns the contents of an attachment.
-- **Create issue**.
-- **Add attachment** adds attachment to an issue.
-- **Update issue**. Specify only the fields that require updating.
-- **Append to issue description** appends text to the description of an issue. Doesn't brake formatting, useful for adding text to the end of the description.
-- **Delete issue**.
-- **Add labels to issue** adds labels to an issue. Returns the updated issue.
-- **Move issues to sprint** Moves issues to a specific sprint
-- **Find issue** returns the first issue that matches given conditions. Allows appending custom JQL conditions.
-- **Link issue** links two issues with a specific relationship type.
+- **Get issue** Get issue details, including the summary, description, status, priority, assignee, and project.
 
-### Issue custom fields
+- **Search issues** Search for issues in a project using the supplied filters and optional custom JQL conditions, and output the matching issues and their count. Outputs one page of matching issues.
 
-- **Get custom text field value** returns the value of a custom string field (e.g., plain text or URL) for a specific issue.
-- **Set custom text field value** sets the value of a custom string field for a specific issue.
-- **Get custom dropdown field value** returns the value of a custom dropdown field for a specific issue.
-- **Set custom dropdown field value** sets the value of a custom dropdown field for a specific issue.
-- **Get custom cascading field value** returns the selected parent and child values of a custom cascading field for a specific issue.
-- **Set custom cascading field value** sets the parent and optional child values of a custom cascading field for a specific issue.
-- **Get custom date field value** returns the value of a custom date field for a specific issue.
-- **Set custom date field value** sets the value of a custom date field for a specific issue.
-- **Get custom multiselect field values** gets the selected values of a multiple choice select list custom field for a specific issue.
-- **Get custom number field value** gets the value of a custom number field
-- **Set custom number field value** sets the value of a custom number field
-- **Set custom rich text field value** sets the value of a custom rich text field
-- **Set custom multiselect field value** sets the value of a custom multiselect field
+    Advanced settings:
 
-### User Actions
+  - **Created hours ago**: Filter to issues created within this number of hours. Leaving this empty applies no creation-time filter.
+  - **Labels**: Select multiple labels; an issue must have at least one selected label.
+  - **Fix versions**: Select multiple fix versions; an issue must match at least one selected version.
+  - **Parent issue**: Filter to issues with this parent issue.
+  - **Custom JQL conditions**: Add JQL conditions to the other filters.
 
-- **List users**: Lists a predefined number of users (up to 20 by default) from Jira.
-- **Get user**: Retrieves detailed information about a specific user identified by their account ID.
-- **Delete user**: Deletes a user from Jira based on their account ID. This action is irreversible.
-- **Create user**: Creates a new user in Jira with the specified details.
-- **Get groups**: Retrieves the groups associated with a specified user.
-- **Get user email**: Fetches the email address for a specified user.
-- **Get user columns**: Gets the column configuration for a specified user.
-- **Reset user default columns**: Resets the column configuration to default for a specified user.
-- **Set user columns**: Sets the column configuration for a specified user.
-- **Bulk get users**: Retrieves information for a bulk list of users based on their account IDs.
-- **Find user by email** Finds a user in Jira by their email address.
+- **List attachments** Search for files attached to an issue and output their details.
 
-### Issue Comment Actions
+- **Download attachment** Download the selected attachment and output a file.
 
-- **Get sssue comments**: Fetches comments for a specified issue. It can retrieve comments for multiple issues if IDs are provided.
-- **Get issue comment**: Retrieves a specific comment from a specified issue.
-- **Delete issue comment**: Deletes a comment from a specified issue.
-- **Add issue comment**: Adds a new comment to a specified issue. Supports optional user mentions and an optional link via dedicated inputs.
-- **Append text to comment**: Append text to comment on a specified issue.
-- **Find issue comment by text**: Find the first comment in an issue that contains the specified text.
+- **Create issue** Create an issue in the selected project and output its ID, key, project details, and issue type.
 
-### Sprint Actions
+    Advanced settings:
 
-- **Get relevant sprint for date** get Sprint corresponding to the specified date for a selected board
+  - **Description**: Text for the new issue description.
+  - **Assignee account ID**: Account ID of the user to assign the issue to.
+  - **Due date**: Date the issue is due.
+  - **Original estimate**: Original estimated time, supplied as Text in minutes.
+  - **Reporter ID**: Account ID of the reporter.
+  - **Parent issue key**: Key of the parent issue.
 
+- **Add attachment** Attach a file to an issue and output the attachment details.
 
-### User Properties Actions
+- **Update issue** Update only the supplied issue fields. Description supports Markdown, and a status change requires an available workflow transition.
 
-- **Get user properties**: Retrieves all properties for a specified user. This can include a variety of user-specific settings and data stored in Jira.
-- **Get boolean user property**: Fetches the value of a specific boolean property for a given user. Useful for true/false user settings.
-- **Get string user property**: Retrieves the value of a specific string property for a specified user. This can include text-based user settings or information.
-- **Get integer user property**: Gets the value of a specific integer property for a user. Ideal for numeric user settings such as limits or thresholds.
-- **Get dateuser property**: Fetches the value of a specific date property for a user. Useful for date-based settings or milestones related to the user.
-- **GetArray user property**: Retrieves the values of a specific array property for a user. This can be used for lists of user settings or preferences that are stored as arrays.
-- **Set user property**: Sets the value of a specified property for a user. This method allows for the dynamic updating of user properties based on provided input.
-- **Delete user property**: Deletes a specified property for a user. This action removes the selected property from the user's profile in Jira.
+    Advanced settings:
+
+  - **Status (transition) ID**: Target status ID. The status changes only if a transition to it is available.
+  - **Issue type ID**: New issue type ID.
+  - **Summary**: New issue summary.
+  - **Reporter account ID**: Account ID of the new reporter.
+  - **Notify users**: Option controlling watcher email notifications for field edits. Disabling notifications requires Administer Jira or Administer project permissions; without them, the request to disable notifications is ignored. Applies when issue fields are edited.
+  - **Override screen security**: Option to request edits to fields hidden by screen settings. Applies when issue fields are edited.
+
+- **Append to issue description** Add text as a new paragraph at the end of an issue description, preserving existing formatting and supporting optional formatting for the added text.
+
+    Advanced settings:
+
+  - **Formatting**: Formatting to apply to the added text.
+
+- **Delete issue** Delete an issue. Enable the optional Delete subtasks setting to delete its subtasks as well.
+
+    Advanced settings:
+
+  - **Delete subtasks**: Enable this option to delete the issue and its subtasks. Disabled by default.
+
+- **Add labels to issue** Add labels to an issue while keeping its existing labels, and output the updated issue.
+
+- **Move issues to sprint** Move the selected issues to a sprint, with optional ranking settings, and output whether the move succeeded and a message.
+
+    Advanced settings:
+
+  - **Rank after issue**: Issue key to rank the moved issues after.
+  - **Rank before issue**: Issue key to rank the moved issues before.
+  - **Rank custom field**: Numeric ID of the custom field used for ranking.
+
+- **Find issue** Search for the first issue matching the supplied filters and optional custom JQL conditions. Output the issue if a match is found. The Parent issue filter also matches Epic Link.
+
+- **Link issue** Link two issues using the selected relationship type, with an optional comment.
+
+    Advanced settings:
+
+  - **Comment**: Text to add as a comment when linking the issues.
+
+- **Clone issue** Create a new issue in the same project with the same issue type, copy supported fields, link it to the source as a clone, and output the new issue. Copies supported custom fields that can be set on creation. Attachments, comments, time tracking, and issue history are excluded. The link is always Cloners; Link type, Comment, and New description are currently ignored.
+
+    Advanced settings:
+
+  - **Copy status**: Enable this option to attempt to match the source status. The status changes only if a transition is available.
+  - **New summary**: Summary for the clone; defaults to the source summary.
+  - **New description**: Currently ignored; the source description is copied when supported.
+  - **Assignee account name**: Account ID for the clone assignee. Defaults to the source assignee if active.
+  - **Reporter name**: Account ID for the clone reporter. Defaults to the active source reporter, or the connected user.
+
+- **Get issue type details** Get the details of an issue type by name for the selected project. Output the issue type if a match is found.
+
+### Custom fields
+
+- **Get custom text field value** Get the Text value of a custom field for the selected issue. Supports plain text and URL fields.
+
+- **Set custom text field value** Set the Text value of a custom field for the selected issue.
+
+- **Get custom dropdown field value** Get the selected value of a custom dropdown field for the selected issue.
+
+- **Set custom dropdown field value** Set the selected value of a custom dropdown field for the selected issue.
+
+- **Get custom cascading field value** Get the selected parent and child values and option IDs of a custom cascading field for the selected issue.
+
+- **Set custom cascading field value** Set the parent and optional child option of a custom cascading field for the selected issue. Select the project and issue type that contain the field.
+
+    Advanced settings:
+
+  - **Child option ID**: Child option under the selected parent. Leave empty to set only the parent.
+
+- **Get custom date field value** Get the date value of a custom field for the selected issue.
+
+- **Set custom date field value** Set the date or date and time value of a custom field for the selected issue.
+
+- **Get custom multiselect field values** Get the selected values of a custom field with multiple selection options for the selected issue.
+
+- **Get custom number field value** Get the value of a custom number field for the selected issue and output it as Text.
+
+- **Set custom number field value** Set the value of a custom number field for the selected issue.
+
+- **Set custom rich text field value** Set the Text of a custom rich text field with optional formatting. Link formatting requires a Link URL.
+
+    Advanced settings:
+
+  - **Marks**: Multiple formatting options to apply to the Text.
+  - **Link URL**: URL required when link formatting is selected.
+
+- **Set custom multiselect field value** Replace the selected values of a custom field with multiple selection options for the selected issue.
+
+- **Get custom multicheckbox field values** Get the selected values of a custom field with multiple checkboxes for the selected issue.
+
+- **Set custom multicheckbox field values** Replace the selected values of a custom field with multiple checkboxes for the selected issue.
+
+- **Get custom user picker field values** Get the account IDs selected in a custom user picker field for the selected issue.
+
+- **Set custom user picker field values** Replace the users selected in a custom user picker field using their account IDs.
+
+- **Set resolution** Set an issue resolution through an available workflow transition that allows the selected resolution.
+
+### Users
+
+- **List users** Search for users and output up to 20 users.
+
+- **Get user** Get the details of a user by account ID.
+
+- **Delete user** Delete the selected user. This action is irreversible.
+
+- **Create user** Create a user with the supplied email address, optional product access and additional properties, and output the user details.
+
+    Advanced settings:
+
+  - **Products**: Multiple product keys granting product access.
+  - **AdditionalPropertiesKeys**: Multiple additional property keys, paired with values in the same order.
+  - **AdditionalPropertiesValues**: Multiple additional property values. Supply the same number of values as keys.
+
+- **Get groups** Get the groups associated with the selected user.
+
+- **Get user email** Get the email address of the selected user.
+
+- **Get user columns** Get the issue search columns configured for the selected user.
+
+- **Reset user default columns** Reset the selected user's issue search columns to the default configuration.
+
+- **Set user columns** Set the issue search columns for the selected user.
+
+- **Bulk get users** Get user details for multiple account IDs.
+
+- **Find user by email** Search for a user with an exact email address match, ignoring capitalization. Output the user if a match is found.
+
+### Comments
+
+- **Get issue comments** Get comments for an issue or selected comment IDs, with optional sorting and a limit. Output each comment with its plain text. Outputs one page when fetching comments by issue.
+
+    Advanced settings:
+
+  - **Issue comment IDs**: Multiple comment IDs to fetch instead of comments from the selected issue.
+  - **Limit**: Maximum number of comments to output; must be greater than zero.
+  - **Sort**: Order by creation date: Newest to oldest or Oldest to newest.
+
+- **Get issue comment** Get the selected issue comment and output its details and plain text.
+
+- **Delete issue comment** Delete the selected comment from an issue.
+
+- **Add issue comment** Add a comment containing Text, a link, or user mentions, and output its details and plain text. Supply at least one of these inputs.
+
+    Advanced settings:
+
+  - **Text**: Comment text. Supply Text, a Link URL, or Mention users.
+  - **Link text**: Text displayed for the link; requires a Link URL. Defaults to the URL.
+  - **Mention users**: Multiple users to mention in a separate paragraph.
+
+- **Append text to comment** Replace the selected comment body with the supplied Text, link, or user mentions, and output its details and plain text. Supply at least one of these inputs. Despite its name, this action replaces the existing body.
+
+- **Find issue comment by text** Find a comment containing the supplied text, ignoring capitalization. Output the first match or, when Latest is enabled, the most recently updated match, with its plain text. Searches one page of comments.
+
+    Advanced settings:
+
+  - **Latest**: Enable this option to select the most recently updated match, using creation date if the update date is unavailable. Disabled by default.
+
+### Sprints
+
+- **Get relevant sprint for date** Get all sprints on the selected board whose start and end dates include the supplied date, and output the sprints and a message.
+
+### User properties
+
+- **Get user properties** Get the keys of the properties stored for the selected user.
+
+- **Get boolean user property** Get the true or false value of a property for the selected user.
+
+- **Get string user property** Get the Text value of a property for the selected user.
+
+- **Get integer user property** Get the whole number value of a property for the selected user.
+
+- **Get date user property** Get the date value of a property for the selected user.
+
+- **Get array user property** Get multiple Text values stored in a property for the selected user.
+
+- **Set user property** Set a property for the selected user. Supply exactly one value input: an option, Text, a whole number, a date, or multiple Text values.
+
+    Advanced settings:
+
+  - **Boolean value**: True or false option.
+  - **Text value**: Text value.
+  - **Integer value**: Whole number value.
+  - **Date value**: Date value.
+  - **Array value**: Multiple Text values.
+
+- **Delete user property** Delete the selected property from a user.
 
 ## Events
 
-- **On issue updated** is triggered when an issue is updated. If you want a bird to be triggered when specific issue is updated, specify the issue parameter. Otherwise, you can specify project parameter if you are interested in specific project's issues.
-- **On issue created** is triggered when an issue is created. If you want a bird to be triggered when an issue is created in specific project, fill the project parameter.
-- **On issue assigned** is triggered when an issue is assigned to specific user. You can specify project parameter if you're interested in specific project.
-- **On issue with specific type created** is triggered when an issue created has specific type (for example, a bug) or an existing issue was updated to have specific type. Optionally, you can specify project parameter.
-- **On issue with specific priority created** is triggered when an issue created has the specified priority or an existing issue was updated to have the specified priority.
-- **On issue deleted** is triggered when an issue is deleted. If you want a bird to be triggered when an issue is deleted in specific project, fill the project parameter.
-- **On file attached to issue** is triggered when a file is attached to an issue. If you want a bird to be triggered when a file is attached to specific issue, specify the issue parameter. Otherwise, you can specify project parameter if you are interested in specific project's issues.
-- **On issue status changed** is triggered when issue status is changed. If you want a bird to be triggered when specific issue's status is changed, specify the issue parameter. Otherwise, you can specify project parameter if you are interested in specific project's issues. You can also limit the event to trigger only on certain statusses.
-- **On issues reach status** is triggered when issueі reaches one of specific statuses.
+### Issues
+
+- **On issue updated** Start when an issue is updated, with optional filters for the issue, projects, changed fields, labels, and custom JQL conditions.
+
+    Advanced settings:
+
+  - **Issue**: Only start for this issue.
+  - **Projects**: Only start for issues in the selected projects.
+  - **Fields**: Only start when at least one selected field changes.
+  - **Labels (manual)**: Manually enter multiple required labels. The issue must have all supplied labels.
+  - **Labels (dropdown selection)**: Select multiple required labels. The issue must have all supplied labels, including any entered manually.
+
+- **On issue created** Start when an issue is created, with optional filters for projects, labels, parent issues, and custom JQL conditions.
+
+    Advanced settings:
+
+  - **Parent issue key(s)**: Only start for issues whose parent matches one of these keys.
+
+- **On issue assigned** Start when an issue is assigned to the selected user, with optional project and label filters.
+
+- **On issue with specific type created** Start when an issue is created with the selected type or its type changes to the selected type, with optional project and label filters.
+
+- **On issue with specific priority created** Start when an issue is created or updated with an assignment to the selected priority, with optional project and label filters.
+
+- **On issue deleted** Start when an issue is deleted, with optional project and label filters.
+
+- **On file attached to issue** Start when a file is attached to an issue and output the attachment details, with optional issue and project filters.
+
+- **On issue status changed** Start when an issue changes status, with filters for the project and optional issue, target status, labels, issue type, and summary.
+
+- **On issues reach status** Start when a selected issue is updated and all specified issues are in one of the selected statuses. Output the specified issues; they can span multiple projects. Each issue may match a different selected status.
+
+- **On issues reach status (polling)** Start when all specified issues in the selected project are in one of the selected statuses, and output the issues. Can start again while this condition remains true. Each issue may match a different selected status.
 
 ## Optional inputs
 
 We may provide two options for inputting one property to filter results:
 
-1. **Manual**:
+1. **Manual** (particularly useful when dealing with a large number of labels, which could otherwise lead to performance issues when retrieving values from the API):
     - **Description**: Allows the user to manually enter value without the assistance of a dropdown list.
     - **Use Case**: This option is ideal when the user knows the exact value they want to use or when the dropdown may not be effective due to the large number of values available through the API.
 
 2. **Dropdown selection**:
     - **Description**: Allows the user to select a value from a dropdown list.
     - **Use Case**: This option is suitable when there are fewer labels, making it convenient for users to select from a predefined list. However, this approach can be less effective if the number of labels is very large, potentially leading to timeout errors during data retrieval.
-
-### Why do we use this approach?
-
-This approach ensures flexibility by providing two methods for inputs, accommodating both situations where the user may need to manually enter specific values and where selecting from a predefined list is more practical. The 'manual' option is particularly useful when dealing with a large number of labels, which could otherwise lead to performance issues when retrieving values from the API.
 
 ## Example
 

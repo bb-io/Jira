@@ -16,7 +16,7 @@ public class UserPropertiesAction : JiraInvocable
     {
     }
     
-    [Action("Get user properties", Description = "Get the properties for the specified user.")]
+    [Action("Get user properties", Description = "Get the keys of the properties stored for the selected user.")]
     public async Task<UserPropertiesResponse> GetUserProperties([ActionParameter] UserIdentifier input)
     {
         var request = new JiraRequest($"/user/properties?accountId={input.AccountId}", Method.Get);
@@ -24,7 +24,7 @@ public class UserPropertiesAction : JiraInvocable
         return properties;
     }
     
-    [Action("Get boolean user property", Description = "Get the specified property for the specified user.")]
+    [Action("Get boolean user property", Description = "Get the true or false value of a property for the selected user.")]
     public async Task<UserPropertyResponse<bool>> GetBooleanUserProperty([ActionParameter] GetUserPropertyRequest input)
     {
         var request = new JiraRequest($"/user/properties/{input.PropertyKey}?accountId={input.AccountId}", Method.Get);
@@ -32,7 +32,7 @@ public class UserPropertiesAction : JiraInvocable
         return property;
     }
     
-    [Action("Get string user property", Description = "Get the specified string property for the specified user.")]
+    [Action("Get string user property", Description = "Get the Text value of a property for the selected user.")]
     public async Task<UserPropertyResponse<string>> GetStringUserProperty([ActionParameter] GetUserPropertyRequest input)
     {
         var request = new JiraRequest($"/user/properties/{input.PropertyKey}?accountId={input.AccountId}", Method.Get);
@@ -40,7 +40,7 @@ public class UserPropertiesAction : JiraInvocable
         return property;
     }
 
-    [Action("Get integer user property", Description = "Get the specified integer property for the specified user.")]
+    [Action("Get integer user property", Description = "Get the whole number value of a property for the selected user.")]
     public async Task<UserPropertyResponse<int>> GetIntegerUserProperty([ActionParameter] GetUserPropertyRequest input)
     {
         var request = new JiraRequest($"/user/properties/{input.PropertyKey}?accountId={input.AccountId}", Method.Get);
@@ -48,7 +48,7 @@ public class UserPropertiesAction : JiraInvocable
         return property;
     }
 
-    [Action("Get date user property", Description = "Get the specified date property for the specified user.")]
+    [Action("Get date user property", Description = "Get the date value of a property for the selected user.")]
     public async Task<UserPropertyResponse<DateTime>> GetDateUserProperty([ActionParameter] GetUserPropertyRequest input)
     {
         var request = new JiraRequest($"/user/properties/{input.PropertyKey}?accountId={input.AccountId}", Method.Get);
@@ -56,7 +56,7 @@ public class UserPropertiesAction : JiraInvocable
         return property;
     }
 
-    [Action("Get array user property", Description = "Get the specified array property for the specified user.")]
+    [Action("Get array user property", Description = "Get multiple Text values stored in a property for the selected user.")]
     public async Task<UserPropertyResponse<string[]>> GetArrayUserProperty([ActionParameter] GetUserPropertyRequest input)
     {
         var request = new JiraRequest($"/user/properties/{input.PropertyKey}?accountId={input.AccountId}", Method.Get);
@@ -64,7 +64,7 @@ public class UserPropertiesAction : JiraInvocable
         return property;
     }
     
-    [Action("Set user property", Description = "Set the specified property for the specified user.")]
+    [Action("Set user property", Description = "Set a property for the selected user. Supply exactly one value input: an option, Text, a whole number, a date, or multiple Text values.")]
     public async Task SetUserProperty([ActionParameter] GetUserPropertyRequest input, 
         [ActionParameter] SetUserPropertyRequest userProperty)
     {
@@ -92,7 +92,7 @@ public class UserPropertiesAction : JiraInvocable
         await Client.ExecuteWithHandling(request);
     }
     
-    [Action("Delete user property", Description = "Delete the specified property for the specified user.")]
+    [Action("Delete user property", Description = "Delete the selected property from a user.")]
     public async Task DeleteUserProperty([ActionParameter] GetUserPropertyRequest input)
     {
         var request = new JiraRequest($"/user/properties/{input.PropertyKey}?accountId={input.AccountId}", Method.Delete);

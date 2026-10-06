@@ -10,7 +10,7 @@ namespace Apps.Jira.Actions;
 [ActionList("Sprints")]
 public class SprintActions(InvocationContext invocationContext) : JiraInvocable(invocationContext)
 {
-    [Action("Get relevant sprint for date", Description = "Get Sprint corresponding to the specified date for a selected board.")]
+    [Action("Get relevant sprint for date", Description = "Get all sprints on the selected board whose start and end dates include the supplied date, and output the sprints and a message.")]
     public async Task<SprintsResponse> GetRelevantSprintForDate(
         [ActionParameter] GetSprintByDateRequest requestModel)
     {

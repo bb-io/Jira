@@ -24,7 +24,7 @@ public class CreateIssueRequest
     [Display("Original estimate", Description ="Original estimate time in minutes")]
     public string? OriginalEstimate { get; set; }
 
-    [Display("Reporter  ID")]
+    [Display("Reporter ID")]
     [DataSource(typeof(AssigneeDataSourceHandler))]
     public string? Reporter { get; set; }
 
@@ -32,7 +32,7 @@ public class CreateIssueRequest
     [DataSource(typeof(IssueDataSourceHandler))]
     public string? ParentIssueKey { get; set; }
 
-    [Display("Labels", Description = "Optional list of labels (Jira labels are strings).")]
+    [Display("Labels", Description = "Optional multiple labels to add to the issue.")]
     [DataSource(typeof(IssueLabelDataHandler))]
     public IEnumerable<string>? Labels { get; set; }
 }

@@ -28,7 +28,7 @@ public class IssueActions(InvocationContext invocationContext, IFileManagementCl
 {
     #region GET
 
-    [Action("Get issue", Description = "Get the specified issue.")]
+    [Action("Get issue", Description = "Get issue details, including the summary, description, status, priority, assignee, and project.")]
     public async Task<IssueDto> GetIssueByKey([ActionParameter] IssueIdentifier input)
     {
         if (input == null || string.IsNullOrEmpty(input.IssueKey))
@@ -41,8 +41,7 @@ public class IssueActions(InvocationContext invocationContext, IFileManagementCl
         return new IssueDto(issue);
     }
 
-    [Action("Search issues", Description =
-        "Returns issues that meet the provided criteria.")]
+    [Action("Search issues", Description = "Search for issues in a project using the supplied filters and optional custom JQL conditions, and output the matching issues and their count.")]
     public async Task<IssuesResponse> ListRecentlyCreatedIssues(
         [ActionParameter] ProjectIdentifier project,
         [ActionParameter] ListRecentlyCreatedIssuesRequest listRequest,
@@ -92,7 +91,7 @@ public class IssueActions(InvocationContext invocationContext, IFileManagementCl
         };
     }
 
-    [Action("Clone issue", Description = "Clone an existing issue into a new issue")]
+    [Action("Clone issue", Description = "Create a new issue in the same project with the same issue type, copy supported fields, link it to the source as a clone, and output the new issue.")]
     public async Task<IssueDto> CloneIssue([ActionParameter] IssueIdentifier sourceIssue,
        [ActionParameter] CloneIssueRequest input)
     {
@@ -397,7 +396,7 @@ public class IssueActions(InvocationContext invocationContext, IFileManagementCl
         }
     }
 
-    [Action("Link issue", Description = "Link two issues with a specific relationship type")]
+    [Action("Link issue", Description = "Link two issues using the selected relationship type, with an optional comment.")]
     public async Task LinkIssue([ActionParameter] LinkIssueRequest input)
     {
         var requestBody = new
@@ -431,7 +430,7 @@ public class IssueActions(InvocationContext invocationContext, IFileManagementCl
         await Client.ExecuteWithHandling(request);
     }
 
-    [Action("Find issue", Description = "Find the first issue that matches given conditions. Allows appending custom JQL conditions.")]
+    [Action("Find issue", Description = "Search for the first issue matching the supplied filters and optional custom JQL conditions. Output the issue if a match is found.")]
     public async Task<IssueDto> FindIssue(
     [ActionParameter] [Display("Parent issue")][DataSource(typeof(IssueDataSourceHandler))]string? parentIssue,
     [ActionParameter] [Display("Summary")] string? issueName,
@@ -471,7 +470,7 @@ public class IssueActions(InvocationContext invocationContext, IFileManagementCl
         return firstIssue != null ? new IssueDto(firstIssue) : null;
     }
 
-    [Action("List attachments", Description = "List files attached to an issue.")]
+    [Action("List attachments", Description = "Search for files attached to an issue and output their details.")]
     public async Task<AttachmentsResponse> ListAttachments([ActionParameter] IssueIdentifier issue)
     {
         var request = new JiraRequest($"/issue/{issue.IssueKey}", Method.Get);
@@ -480,7 +479,7 @@ public class IssueActions(InvocationContext invocationContext, IFileManagementCl
         return new AttachmentsResponse { Attachments = attachments };
     }
 
-    [Action("Download attachment", Description = "Download an attachment.")]
+    [Action("Download attachment", Description = "Download the selected attachment and output a file.")]
     public async Task<DownloadAttachmentResponse> DownloadAttachment([ActionParameter] AttachmentIdentifier attachment)
     {
         var request = new JiraRequest($"/attachment/content/{attachment.AttachmentId}", Method.Get);
@@ -494,7 +493,7 @@ public class IssueActions(InvocationContext invocationContext, IFileManagementCl
         return new DownloadAttachmentResponse { Attachment = file };
     }
 
-    [Action("Get issue type details", Description = "Get issue type details by name")]
+    [Action("Get issue type details", Description = "Get the details of an issue type by name for the selected project. Output the issue type if a match is found.")]
     public async Task<IssueTypeDto> GetIssueTypeDetails([ActionParameter] ProjectIdentifier projectIdentifier,
         [Display("Type name")] [ActionParameter] string TypeName)
     {
@@ -519,7 +518,7 @@ public class IssueActions(InvocationContext invocationContext, IFileManagementCl
 
     #region POST
 
-    [Action("Create issue", Description = "Create a new issue.")]
+    [Action("Create issue", Description = "Create an issue in the selected project and output its ID, key, project details, and issue type.")]
     public async Task<CreatedIssueDto> CreateIssue([ActionParameter] ProjectIdentifier project,
         [ActionParameter] CreateIssueRequest input)
     {
@@ -611,7 +610,7 @@ public class IssueActions(InvocationContext invocationContext, IFileManagementCl
         return createdIssue;
     }
 
-    [Action("Add attachment", Description = "Add attachment to an issue.")]
+    [Action("Add attachment", Description = "Attach a file to an issue and output the attachment details.")]
     public async Task<AttachmentDto> AddAttachment([ActionParameter] IssueIdentifier issue,
         [ActionParameter] AddAttachmentRequest input)
     {
@@ -624,7 +623,7 @@ public class IssueActions(InvocationContext invocationContext, IFileManagementCl
         return response.First();
     }
 
-    [Action("Add labels to issue", Description = "Add labels to a specific issue.")]
+    [Action("Add labels to issue", Description = "Add labels to an issue while keeping its existing labels, and output the updated issue.")]
     public async Task<IssueDto> AddLabelsToIssue([ActionParameter] IssueIdentifier issue,
         [ActionParameter] AddLabelsRequest input)
     {
@@ -635,7 +634,7 @@ public class IssueActions(InvocationContext invocationContext, IFileManagementCl
         return await GetIssueByKey(issue);
     }
 
-    [Action("Move issues to sprint", Description = "Moves issues to a specific sprint")]
+    [Action("Move issues to sprint", Description = "Move the selected issues to a sprint, with optional ranking settings, and output whether the move succeeded and a message.")]
     public async Task<MoveIssuesToSprintResponse> MoveIssuesToSprint(
     [ActionParameter] MoveIssuesToSprintRequest input)
     {
@@ -676,7 +675,7 @@ public class IssueActions(InvocationContext invocationContext, IFileManagementCl
 
     #region PUT
 
-    [Action("Update issue", Description = "Update issue, specifying only the fields that require updating.")]
+    [Action("Update issue", Description = "Update only the supplied issue fields. Description supports Markdown, and a status change requires an available workflow transition.")]
     public async Task UpdateIssue([ActionParameter] ProjectIdentifier projectIdentifier,
         [ActionParameter] IssueIdentifier issue,
         [ActionParameter] UpdateIssueRequest input)
@@ -763,7 +762,7 @@ public class IssueActions(InvocationContext invocationContext, IFileManagementCl
         }
     }
 
-    [Action("Append to issue description", Description = "Appends additional text with optional formatting to an issue's description.")]
+    [Action("Append to issue description", Description = "Add text as a new paragraph at the end of an issue description, preserving existing formatting and supporting optional formatting for the added text.")]
     public async Task AppendIssueDescription([ActionParameter] IssueIdentifier issueIdentifier,
         [ActionParameter] AppendDescriptionRequest input)
     {
@@ -817,8 +816,7 @@ public class IssueActions(InvocationContext invocationContext, IFileManagementCl
 
     #region DELETE
 
-    [Action("Delete issue", Description = "Delete an issue. To delete the issue along with its subtasks, " +
-                                          "set the optional input parameter 'Delete subtasks' to 'True'.")]
+    [Action("Delete issue", Description = "Delete an issue. Enable the optional Delete subtasks setting to delete its subtasks as well.")]
     public async Task DeleteIssue([ActionParameter] IssueIdentifier issue,
         [ActionParameter] [Display("Delete subtasks")]
         bool? deleteSubtasks)

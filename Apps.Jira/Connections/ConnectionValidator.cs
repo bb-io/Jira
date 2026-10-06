@@ -3,6 +3,7 @@ using Blackbird.Applications.Sdk.Common.Authentication;
 using Blackbird.Applications.Sdk.Common.Connections;
 using Blackbird.Applications.Sdk.Common.Invocation;
 using RestSharp;
+using System.Net;
 
 namespace Apps.Jira.Connections;
 
