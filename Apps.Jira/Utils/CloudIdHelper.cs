@@ -2,6 +2,7 @@ using Apps.Jira.Dtos;
 using Apps.Jira.Extensions;
 using Blackbird.Applications.Sdk.Common.Exceptions;
 using RestSharp;
+using Newtonsoft.Json.Linq;
 
 namespace Apps.Jira.Utils;
 
@@ -61,5 +62,36 @@ public static class CloudIdHelper
     public static string GetCloudId(string accessToken, string jiraUrl)
     {
         return GetCloudIdAsync(accessToken, jiraUrl, CancellationToken.None).GetAwaiter().GetResult();
+    }
+
+    public static async Task<string> GetCloudIdFromSiteAsync(
+        string jiraUrl,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(jiraUrl))
+            throw new PluginMisconfigurationException("Jira URL is not configured");
+
+        try
+        {
+            // Scoped service-account tokens cannot use OAuth's accessible-resources endpoint.
+            // This public endpoint resolves the site without sending any credentials.
+            using var client = new RestClient(new Uri(jiraUrl).GetLeftPart(UriPartial.Authority));
+            var response = await client.ExecuteAsync(new RestRequest("/_edge/tenant_info"), cancellationToken);
+
+            if (!response.IsSuccessful || string.IsNullOrWhiteSpace(response.Content))
+                throw new PluginApplicationException($"Failed to fetch Jira Cloud ID from the site: {response.StatusCode}.");
+
+            var cloudId = JObject.Parse(response.Content).Value<string>("cloudId");
+            if (!Guid.TryParse(cloudId, out _))
+                throw new PluginMisconfigurationException("The Jira site did not return a valid Cloud ID. Check the Jira URL.");
+
+            return cloudId!;
+        }
+        catch (Exception ex) when (ex is not PluginApplicationException &&
+                                     ex is not PluginMisconfigurationException &&
+                                     ex is not OperationCanceledException)
+        {
+            throw new PluginApplicationException("Failed to resolve Jira Cloud ID. Check the Jira URL.", ex);
+        }
     }
 }

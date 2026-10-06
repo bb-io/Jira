@@ -8,4 +8,6 @@ public static class CredNames
     public const string ClientSecret = "ClientSecret";
     public const string CustomScopes = "CustomScopes";
     public const string ConnectionType = "ConnectionType";
+    public const string ServiceAccountEmail = "ServiceAccountEmail";
+    public const string ApiKey = "ApiKey";
 }

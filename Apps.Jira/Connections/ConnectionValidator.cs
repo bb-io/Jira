@@ -1,5 +1,4 @@
-﻿using System.Net;
-using Blackbird.Applications.Sdk.Common;
+﻿using Blackbird.Applications.Sdk.Common;
 using Blackbird.Applications.Sdk.Common.Authentication;
 using Blackbird.Applications.Sdk.Common.Connections;
 using Blackbird.Applications.Sdk.Common.Invocation;
@@ -13,11 +12,10 @@ public class ConnectionValidator(InvocationContext invocationContext) : BaseInvo
         IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders, 
         CancellationToken cancellationToken)
     {
-        var client = new JiraClient(authenticationCredentialsProviders);
-        var request = new JiraRequest("/myself", Method.Get);
-        
         try
         {
+            using var client = new JiraClient(authenticationCredentialsProviders);
+            var request = new JiraRequest("/myself", Method.Get);
             var response = await client.ExecuteAsync(request, cancellationToken);
             var isValid = response.StatusCode != HttpStatusCode.Unauthorized;
             

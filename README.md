@@ -25,10 +25,7 @@ If you want to use your custom OAuth2 app to connect, you need to:
 - Name your app for future reference, read and agree to be bound by Atlassian's developer terms and click _Create_.
 - Go to _Authorization_ and click _Add_ for the OAuth 2.0 (3LO) authorization type.
 - In the _Callback URLs_ field, specify `https://bridge.blackbird.io/api/AuthorizationCode` and click _Save changes_.
-- Go to _Permissions_ and configure the scopes you want to use. Currently, our app supports these scopes: 
-`read:email-address:jira read:me read:sprint:jira-software read:jira-work write:jira-work 
-read:jira-user offline_access read:board-scope:jira-software read:project:jira write:sprint:jira-software`. 
-If you don't need to configure your own scopes, simply copy and paste the beforementioned ones.
+- Go to _Permissions_ and configure the scopes listed in [Required scopes](#required-scopes) for the actions and events you want to use. Include `offline_access` to allow Blackbird to refresh the OAuth connection.
 - Go to _Settings_ > _Authentication details_ and copy `Client ID` and `Secret` values.
 
 ### Enable webhooks
@@ -83,6 +80,43 @@ Navigate to apps and search for Jira. Click _Add Connection_ and name it for fut
 6. When you return to Blackbird, confirm that the connection has appeared and the status is _Connected_.
 
 ![Connecting using OAuth2 custom app](Images/README/oauth2_customapp_connection.png)
+
+### Service account
+
+1. Select the `Service account` connection type from the dropdown.
+2. Enter your Jira site's base URL, for example `https://<organization name>.atlassian.net`.
+3. Enter the service account email and its API token in the `API key` field.
+4. Save the connection and confirm that its status is _Connected_.
+
+Create a scoped API token for the service account in [Atlassian Administration](https://support.atlassian.com/user-management/docs/manage-api-tokens-for-service-accounts/). Give the account Jira app access and the project permissions needed by your workflows. Select the scopes listed in [Required scopes](#required-scopes), including `read:jira-user` for connection validation.
+
+The app resolves the Cloud ID from your Jira URL and sends API requests through Atlassian's gateway using HTTP Basic authentication with the email and API token. No interactive OAuth authorization is required. When the token expires or is revoked, replace the API key in the connection.
+
+## Required scopes
+
+The following set covers the documented Jira endpoints currently used by this app's actions, data sources, connection validator, and events. Select the scopes needed by your workflows, keeping `read:jira-user` for connection validation. These requirements use Atlassian's recommended classic scopes where available, plus the specific scopes required for email addresses and Jira Software. Granular alternatives are listed in the linked [Jira platform API reference](https://developer.atlassian.com/cloud/jira/platform/rest/v3/intro/) and [Jira Software API reference](https://developer.atlassian.com/cloud/jira/software/rest/intro/).
+
+| Scope | Required for |
+| --- | --- |
+| `read:jira-user` | Validate the connection; read users, groups, user columns, and user properties. |
+| `read:jira-work` | Read and search issues; read comments, attachments, fields, projects, issue types, statuses, priorities, resolutions, labels, versions, and JQL suggestions. |
+| `write:jira-work` | Create, update, delete, assign, link, and transition issues; upload attachments; write/delete comments and user properties. |
+| `manage:jira-configuration` | Create/delete users and set/reset user columns. |
+| `read:email-address:jira` | Get user email. |
+| `read:board-scope:jira-software` | List boards for the board dropdown. Also requires `read:project:jira`. |
+| `read:project:jira` | List boards together with `read:board-scope:jira-software`. |
+| `read:sprint:jira-software` | Read board sprints for the sprint dropdown and Get relevant sprint for date. |
+| `write:sprint:jira-software` | Move issues to sprint. |
+
+Scope list for a service-account API token or custom OAuth app covering all documented endpoints:
+
+```text
+read:jira-user read:jira-work write:jira-work manage:jira-configuration read:email-address:jira read:board-scope:jira-software read:project:jira read:sprint:jira-software write:sprint:jira-software
+```
+
+For OAuth connections, also request `offline_access` to obtain a refresh token. Service-account API tokens do not require `offline_access`. See [Atlassian's OAuth refresh documentation](https://developer.atlassian.com/cloud/jira/platform/oauth-2-3lo-apps/#how-do-i-get-a-new-access-token--if-my-access-token-expires-or-is-revoked-).
+
+Scopes do not grant Jira permissions. The account must also have the relevant project and global permissions. User creation requires Administer Jira and organization-admin access; user deletion requires site-admin access. The standard OAuth connection uses predefined scopes without `manage:jira-configuration`; use a custom OAuth app or service-account token with that scope for the corresponding actions. See [User API permissions](https://developer.atlassian.com/cloud/jira/platform/rest/v3/api-group-users/).
 
 ## Actions
 
