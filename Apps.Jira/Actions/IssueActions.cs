@@ -48,7 +48,7 @@ public class IssueActions(InvocationContext invocationContext, IFileManagementCl
         [ActionParameter][Display("Custom JQL conditions")] string? customJql)
     {
         List<string> jqlConditions = [
-            $"project={project.ProjectKey}"
+            $"project=\"{project.ProjectKey}\""
         ];
 
         if (listRequest.Hours.HasValue)
