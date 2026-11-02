@@ -7,7 +7,6 @@ using Blackbird.Applications.Sdk.Common;
 using Blackbird.Applications.Sdk.Common.Actions;
 using Blackbird.Applications.Sdk.Common.Invocation;
 using RestSharp;
-using System.ComponentModel.DataAnnotations;
 using UserDto = Apps.Jira.Models.Responses.UserDto;
 
 namespace Apps.Jira.Actions;
@@ -15,6 +14,9 @@ namespace Apps.Jira.Actions;
 [ActionList("Users")]
 public class UserActions : JiraInvocable
 {
+    private const int ActiveUserSearchPageSize = 100;
+    private const int AllUsersPageSize = 1000;
+
     public UserActions(InvocationContext invocationContext) : base(invocationContext)
     {
     }
@@ -30,28 +32,46 @@ public class UserActions : JiraInvocable
     [Action("Find user by email", Description = "Search for a user with an exact email address match, ignoring capitalization. Output the user if a match is found.")]
     public async Task<UserDto?> FindUserByEmail([ActionParameter] UserEmailRequest input)
     {
+        return await FindActiveUserByEmail(input.Email) ?? await FindAnyUserByEmail(input.Email);
+    }
+
+    private async Task<UserDto?> FindActiveUserByEmail(string email)
+    {
+        var request = new JiraRequest("/user/search", Method.Get)
+            .AddQueryParameter("query", email)
+            .AddQueryParameter("maxResults", ActiveUserSearchPageSize);
+
+        var users = await Client.ExecuteWithHandling<List<UserDto>>(request) ?? [];
+        return users.FirstOrDefault(user => IsAtlassianUserWithEmail(user, email));
+    }
+
+    private async Task<UserDto?> FindAnyUserByEmail(string email)
+    {
         var startAt = 0;
-        const int maxResults = 100;
 
         while (true)
         {
-            var request = new JiraRequest($"/users/search?query={input.Email}&maxResults={maxResults}&startAt={startAt}", Method.Get);
-            var users = await Client.ExecuteWithHandling<List<UserDto>>(request) ?? new List<UserDto>();
+            var request = new JiraRequest("/users/search", Method.Get)
+                .AddQueryParameter("maxResults", AllUsersPageSize)
+                .AddQueryParameter("startAt", startAt);
 
-            if (!users.Any())
+            var users = await Client.ExecuteWithHandling<List<UserDto>>(request) ?? [];
+
+            if (users.Count == 0)
                 return null;
 
-            var matchedUser = users
-                .FirstOrDefault(u =>
-                    u.AccountType.Equals("atlassian", StringComparison.OrdinalIgnoreCase) &&
-                    string.Equals(u.EmailAddress, input.Email, StringComparison.OrdinalIgnoreCase));
+            var matchedUser = users.FirstOrDefault(user => IsAtlassianUserWithEmail(user, email));
 
             if (matchedUser != null)
                 return matchedUser;
 
-            startAt += maxResults;
+            startAt += users.Count;
         }
     }
+
+    private static bool IsAtlassianUserWithEmail(UserDto user, string email) =>
+        string.Equals(user.AccountType, "atlassian", StringComparison.OrdinalIgnoreCase) &&
+        string.Equals(user.EmailAddress, email, StringComparison.OrdinalIgnoreCase);
 
     [Action("Get user", Description = "Get the details of a user by account ID.")]
     public async Task<ExpandedUserDto> GetUser([ActionParameter] UserIdentifier input)
