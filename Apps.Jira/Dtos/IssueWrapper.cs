@@ -9,6 +9,10 @@ namespace Apps.Jira.Dtos;
 
 public class IssuesWrapper
 {
+    [JsonProperty("nextPageToken")]
+    [DefinitionIgnore]
+    public string? NextPageToken { get; set; }
+
     [JsonProperty("startAt")]
     [DefinitionIgnore]
     public int StartAt { get; set; }
@@ -20,7 +24,7 @@ public class IssuesWrapper
     [JsonProperty("total")]
     [DefinitionIgnore]
     public int Total { get; set; }
-    public IEnumerable<IssueWrapper> Issues { get; set; }
+    public IEnumerable<IssueWrapper> Issues { get; set; } = [];
 }
 
 public class IssueWrapper

@@ -78,16 +78,33 @@ public class IssueActions(InvocationContext invocationContext, IFileManagementCl
             jqlConditions.Add($"({customJql})");
         }
 
-        var request = new JiraRequest("/search/jql", Method.Get);
-        request.AddQueryParameter("jql", string.Join(" and ", jqlConditions));
-        request.AddQueryParameter("fields","id,key,summary,status,priority,assignee,reporter,project,description,labels,subtasks,duedate,parent");
+        const string fields = "id,key,summary,status,priority,assignee,reporter,project,description,labels,subtasks,duedate,parent";
+        const int maxResults = 50;
+        var jql = string.Join(" and ", jqlConditions);
+        var allIssues = new List<IssueWrapper>();
+        string? nextPageToken = null;
 
-        var issues = await Client.ExecuteWithHandling<IssuesWrapper>(request);
+        do
+        {
+            var request = new JiraRequest("/search/jql", Method.Get);
+            request.AddQueryParameter("jql", jql);
+            request.AddQueryParameter("fields", fields);
+            request.AddQueryParameter("maxResults", maxResults.ToString());
+
+            if (!string.IsNullOrWhiteSpace(nextPageToken))
+            {
+                request.AddQueryParameter("nextPageToken", nextPageToken);
+            }
+
+            var page = await Client.ExecuteWithHandling<IssuesWrapper>(request);
+            allIssues.AddRange(page.Issues);
+            nextPageToken = page.NextPageToken;
+        } while (!string.IsNullOrWhiteSpace(nextPageToken));
 
         return new IssuesResponse
         {
-            Issues = issues.Issues.Select(i => new IssueDto(i)),
-            Count = issues.Issues.Count()
+            Issues = allIssues.Select(i => new IssueDto(i)),
+            Count = allIssues.Count
         };
     }
 

@@ -126,7 +126,7 @@ Please note: sending too many parallel requests to Jira may result in request re
 
 - **Get issue** Get issue details, including the summary, description, status, priority, assignee, and project.
 
-- **Search issues** Search for issues in a project using the supplied filters and optional custom JQL conditions, and output the matching issues and their count. Outputs one page of matching issues.
+- **Search issues** Search for issues in a project using the supplied filters and optional custom JQL conditions, and output all matching issues and their count.
 
     Advanced settings:
 
